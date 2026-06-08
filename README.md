@@ -14,6 +14,34 @@ A full-stack authentication module — sign up, sign in, and quack your way in. 
 
 For architecture details, setup walkthroughs, path aliases, nestjs-zod wiring, and AI workflow — see the **documentation site** (below).
 
+## Architecture (high level)
+
+```mermaid
+flowchart TB
+  subgraph monorepo["Nx monorepo"]
+    FE["apps/FE — React + Redux"]
+    BE["apps/BE — NestJS"]
+    LIBS["libs/dtos + qu-constants"]
+    MONGO["mongoose/"]
+    DOCS["apps/DOCS"]
+  end
+
+  subgraph feLayers["FE data flow"]
+    API["api/services"]
+    SLICE["store/slices"]
+    HOOK["hooks/slices"]
+    CTX["Page context — fetch*"]
+    LOGIC["useComponentName"]
+    UI["ComponentName.tsx"]
+    API --> SLICE --> HOOK --> CTX --> LOGIC --> UI
+  end
+
+  FE --> feLayers
+  FE --> LIBS
+  BE --> LIBS
+  BE --> MONGO
+```
+
 ## Prerequisites
 
 - **Node.js** 22.13+ (required by pnpm 11.5.2)

@@ -1,29 +1,8 @@
 ---
-sidebar_position: 1
+sidebar_position: 8
 ---
 
-# Frontend (FE)
-
-React + Vite + Tailwind at `apps/FE`.
-
-## Dev server
-
-```bash
-pnpm nx serve FE
-```
-
-http://localhost:4200
-
-## Path aliases
-
-- `@/*` → `apps/FE/src/*`
-- `@shared/dtos`, `@shared/constants` → shared libs (see Setup → Path aliases)
-
-## TypeScript note
-
-`tsconfig.app.json` must extend `./tsconfig.json` (not `tsconfig.base.json` directly) to inherit `jsx: "react-jsx"`.
-
-## Dev-only tooling
+# Dev-only tooling
 
 Bootstrap: `index.html` → `dev-entry.ts` → (`dev-tools.ts` in dev only) → `main.tsx`. Matches [React Scan Vite](https://github.com/aidenybai/react-scan/blob/main/docs/installation/vite.md) and [React Grab Vite](https://github.com/aidenybai/react-grab/blob/main/README.md#vite) guides. Production builds skip `dev-tools` entirely.
 

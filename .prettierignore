@@ -1,6 +1,7 @@
 .prettierignore
 .docusaurus
 .cache-loader
+apps/DOCS/build
 dist
 out-tsc
 coverage

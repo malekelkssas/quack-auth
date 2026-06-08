@@ -27,8 +27,8 @@ The Developer is moving to the **Agents** window next for **multi-chat / multi-b
 | ------------------------- | --------------------- |
 | `quack-XX-<feature-slug>` | `quack-01-auth-login` |
 
-1. Inspect: `git branch -a | grep quack-`
-2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>`
+1. Inspect: `git branch -a | grep quack-` and `git worktree list` (parallel agents may hold `quack-XX-*` only in another worktree).
+2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>` — the script scans refs **and** checked-out worktree branches when picking the next `XX`.
 3. Log **branch name** in session entries when useful.
 
 `XX` = next zero-padded number. One branch per chat — do not share across agents.
@@ -887,6 +887,171 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 ---
 
+## 2026-06-08 23:50 — FE auth branch + worktree-aware branch script
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-08 23:50`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages` (created from `main` @ `166ba97`)
+
+**Developer request**
+
+- Start a branch for FE theme/design and sign-up + login pages (sign-up wired first; login UI only for now).
+- When running `./scripts/next-quack-branch.sh`, **do not miss `quack-XX-*` branches checked out in other Cursor worktrees** — Developer noticed parallel worktrees (`quack-04-be-tests-setup`, `quack-05-db-seed-fixtures`) and asked for script + doc updates.
+
+**Implemented**
+
+- Updated `scripts/next-quack-branch.sh` to union branch names from `refs/heads`, `refs/remotes/origin`, and `git worktree list --porcelain` (`branch refs/heads/...`); prints active worktrees on quack branches before creating the next branch.
+- Ran `./scripts/next-quack-branch.sh fe-auth-pages` → `quack-06-fe-auth-pages` (next after `05`, worktrees listed correctly).
+- Updated **Branch per chat** section above to mention worktree inspection + script behavior.
+
+**Planned on this branch (not started this turn)**
+
+- FE theme/design system baseline, sign-up page (functional), login page (static/shell).
+
+---
+
+## 2026-06-09 00:05 — FE API conventions (`handleError`, `services/`)
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:05`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer conventions (new)**
+
+1. **`apps/FE/src/api/handleError.ts`** — maps `AxiosError` / network failures to `ErrorResponse` (`@shared/dtos`); axios codes/messages in `apps/FE/src/utils/constants.ts`.
+2. **`apps/FE/src/api/services/`** — domain axios call sites (e.g. `authService.ts`); routes built from `BE_ROUTES` (`@shared/constants`), shared `api` instance from `axiosConfig.ts`.
+
+**Implemented**
+
+- `handleError.ts`, `utils/constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
+- `services/authService.ts` — `AuthService.signup` → `POST /users/signup`.
+- Updated `.cursor/rules/project-conventions.mdc` (FE HTTP client section).
+
+---
+
+## 2026-06-09 00:20 — Convention must sync Docusaurus docs (Developer catch)
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:20`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer feedback**
+
+- FE API conventions were added to `project-conventions.mdc` but **Docusaurus app docs were not updated** — Developer asked to make doc updates **mandatory** when conventions change.
+
+**Implemented**
+
+- `project-conventions.mdc` — step 3 + **Convention → docs map** (FE → `frontend.md`, BE → `backend.md`, Mongoose, setup, AI).
+- `ai-first-engineering.mdc` step 0 — same requirement; `AGENTS.md` pointer updated.
+- Backfilled docs: `apps/DOCS/docs/apps/frontend.md` (HTTP client), `backend.md` (`BE_ROUTES`), `setup/10-git-branches-commits.md` (worktree list).
+
+---
+
+## 2026-06-09 00:45 — FE Redux slices, slice hooks, layered flow
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:45`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer rationale (slice hooks)**
+
+> Unified slice-hook interface so when slice shape changes, you update few interface files instead of many consumers across the app.
+
+**Implemented**
+
+- `store/slices/authSlice.ts` — `signup` async thunk (`AuthService.signup` + `handleError` + `rejectWithValue`); granular `isSigningUp` / `signupError` / `signupSucceeded`; `user` placeholder for future auth endpoints.
+- `hooks/slices/useAuth.ts` — unified auth slice interface (state + `signup` / `clearSignup` / `clearError`).
+- `api/services/index.ts` — barrel export for `AuthService`.
+- `root-reducer.ts` — wired `auth` slice.
+- Conventions: `project-conventions.mdc` (Redux, slice hooks, layered flow); `frontend.md` (full FE flow + mermaid); `README.md` (monorepo + FE layer diagram); `@docusaurus/theme-mermaid` enabled in DOCS.
+
+**Deferred**
+
+- Full auth pages, page contexts, component logic hooks — structure only; login/checkAuth/logout thunks wait for BE routes.
+
+## 2026-06-09 01:15 — FE duck theme + auth pages + toast system
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 01:15`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Overview**
+
+> Retheme FE Tailwind tokens to the retro "duck pond" design language, build animated-duck Login + Sign-up pages with react-router, add a classic shadcn toast system with success/warning/error variants + `use-error`/`use-success`, and wire Sign-up to the `useAuth` slice hook via react-hook-form + the shared Zod `Signup` DTO.
+
+**Deps added** (root `package.json`, hoisted to FE)
+
+- `react-router-dom` — real `/login` + `/signup` routes.
+- `react-hook-form` + `@hookform/resolvers` — `zodResolver` (Zod v4 compatible).
+- `@radix-ui/react-toast` — classic shadcn toast primitive.
+
+**Implemented**
+
+- **Tokens & fonts** — full token replacement to the duck pond palette (single dark theme; dropped the `.dark` block), Google Fonts `@import` (Press Start 2P + VT323), `@theme inline` `--color-*` + `--font-pixel`/`--font-body`, `bob` keyframes + `.pixelated` helper; duck `index.html` title.
+- **Sprites + visuals** — walking-duck sprite sheets in `apps/FE/public/sprites/` (`duckling.png`, `mallard.png`); `components/duck/` `DuckCanvas` (6-frame animation, modes `duckling`/`mallard`/`both`), `StarField`, `PixelField`, `PixelButton`.
+- **Routing + pages** — `BrowserRouter` in `main.tsx`; `Routes` (`/login`, `/signup`, `/` → `/signup`) + `<Toaster/>` in `app/app.tsx`; `pages/auth/` with `AuthLayout`, `Login` (UI only) + `useLogin`, `Signup` + `useSignup`.
+- **Toast system** — classic shadcn `toast.tsx`/`toaster.tsx` + `use-toast`; `success`/`warning`/`error` variants; `utils/constants.ts` → `utils/constants/` dir (`index.ts` barrel, `axios.constants.ts`, `toast-variants.constants.ts`); `use-error` / `use-success` system hooks.
+- **Signup integration** — `useSignup` uses `useForm<z.input, unknown, z.output>` + `zodResolver(Signup)` from `@shared/dtos` → `useAuth().signup`; success toast "Welcome to the pond!", error via `use-error`, cleanup on unmount.
+- **Docs** — expanded `docs/apps/frontend.md` into the `docs/apps/FE/` directory (`_category_.json` + `01-overview`…`09-testing`, new testing page), deleted the old `frontend.md`, fixed cross-links (`backend.md`, `ai/maintenance.md`); updated `project-conventions.mdc` (FE docs-map row + new pages/system-hooks/constants-dir/toast-variant/public-assets conventions), `AGENTS.md`, `ai-first-engineering.mdc`, `docusaurus-docs.mdc`, and `TODO.md`.
+
+**Judgement calls / deviations**
+
+- **Classic toast vs `sonner`** — chose the classic shadcn Radix toast for a typed `cva` variant API + reducer queue that `use-error`/`use-success` can drive, rather than `sonner`.
+- **`useEffectEvent` availability** — verified the installed React supports it; otherwise the toast hooks fall back to a `useRef`-of-latest-values pattern.
+- **Single dark duck theme** — dropped the shadcn light/dark split in favor of one dark pond theme per the design language.
+
+## 2026-06-09 01:50 — FE route path constants
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 01:50`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Developer request**
+
+> Use a constants file for FE route paths (e.g. redirects in `app.tsx` and cross-links in Login/Signup) instead of scattered magic strings like `"/login"` and `"/signup"`. Log this in `AI.md`.
+
+**Done**
+
+- Added `apps/FE/src/utils/constants/routes.constants.ts` — `FE_ROUTES` (`HOME`, `LOGIN`, `SIGNUP`), `FE_DEFAULT_ROUTE` (`FE_ROUTES.SIGNUP`); re-exported from `@/utils/constants`.
+- Wired `app/app.tsx` (`<Route>`, `<Navigate>`), `Login.tsx` and `Signup.tsx` (`<Link>`) to the constants.
+- Updated `project-conventions.mdc` (FE pages routing + `utils/constants/` list) and `apps/DOCS/docs/apps/FE/04-routing-pages.md`.
+
+---
+
 ## 2026-06-08 — BE API test plan revised (`quack-04-be-tests-setup`)
 
 **Session** — `S017-be-tests-setup`
@@ -914,7 +1079,7 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Implemented**
 
 - `apps/BE/src/test/` — Jest + Supertest API specs (`*.api-spec.ts`), in-memory Mongo, `resetDb()` → `loadFixtures({ reset: true })`.
-- `apps/BE/src/app/configure-app.ts` — shared global prefix for `main.ts` and tests.
+- `apps/BE/src/app/configure-app.ts` — shared global prefix + CORS for `main.ts` and tests.
 - `apps/BE/jest.config.ts`, `tsconfig.spec.json`; `pnpm test:be` / `pnpm nx test BE`; CI via `pnpm ci`.
 - Test helpers: `API_PATHS` / `apiPath()` from `BE_ROUTES`; `expectApiError()` for exact `{ message }` assertions.
 - Signup specs: **11** cases + **1** app smoke = **12** total (201, 409 duplicate, 400 validation — missing fields, email, name length, password rules).

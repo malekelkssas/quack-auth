@@ -20,7 +20,7 @@ quack-XX-<feature-slug>
 
 ### Start of every new chat (required)
 
-1. List existing branches: `git branch -a | grep quack-`
+1. List existing branches: `git branch -a | grep quack-` **and** `git worktree list` (parallel Cursor worktrees may hold `quack-XX-*` only in another checkout).
 2. Create the next branch — **do not** reuse another chat’s branch:
 
 ```bash

@@ -11,6 +11,7 @@ export default [
       '**/dist',
       '**/out-tsc',
       '**/.docusaurus',
+      'apps/DOCS/build',
       '**/.nx',
       '**/node_modules',
       '**/coverage',
