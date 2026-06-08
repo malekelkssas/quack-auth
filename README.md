@@ -67,7 +67,7 @@ pnpm format         # Prettier write
 pnpm format:check   # Prettier check
 ```
 
-CI is planned next so multiple agents can work on separate branches with automated gates.
+**CI** (`.github/workflows/ci.yml`) runs the same **`pnpm check`** as Husky on push/PR. BE unit tests and FE E2E are commented in the workflow until they exist and are light enough for every run — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`).
 
 ## Keeping DTOs in sync (`libs/dtos` ↔ `app.dto.ts`)
 

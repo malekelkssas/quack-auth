@@ -45,17 +45,17 @@ Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `
 
 Nx monorepo (`pnpm` + Nx 22) with:
 
-| Area            | What exists                                                               |
-| --------------- | ------------------------------------------------------------------------- |
-| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)         |
-| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)  |
-| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)   |
-| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts` |
-| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`           |
-| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                   |
-| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                  |
-| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`     |
-| **Next**        | CI for multi-agent / multi-branch workflow                                |
+| Area            | What exists                                                                          |
+| --------------- | ------------------------------------------------------------------------------------ |
+| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                    |
+| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)             |
+| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)              |
+| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`            |
+| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                      |
+| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                              |
+| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                             |
+| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                |
+| **CI**          | `.github/workflows/ci.yml` — `pnpm check` (parity with Husky); BE test + FE E2E TODO |
 
 ### Completed setup steps
 
@@ -183,6 +183,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 - Document **[filelinks](https://github.com/Vilancer/filelinks)** at the `app.dto.ts` sync warning — Developer-built tool linking trigger/affects files and directories for hooks/agents; README shows `pnpm add` but **not published on npm yet**
 - Document **`filelinks check --run-agents`** — when a trigger is staged, filelinks can spawn a Cursor agent with a per-link prompt to fix affects (e.g. `createZodDto` wrappers); Developer asked to mention this explicitly
 - Log **model with exact version** (e.g. Composer 2.5), not shorthand “Composer”
+- Developer hit `EBADDEVENGINES` running `npx nx generate ci-workflow` — repo requires **pnpm**; Developer then ran **`pnpm nx generate ci-workflow --ci=github`** to scaffold `.github/workflows/ci.yml`
+- Align **CI** with Husky — workflow customized so main step is `pnpm check` (not default `nx affected -t lint test build`); commented TODOs for **BE unit tests** and **FE E2E** when ready (E2E only if not too heavy)
 
 ---
 

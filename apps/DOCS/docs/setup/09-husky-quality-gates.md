@@ -77,6 +77,34 @@ pnpm install   # runs "prepare" → husky installs hooks into .git/hooks
 
 If hooks are missing, run `pnpm prepare` manually.
 
-## Next: CI
+## CI (GitHub Actions)
 
-GitHub Actions (planned) will run the same `pnpm check` on pull requests so multiple agents can work on separate branches with automated gates — see root `README.md` and `AI.md` session `S006-quality-gates`.
+Workflow: `.github/workflows/ci.yml` — runs on `push` to `main` and on pull requests.
+
+| Layer                 | Husky (local)                             | CI                                              |
+| --------------------- | ----------------------------------------- | ----------------------------------------------- |
+| Auto-fix staged files | `lint-staged` (Prettier + ESLint `--fix`) | — (use `pnpm format` / `pnpm lint:fix` locally) |
+| Verify full repo      | `pnpm check`                              | **`pnpm check`** (same)                         |
+
+CI does **not** re-run `lint-staged` (nothing is staged in Actions); `pnpm check` already includes `format:check`, `lint`, and `typecheck` on the whole tree.
+
+### Planned (not enabled yet)
+
+Add these steps to `.github/workflows/ci.yml` when ready — **do not forget**:
+
+| When ready        | Command                                               | Notes                                                                                           |
+| ----------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **BE unit tests** | `pnpm nx run-many -t test --all --exclude=quack-auth` | Uncomment in workflow once `BE:test` (or lib tests) exist                                       |
+| **FE E2E**        | `pnpm nx run FE:e2e`                                  | Only if the suite is light enough for every PR; consider `nx affected` or a nightly job if slow |
+
+### Generating / updating the workflow
+
+The Developer scaffolded this workflow with:
+
+```bash
+pnpm nx generate ci-workflow --ci=github
+```
+
+Nx’s default tip uses `npx nx generate ci-workflow`, which fails here with `EBADDEVENGINES` — `npx` invokes **npm**, but this repo’s `devEngines.packageManager` requires **pnpm** 11.5.2. Always use **`pnpm nx …`** instead.
+
+After generating (or regenerating), keep the main step as **`pnpm check`** to stay aligned with Husky — the stock generator may use `nx affected -t lint test build` instead.
