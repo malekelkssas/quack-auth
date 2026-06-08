@@ -31,7 +31,7 @@ Always end with:
 
 **Session** — active session id (`S###-slug`); reuse the current chat's id, or propose a new id if this is a new chat
 
-**Model** — the model name you are running as (e.g. Composer, Claude Opus, GPT-4.1)
+**Model** — full name + version (e.g. Composer 2.5, Claude Opus 4.6, GPT-4.1)
 
 **Chat summary** — `No` or brief note if this turn follows a context compaction / summarized chat
 

@@ -69,6 +69,12 @@ pnpm format:check   # Prettier check
 
 CI is planned next so multiple agents can work on separate branches with automated gates.
 
+## Keeping DTOs in sync (`libs/dtos` ↔ `app.dto.ts`)
+
+Shared Zod schemas live in `libs/dtos`; NestJS needs separate `createZodDto` wrappers in `apps/BE/src/app/app.dto.ts`. That pairing is easy to forget — see the sync warning in **Setup → nestjs-zod** (`pnpm nx serve DOCS` → http://localhost:4001).
+
+The Developer maintains **[filelinks](https://github.com/Vilancer/filelinks)** — a tool that declares semantic links between files (and directories). On `filelinks check`, staged **triggers** flag missing **affects** companions; with **`--run-agents`**, it can spawn a Cursor agent (configured prompt/model per link) to fix them — e.g. update `app.dto.ts` after `libs/dtos` changes. The upstream README shows `pnpm add -D filelinks @filelinks/core`, but **it is not published on npm yet** — use the GitHub repo until release.
+
 ## AI-assisted development
 
 This repo uses an AI-first workflow. See `AI.md` for session log and `.cursor/agents/` for subagents. Policy and doc conventions are in the DOCS app under **AI**.

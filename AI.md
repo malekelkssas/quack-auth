@@ -1,6 +1,6 @@
 # AI.md — quack-auth
 
-Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **session id**, **model**, prompts, fixes, judgement calls, and **chat summaries**.
+Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **session id**, **model** (full name + version, e.g. **Composer 2.5** — not just “Composer”), prompts, fixes, judgement calls, and **chat summaries**.
 
 ## Session IDs
 
@@ -110,7 +110,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 - **Response validation errors as 400** — nestjs-zod treats serialization failures as 500 (server bug); we map them to the same body as input validation for consistent API DX during development
 - **Same-name Zod schema + type** — Developer choice over `*Schema` suffix convention
 - **Filters directory** — `apps/BE/src/filters/` (`http-exception`, `global-exception`) instead of colocating in `app/`
-- **`app.dto.ts` sync warning** in setup — BE needs `createZodDto` wrappers separate from shared Zod schemas in `libs/dtos`
+- **`app.dto.ts` sync warning** in setup — BE needs `createZodDto` wrappers separate from shared Zod schemas in `libs/dtos`; Developer later pointed to [filelinks](https://github.com/Vilancer/filelinks) as the tool being built to link these (not on npm yet)
 - **Always-use subagent** — non-trivial work should go through `ai-first-engineering` subagent, not inline parent agent
 
 **Verified**
@@ -127,7 +127,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 **Session** — `S005-docusaurus`
 
-**Model** — Composer
+**Model** — Composer (exact version not recorded for this session)
 
 **Chat summary** — No (single continuous thread for DOCS migration)
 
@@ -147,7 +147,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 **Session** — `S006-quality-gates`
 
-**Model** — Composer
+**Model** — Composer 2.5
 
 **Chat summary** — Yes — prior thread summarized at handoff; Developer asked to continue Husky + README + CI prep for parallel agent work.
 
@@ -180,6 +180,9 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 - Husky landed in code + README + skills but **not** in `apps/DOCS` until Developer flagged it — added `setup/09-husky-quality-gates.md`, updated `intro.md`, maintenance tables, and doc skills/agents
 - Developer ran `pnpm check` and hit `format:check` failure — `09-husky-quality-gates.md` and `docusaurus-docs/SKILL.md` were edited but not Prettier-formatted before commit; fixed with `prettier --write`
+- Document **[filelinks](https://github.com/Vilancer/filelinks)** at the `app.dto.ts` sync warning — Developer-built tool linking trigger/affects files and directories for hooks/agents; README shows `pnpm add` but **not published on npm yet**
+- Document **`filelinks check --run-agents`** — when a trigger is staged, filelinks can spawn a Cursor agent with a per-link prompt to fix affects (e.g. `createZodDto` wrappers); Developer asked to mention this explicitly
+- Log **model with exact version** (e.g. Composer 2.5), not shorthand “Composer”
 
 ---
 
@@ -189,7 +192,7 @@ After each significant AI-assisted session, append:
 
 - **Session id** (`S###-slug`) — one id per chat; reuse for all entries from the same conversation
 - **Local start time** (`YYYY-MM-DD HH:MM`)
-- **Model**
+- **Model** — full product name + version (e.g. Composer 2.5, Claude Opus 4.6)
 - **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted
 
 Template: `.cursor/skills/ai-first-engineering/SKILL.md`.

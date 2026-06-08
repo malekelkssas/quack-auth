@@ -18,7 +18,7 @@ pnpm nx serve BE
 ## Validation
 
 - [nestjs-zod](https://github.com/BenLorantfy/nestjs-zod) — global pipe, interceptor, filters
-- Shared Zod schemas in `libs/dtos`; Nest wrappers in `apps/BE/src/app/app.dto.ts`
+- Shared Zod schemas in `libs/dtos`; Nest wrappers in `apps/BE/src/app/app.dto.ts` — see [nestjs-zod setup → sync warning](../setup/06-nestjs-zod.md) and [filelinks](https://github.com/Vilancer/filelinks) (trigger/affects links; optional `--run-agents` to spawn Cursor to fix companions; not on npm yet)
 
 ## Path aliases
 
