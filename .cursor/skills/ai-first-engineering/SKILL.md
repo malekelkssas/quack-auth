@@ -127,6 +127,8 @@ Append to project root `AI.md`. Use **local time** when the session started (`HH
 
 Pre-commit runs `lint-staged` (Prettier + ESLint `--fix` on staged files), then `pnpm check`.
 
+**Document in DOCS** — when adding or changing hooks, scripts, or CI: update `apps/DOCS/docs/setup/09-husky-quality-gates.md` and `intro.md` (see **docs-maintainer**).
+
 | Command         | Purpose                             |
 | --------------- | ----------------------------------- |
 | `pnpm check`    | lint + typecheck + format:check     |

@@ -15,7 +15,7 @@ You maintain the **Quack Auth** docs site (`apps/DOCS`, [Docusaurus](https://doc
 | Area              | Path                                                               |
 | ----------------- | ------------------------------------------------------------------ |
 | Home              | `apps/DOCS/docs/intro.md`                                          |
-| Setup steps       | `apps/DOCS/docs/setup/01-*.md` … `08-docusaurus.md`                |
+| Setup steps       | `apps/DOCS/docs/setup/01-*.md` … `09-husky-quality-gates.md`       |
 | FE / BE / MongoDB | `apps/DOCS/docs/apps/` (`frontend.md`, `backend.md`, `mongodb.md`) |
 | AI policy         | `apps/DOCS/docs/ai/`                                               |
 

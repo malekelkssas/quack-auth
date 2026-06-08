@@ -174,6 +174,12 @@ Nx monorepo (`pnpm` + Nx 22) with:
 **Developer asked for (same session)**
 
 - Rename **section id** → **session id** — one id per chat, not per topic arc; refer to the human as **Developer**
+- Document **Husky** in DOCS — what the pre-commit hook runs (`lint-staged` + `pnpm check`), lint-staged globs, and manual `pnpm check` scripts (was missing from Docusaurus after implementation)
+
+**Output that needed fixing**
+
+- Husky landed in code + README + skills but **not** in `apps/DOCS` until Developer flagged it — added `setup/09-husky-quality-gates.md`, updated `intro.md`, maintenance tables, and doc skills/agents
+- Developer ran `pnpm check` and hit `format:check` failure — `09-husky-quality-gates.md` and `docusaurus-docs/SKILL.md` were edited but not Prettier-formatted before commit; fixed with `prettier --write`
 
 ---
 

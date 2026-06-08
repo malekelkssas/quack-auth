@@ -16,7 +16,7 @@ description: Maintains quack-auth Docusaurus docs in apps/DOCS. Use when updatin
 ```
 docs/
 ├── intro.md              # Home (routeBasePath /)
-├── setup/                # 01-monorepo … 08-docusaurus
+├── setup/                # 01-monorepo … 09-husky-quality-gates
 ├── apps/                 # frontend.md, backend.md, mongodb.md
 └── ai/                   # policy.md, maintenance.md
 ```
@@ -30,14 +30,15 @@ pnpm nx build DOCS
 
 ## When to update
 
-| Repo change                 | Doc file                                        |
-| --------------------------- | ----------------------------------------------- |
-| Setup / deps / Docker       | `docs/setup/NN-*.md`                            |
-| FE app                      | `docs/apps/frontend.md`                         |
-| BE app                      | `docs/apps/backend.md`                          |
-| MongoDB / Docker / mongoose | `docs/apps/mongodb.md`                          |
-| AI policy                   | `docs/ai/policy.md` + root `AI.md`              |
-| New doc section             | Add under `docs/` + `_category_.json` if needed |
+| Repo change                 | Doc file                                            |
+| --------------------------- | --------------------------------------------------- |
+| Setup / deps / Docker       | `docs/setup/NN-*.md`                                |
+| FE app                      | `docs/apps/frontend.md`                             |
+| BE app                      | `docs/apps/backend.md`                              |
+| MongoDB / Docker / mongoose | `docs/apps/mongodb.md`                              |
+| AI policy                   | `docs/ai/policy.md` + root `AI.md`                  |
+| Husky / lint-staged / CI    | `docs/setup/09-husky-quality-gates.md` + `intro.md` |
+| New doc section             | Add under `docs/` + `_category_.json` if needed     |
 
 ## README boundary
 

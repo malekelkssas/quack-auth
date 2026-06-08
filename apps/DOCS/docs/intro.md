@@ -17,6 +17,16 @@ Nx monorepo for **quack-auth** — React frontend, NestJS backend, shared Zod DT
 | **This site**      | `pnpm nx serve DOCS`           | http://localhost:4001      |
 | MongoDB (Docker)   | `docker compose up -d mongodb` | `localhost:27017`          |
 
+## Quality gates (Husky)
+
+Every commit runs **lint-staged** (Prettier + ESLint fix on staged files), then **`pnpm check`** (full lint, typecheck, format check).
+
+```bash
+pnpm check    # run the same suite manually
+```
+
+Details: [Setup → Husky & quality gates](./setup/09-husky-quality-gates.md).
+
 ## Documentation map
 
 - **Setup** — step-by-step project initialization (migrated from the original `docs/setup.md`)

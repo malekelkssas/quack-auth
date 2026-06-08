@@ -17,6 +17,7 @@ Use the docs-maintainer subagent to update docs for [change description]
 | Change                 | Update                                                              |
 | ---------------------- | ------------------------------------------------------------------- |
 | New setup step         | `apps/DOCS/docs/setup/NN-*.md` + `08-docusaurus` if tooling changes |
+| Husky / lint / CI      | `apps/DOCS/docs/setup/09-husky-quality-gates.md` + `intro.md`       |
 | FE/BE/MongoDB behavior | `apps/DOCS/docs/apps/frontend.md`, `backend.md`, or `mongodb.md`    |
 | Env / Docker           | `apps/DOCS/docs/setup/07-mongodb.md` + `.env.example`               |
 | AI workflow            | `apps/DOCS/docs/ai/*.md` + `AI.md`                                  |

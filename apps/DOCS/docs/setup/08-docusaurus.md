@@ -33,7 +33,7 @@ pnpm nx build DOCS
 ```
 apps/DOCS/docs/
 ├── intro.md
-├── setup/          # Steps 01–08
+├── setup/          # Steps 01–09 (see 09-husky-quality-gates)
 ├── apps/           # FE, BE & MongoDB
 └── ai/             # AI policy & doc maintenance
 ```
