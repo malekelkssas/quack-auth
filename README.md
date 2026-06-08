@@ -67,7 +67,7 @@ pnpm format         # Prettier write
 pnpm format:check   # Prettier check
 ```
 
-**CI** (`.github/workflows/ci.yml`) runs the same **`pnpm check`** as Husky on push/PR. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). BE unit tests and FE E2E are commented in `ci.yml` until ready.
+**CI** (`.github/workflows/ci.yml`) runs **`pnpm ci`** (`pnpm check` + **`pnpm build`**) on push/PR. Husky pre-commit stays on `pnpm check` only — builds are too slow for every commit. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). BE unit tests and FE E2E are commented in `ci.yml` until ready.
 
 ### GitHub Actions secrets (maintainers)
 

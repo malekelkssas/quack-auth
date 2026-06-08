@@ -55,7 +55,9 @@ Root `quack-auth` is excluded from `nx run-many` so workspace scripts do not rec
 Same scripts you can run without committing:
 
 ```bash
+pnpm ci             # check + build (same as CI job)
 pnpm check          # lint + typecheck + format:check
+pnpm build          # nx run-many -t build (FE, BE, DOCS, libs)
 pnpm lint           # ESLint (all projects)
 pnpm lint:fix       # ESLint with --fix
 pnpm typecheck      # TypeScript (apps, libs, mongoose/)
@@ -81,10 +83,13 @@ If hooks are missing, run `pnpm prepare` manually.
 
 Workflow: `.github/workflows/ci.yml` — runs on `push` to `main` and on pull requests (Node **22** in Actions — pnpm 11.5.2 needs **≥ 22.13**).
 
-| Layer                 | Husky (local)                             | CI                                              |
-| --------------------- | ----------------------------------------- | ----------------------------------------------- |
-| Auto-fix staged files | `lint-staged` (Prettier + ESLint `--fix`) | — (use `pnpm format` / `pnpm lint:fix` locally) |
-| Verify full repo      | `pnpm check`                              | **`pnpm check`** (same)                         |
+| Layer                 | Husky (local)                             | CI                                                                    |
+| --------------------- | ----------------------------------------- | --------------------------------------------------------------------- |
+| Auto-fix staged files | `lint-staged` (Prettier + ESLint `--fix`) | — (use `pnpm format` / `pnpm lint:fix` locally)                       |
+| Verify full repo      | `pnpm check`                              | **`pnpm check`** (same)                                               |
+| Production builds     | — (run manually or rely on CI)            | **`pnpm build`** — FE, BE, DOCS, `dtos`, `qu-constants` via `pnpm ci` |
+
+CI runs **`pnpm ci`** = `pnpm check` + **`pnpm build`**. Builds are omitted from Husky pre-commit (too slow); CI catches broken webpack/Vite/Docusaurus compiles.
 
 CI does **not** re-run `lint-staged` (nothing is staged in Actions); `pnpm check` already includes `format:check`, `lint`, and `typecheck` on the whole tree.
 
