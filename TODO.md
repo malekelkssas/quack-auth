@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-08 — `quack-03-signup-endpoint` @ `27ee04b` (signup API, ErrorResponse DTO, exception filters).
+**Last audited:** 2026-06-08 — `quack-03-signup-endpoint` @ `dabd7cf` (signup API, unified `GlobalExceptionFilter`, `ErrorResponse`).
 
 ---
 
@@ -243,11 +243,11 @@ The PDF uses older names; the repo has evolved:
 
 Other local branches (check worktrees before merging):
 
-| Branch                     | Worktree                              | Likely focus                                                                                                         |
-| -------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| `quack-02-fe-setup`        | `~/.cursor/worktrees/quack-auth/iya6` | FE setup                                                                                                             |
-| `quack-03-signup-endpoint` | `~/.cursor/worktrees/quack-auth/bo10` | Signup API — **ready for PR** (signup, repo/service, Argon2id, `BE_ROUTES`, mongoose error handler, `ErrorResponse`) |
-| `quack-02-user-model`      | —                                     | User model / DTOs                                                                                                    |
+| Branch                     | Worktree                              | Likely focus                                                               |
+| -------------------------- | ------------------------------------- | -------------------------------------------------------------------------- |
+| `quack-02-fe-setup`        | `~/.cursor/worktrees/quack-auth/iya6` | FE setup                                                                   |
+| `quack-03-signup-endpoint` | `~/.cursor/worktrees/quack-auth/bo10` | Signup API — **PR #5** (unified filter, `ErrorResponse`, signup hardening) |
+| `quack-02-user-model`      | —                                     | User model / DTOs (merged)                                                 |
 
 Before implementing items above, **reconcile** with open PRs/branches to avoid duplicate work.
 
