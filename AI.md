@@ -482,3 +482,48 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - Deleted `user.fields.ts`.
 - Restored inline `email` / `name` validation in `user.model.ts` and `signup.dto.ts` as before the simplify pass.
+
+---
+
+## 2026-06-08 22:10 — FE Redux store + encrypt-storage (Developer request)
+
+**Session** — `S012-fe-redux-store`
+
+**Local start time** — `2026-06-08 22:10` (continued from earlier turns in same chat)
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- Checkout `quack-02-fe-setup` for deep FE work; install RTK + `react-redux` + `redux-persist` + `@types/react-redux`; add `VITE_REDUX_PERSIST_SECRET_KEY` to `.env.example` and `ENV_KEYS`; scaffold `apps/FE/src/store/`.
+- **Research encrypt integration first** — Developer shared findings: `redux-persist-transform-encrypt` is abandoned; static `VITE_*` keys are bundled and give false security; prefer runtime auth token or `encrypt-storage` as redux-persist storage engine.
+- **Log this in `AI.md`** — Developer flagged that prior FE work skipped `AI.md`; update `AGENTS.md` so agents do not forget the logging rule.
+
+**Implemented**
+
+- Installed `@reduxjs/toolkit`, `react-redux`, `redux-persist`, `encrypt-storage`, `@types/react-redux`.
+- **Skipped** `redux-persist-transform-encrypt` (archived Feb 2024); used **`encrypt-storage`** `AsyncEncryptStorage` as redux-persist `storage` with `stateManagementUse: true`.
+- `apps/FE/src/store/` — `persist-secret.ts` (`getDevPersistSecretKey`, `setRuntimePersistSecretKey` for future JWT/session key), `encrypted-storage.ts`, `persist.config.ts`, `root-reducer.ts`, `store.ts`, `hooks.ts`, `index.ts`.
+- `main.tsx` — `Provider` + `PersistGate` (loading placeholder until ProgressLoader lands in follow-up commit).
+- `.env.example` + `libs/qu-constants/src/lib/env.constants.ts` — `VITE_REDUX_PERSIST_SECRET_KEY` with comment that it is dev obfuscation only.
+
+**Decisions different from Developer’s initial package list**
+
+| Developer listed | Chosen | Why |
+| ---------------- | ------ | --- |
+| `redux-persist-transform-encrypt` | `encrypt-storage` | Original archived; storage-level encryption is the maintained redux-persist integration path |
+| Static `VITE_` key as “security” | Dev fallback + `setRuntimePersistSecretKey()` | `VITE_*` is in client bundle; real key should be runtime session/JWT when auth exists |
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+**Developer asked for (same session, next)**
+
+- Commit Redux work; then shadcn scaffold (`apps/FE/src/components/ui`, `@/lib/utils.ts`); `ProgressLoader` on `PersistGate` instead of `null` loading.

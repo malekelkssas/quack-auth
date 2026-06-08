@@ -2,6 +2,8 @@
 
 Overview for AI agents and contributors. **Detailed conventions live in `.cursor/rules/`** — this file indexes them; do not duplicate rule text here. Session logs and judgement calls stay in [`AI.md`](./AI.md).
 
+**When the Developer asks you to log something in `AI.md`, do it in the same turn** — do not defer or skip. See [AI-first engineering](./.cursor/rules/ai-first-engineering.mdc) step 5.
+
 ## Monorepo layout
 
 | Area              | Path                    | Import alias                           |
