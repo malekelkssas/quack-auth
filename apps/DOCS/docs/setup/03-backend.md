@@ -18,3 +18,5 @@ pnpm nx serve BE
 ```
 
 API is served at http://localhost:3000/api
+
+Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md).

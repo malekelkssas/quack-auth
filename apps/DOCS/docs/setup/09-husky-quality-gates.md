@@ -64,7 +64,8 @@ Root `quack-auth` is excluded from `nx run-many` so workspace scripts do not rec
 Same scripts you can run without committing:
 
 ```bash
-pnpm ci             # check + build (same as CI job)
+pnpm ci             # check + build + BE API tests (same as CI job)
+pnpm test:be        # BE API tests only (Jest + Supertest)
 pnpm check          # lint + typecheck + format:check
 pnpm build          # nx run-many -t build (FE, BE, DOCS, libs)
 pnpm lint           # ESLint (all projects)
@@ -97,8 +98,9 @@ Workflow: `.github/workflows/ci.yml` — runs on `push` to `main` and on pull re
 | Auto-fix staged files | `lint-staged` (Prettier + ESLint `--fix`) | — (use `pnpm format` / `pnpm lint:fix` locally)                       |
 | Verify full repo      | `pnpm check`                              | **`pnpm check`** (same)                                               |
 | Production builds     | — (run manually or rely on CI)            | **`pnpm build`** — FE, BE, DOCS, `dtos`, `qu-constants` via `pnpm ci` |
+| BE API tests          | — (run manually or rely on CI)            | **`pnpm nx test BE`** — in-memory Mongo + Supertest via `pnpm ci`     |
 
-CI runs **`pnpm ci`** = `pnpm check` + **`pnpm build`**. Builds are omitted from Husky pre-commit (too slow); CI catches broken webpack/Vite/Docusaurus compiles.
+CI runs **`pnpm ci`** = `pnpm check` + **`pnpm build`** + **`pnpm nx test BE`**. Builds and tests are omitted from Husky pre-commit (too slow); CI catches broken compiles and API regressions.
 
 CI does **not** re-run `lint-staged` (nothing is staged in Actions); `pnpm check` already includes `format:check`, `lint`, and `typecheck` on the whole tree.
 
@@ -106,10 +108,9 @@ CI does **not** re-run `lint-staged` (nothing is staged in Actions); `pnpm check
 
 Add these steps to `.github/workflows/ci.yml` when ready — **do not forget**:
 
-| When ready        | Command                                               | Notes                                                                                           |
-| ----------------- | ----------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| **BE unit tests** | `pnpm nx run-many -t test --all --exclude=quack-auth` | Uncomment in workflow once `BE:test` (or lib tests) exist                                       |
-| **FE E2E**        | `pnpm nx run FE:e2e`                                  | Only if the suite is light enough for every PR; consider `nx affected` or a nightly job if slow |
+| When ready | Command              | Notes                                                                                           |
+| ---------- | -------------------- | ----------------------------------------------------------------------------------------------- |
+| **FE E2E** | `pnpm nx run FE:e2e` | Only if the suite is light enough for every PR; consider `nx affected` or a nightly job if slow |
 
 ### Generating / updating the workflow
 

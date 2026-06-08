@@ -867,7 +867,7 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Implemented**
 
 - `mongoose/fixtures/user.fixtures.ts` — three dev users (`alice@example.com`, `bob@example.com`, `admin@quack.dev`) with known plaintext passwords (`FIXTURE_USER_PASSWORD` / `AdminPass1!`).
-- `mongoose/fixtures/load.fixtures.ts` — `loadUserFixtures()` / `loadFixtures()` using `UserModel.create()` so Argon2id pre-save hashing runs; supports `{ reset: true }`.
+- `mongoose/fixtures/load.fixtures.ts` — `loadFixtures()` using `UserModel.create()` so Argon2id pre-save hashing runs; supports `{ reset: true }`.
 - `mongoose/fixtures/index.ts` — re-exports.
 - `mongoose/seed.ts` — CLI entry; `--reset` drops users before insert.
 - `mongoose/register-paths.js` + `mongoose/tsconfig.json` `ts-node` commonjs block — path alias resolution for standalone seed script.
@@ -884,3 +884,30 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - Fixtures use `UserModel.create()` not `insertMany()` — pre-save middleware must run for hashing.
 - Seed runner uses `ts-node` + `tsconfig-paths` + `node --env-file=.env` instead of adding `dotenv`.
+
+---
+
+## 2026-06-08 — BE API test plan revised (`quack-04-be-tests-setup`)
+
+**Session** — `S017-be-tests-setup`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-04-be-tests-setup`
+
+**Deferred then implemented** — execution paused until S016 (`quack-05-db-seed-fixtures`) merged; tests reuse `mongoose/fixtures/` + `loadFixtures({ reset: true })`.
+
+**AI.md correction (S016)** — only `loadFixtures()` exists; `loadUserFixtures()` was a logging typo.
+
+**Implemented**
+
+- `apps/BE/src/test/` — Jest + Supertest API specs (`*.api-spec.ts`), in-memory Mongo, `resetDb()` → `loadFixtures({ reset: true })`.
+- `apps/BE/src/app/configure-app.ts` — shared global prefix for `main.ts` and tests.
+- `apps/BE/jest.config.ts`, `tsconfig.spec.json`; `pnpm test:be` / `pnpm nx test BE`; CI via `pnpm ci`.
+- Test helpers: `API_PATHS` / `apiPath()` from `BE_ROUTES`; `expectApiError()` for exact `{ message }` assertions.
+- Signup specs: 11 cases (201, 409 duplicate, 400 validation — missing fields, email, name length, password rules).
+- Docs: `apps/DOCS/docs/apps/be/` (`overview.md` slug `/apps/backend`, `testing.md`); removed flat `backend.md`.
+
+**Verified** — `pnpm nx test BE` (12 tests), `pnpm nx typecheck BE`, `pnpm nx build DOCS`.
