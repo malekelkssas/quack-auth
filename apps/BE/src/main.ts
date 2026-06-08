@@ -10,13 +10,13 @@ import { BE_ROUTES } from '@shared/constants';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from './app/app.module';
+import { configureApp } from './app/configure-app';
 
 async function bootstrap() {
   await dbClient();
 
   const app = await NestFactory.create(AppModule);
-  const globalPrefix = BE_ROUTES.BASE;
-  app.setGlobalPrefix(globalPrefix);
+  configureApp(app);
 
   const openApiDoc = SwaggerModule.createDocument(
     app,
@@ -31,7 +31,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+    `🚀 Application is running on: http://localhost:${port}/${BE_ROUTES.BASE}`,
   );
   Logger.log(`📚 Swagger docs: http://localhost:${port}/docs`);
 }
