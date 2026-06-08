@@ -923,3 +923,5 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Verified** — `pnpm nx test BE` (12 tests), `pnpm nx typecheck BE`, `pnpm nx build DOCS`.
 
 **Developer noticed: “only 4 tests?”** — Nx had **cached** an earlier `BE:test` run from before signup expansion (`Nx read the output from the cache instead of running the command`). Fresh run: `pnpm nx reset && pnpm nx test BE --skip-nx-cache` → **12 passed**. Not a missing-spec bug; stale task cache. After noticing, confirmed all 11 signup + 1 app tests in source.
+
+**Developer workflow (first triple command in one message)** — Ran **`/code-review`**, **`/simplify`**, and **`/babysit`** together in a single chat message (not split across messages/chats). Outcomes: code review flagged docs/CI wiring gap (`pnpm ci` missing `nx test BE` despite README); simplify pass added `api-spec-lifecycle`, `it.each` validation table, slimmer `expectApiError`; babysit targeted merge-ready fixes before PR.

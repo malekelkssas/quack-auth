@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import { ENV_KEYS, NODE_ENV } from '@shared/constants';
 
 export const dbClient = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+
   try {
     let mongoUri: string | undefined;
 

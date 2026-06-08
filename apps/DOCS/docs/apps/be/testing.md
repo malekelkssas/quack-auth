@@ -26,6 +26,7 @@ apps/BE/src/test/
 │   ├── expect-error.ts           # expectApiError() — exact message assertions
 │   └── request.ts                # api(), apiPath(), API_PATHS, fullApiPath()
 └── setup/
+    ├── api-spec-lifecycle.ts     # registerApiTestLifecycle() — one app/connection per file
     ├── create-test-app.ts        # Nest TestingModule + configureApp
     ├── global-setup.ts           # mongodb-memory-server
     └── global-teardown.ts        # disconnect + stop memory server
@@ -47,11 +48,11 @@ apps/BE/src/test/
 
 **`global-setup.ts`** starts `mongodb-memory-server`, sets `NODE_ENV=e2e`, and exports the URI via `E2E_MONGODB_URI`. `mongoose/client.ts` connects to that URI in e2e mode.
 
-Each test:
+Each spec file:
 
-1. **`createTestApp()`** — bootstraps `AppModule` with `configureApp` (same as production minus Swagger/listen).
-2. **`resetDb()`** — clears collections and calls **`loadFixtures({ reset: true })`** from `@quack/mongoose/fixtures` (Argon2-hashed users, same data as `pnpm db:seed`).
-3. **`afterEach`** — closes the Nest app and disconnects Mongoose.
+1. **`registerApiTestLifecycle()`** — `beforeAll` → `createTestApp()` once; `afterAll` → close app + disconnect Mongoose.
+2. **`resetDb()`** in `beforeEach` only when the test needs seeded users (conflict / success paths) — calls **`loadFixtures({ reset: true })`** from `@quack/mongoose/fixtures`.
+3. Validation-only cases skip `resetDb()` — no Argon2 re-seeding for pure 400 paths.
 
 ## HTTP helpers and `BE_ROUTES`
 
@@ -92,10 +93,10 @@ const response = await api(app)
   .send({ name: 'Alice', password: FIXTURE_USER_PASSWORD })
   .expect(400);
 
-expectApiError(response, 400, 'A valid email is required');
+expectApiError(response, 'A valid email is required');
 ```
 
-`expectApiError` in `test/helpers/expect-error.ts` checks `response.status` and `response.body.message`. Message strings must match the shared Zod schemas in `libs/dtos` (e.g. `signup.dto.ts`, `password.schema.ts`) or service-layer exceptions (e.g. duplicate email → `Email is already registered`).
+Use Supertest `.expect(status)` for HTTP status; `expectApiError` asserts only `response.body.message`. Message strings must match the shared Zod schemas in `libs/dtos` (e.g. `signup.dto.ts`, `password.schema.ts`) or service-layer exceptions (e.g. duplicate email → `Email is already registered`).
 
 When adding a new endpoint test:
 

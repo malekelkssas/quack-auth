@@ -1,25 +1,15 @@
-import type { INestApplication } from '@nestjs/common';
-import mongoose from 'mongoose';
 import { APP_NAME } from '@shared/constants';
-import { createTestApp } from '../setup/create-test-app';
-import { resetDb } from '../helpers/db';
+import {
+  getApiTestApp,
+  registerApiTestLifecycle,
+} from '../setup/api-spec-lifecycle';
 import { api, API_PATHS, fullApiPath } from '../helpers/request';
 
 describe(`GET ${fullApiPath()}`, () => {
-  let app: INestApplication;
-
-  beforeEach(async () => {
-    ({ app } = await createTestApp());
-    await resetDb();
-  });
-
-  afterEach(async () => {
-    await app.close();
-    await mongoose.disconnect();
-  });
+  registerApiTestLifecycle();
 
   it('returns greeting with app name', async () => {
-    const response = await api(app)
+    const response = await api(getApiTestApp())
       .get(`${API_PATHS.root}?name=Quack`)
       .expect(200);
 

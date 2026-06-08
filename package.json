@@ -14,7 +14,8 @@
     "db:seed": "TS_NODE_PROJECT=mongoose/tsconfig.json node --env-file=.env -r ./mongoose/register-paths.js -r ts-node/register mongoose/seed.ts",
     "db:seed:reset": "TS_NODE_PROJECT=mongoose/tsconfig.json node --env-file=.env -r ./mongoose/register-paths.js -r ts-node/register mongoose/seed.ts -- --reset",
     "build": "nx run-many -t build --all --exclude=quack-auth",
-    "ci": "pnpm check && pnpm build"
+    "test:be": "nx test BE",
+    "ci": "pnpm check && pnpm build && pnpm nx test BE"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,scss,yml,yaml}": "prettier --write",

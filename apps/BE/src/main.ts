@@ -17,7 +17,6 @@ async function bootstrap() {
 
   const app = await NestFactory.create(AppModule);
   configureApp(app);
-  const globalPrefix = BE_ROUTES.BASE;
 
   const openApiDoc = SwaggerModule.createDocument(
     app,
@@ -32,7 +31,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+    `🚀 Application is running on: http://localhost:${port}/${BE_ROUTES.BASE}`,
   );
   Logger.log(`📚 Swagger docs: http://localhost:${port}/docs`);
 }
