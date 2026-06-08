@@ -899,6 +899,16 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 **Deferred then implemented** — execution paused until S016 (`quack-05-db-seed-fixtures`) merged; tests reuse `mongoose/fixtures/` + `loadFixtures({ reset: true })`.
 
+**Developer direction (testing preferences)**
+
+- **API-level only** — same habit as plain Node: **Supertest** on HTTP, not colocated unit `*.spec.ts` next to services.
+- **Branch** — `quack-04-be-tests-setup`; fixtures/seeding (`quack-05`) had to land first so tests share `mongoose/fixtures/`.
+- **Follow-up asks (same session):**
+  - Use **`BE_ROUTES`** from `libs/qu-constants/.../be-routes.constants.ts` in test helpers/paths (no hardcoded `/users/signup`).
+  - **Signup coverage** — trace DTO → controller → service → repo; add edge cases with **exact** `response.body.message` (e.g. missing password, weak password rules) via `expectApiError()` convention.
+  - **Docs** — expand BE section under `apps/DOCS/docs/apps/be/` (not just a line in `backend.md`); dedicated **testing** page for structure, fixtures, CI.
+  - **README** — document `pnpm test:be` / `pnpm nx test BE` and CI including BE tests.
+
 **AI.md correction (S016)** — only `loadFixtures()` exists; `loadUserFixtures()` was a logging typo.
 
 **Implemented**
@@ -907,7 +917,9 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 - `apps/BE/src/app/configure-app.ts` — shared global prefix for `main.ts` and tests.
 - `apps/BE/jest.config.ts`, `tsconfig.spec.json`; `pnpm test:be` / `pnpm nx test BE`; CI via `pnpm ci`.
 - Test helpers: `API_PATHS` / `apiPath()` from `BE_ROUTES`; `expectApiError()` for exact `{ message }` assertions.
-- Signup specs: 11 cases (201, 409 duplicate, 400 validation — missing fields, email, name length, password rules).
-- Docs: `apps/DOCS/docs/apps/be/` (`overview.md` slug `/apps/backend`, `testing.md`); removed flat `backend.md`.
+- Signup specs: **11** cases + **1** app smoke = **12** total (201, 409 duplicate, 400 validation — missing fields, email, name length, password rules).
+- Docs: `apps/DOCS/docs/apps/be/` (`overview.md` slug `/apps/backend`, `testing.md`); README **Tests** section.
 
 **Verified** — `pnpm nx test BE` (12 tests), `pnpm nx typecheck BE`, `pnpm nx build DOCS`.
+
+**Developer noticed: “only 4 tests?”** — Nx had **cached** an earlier `BE:test` run from before signup expansion (`Nx read the output from the cache instead of running the command`). Fresh run: `pnpm nx reset && pnpm nx test BE --skip-nx-cache` → **12 passed**. Not a missing-spec bug; stale task cache. After noticing, confirmed all 11 signup + 1 app tests in source.

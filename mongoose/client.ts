@@ -21,7 +21,10 @@ export const dbClient = async () => {
 
     const dbName = process.env[ENV_KEYS.MONGODB_DATABASE];
     await mongoose.connect(mongoUri, { dbName });
-    console.log('Connected to MongoDB');
+
+    if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.DEVELOPMENT) {
+      console.log('Connected to MongoDB');
+    }
   } catch (error) {
     console.error(error);
     throw error;

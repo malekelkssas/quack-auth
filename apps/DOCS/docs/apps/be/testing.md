@@ -26,7 +26,6 @@ apps/BE/src/test/
 │   ├── expect-error.ts           # expectApiError() — exact message assertions
 │   └── request.ts                # api(), apiPath(), API_PATHS, fullApiPath()
 └── setup/
-    ├── configure-app.ts          # test-only configureApp re-export
     ├── create-test-app.ts        # Nest TestingModule + configureApp
     ├── global-setup.ts           # mongodb-memory-server
     └── global-teardown.ts        # disconnect + stop memory server
@@ -107,6 +106,16 @@ When adding a new endpoint test:
 ## CI
 
 `.github/workflows/ci.yml` runs `pnpm ci` (`check` + `build` + `pnpm nx test BE`). See [Husky & quality gates](../../setup/09-husky-quality-gates.md).
+
+## Troubleshooting
+
+**Nx shows an old test count** (e.g. “4 passed” after you added specs) — Nx may replay a **cached** `BE:test` result (`Nx read the output from the cache instead of running the command`). The suite on disk is authoritative; force a fresh run:
+
+```bash
+pnpm nx reset && pnpm nx test BE --skip-nx-cache
+```
+
+Current signup + app smoke suite: **12** tests (`signup.api-spec.ts` × 11, `app.api-spec.ts` × 1).
 
 ## Related
 
