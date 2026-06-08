@@ -1,5 +1,5 @@
 {
-  "extends": "./tsconfig.json",
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "../../dist/out-tsc",
     "module": "commonjs",
@@ -8,13 +8,13 @@
     "emitDecoratorMetadata": true,
     "target": "es2021",
     "moduleResolution": "node",
-    "baseUrl": ".",
+    "baseUrl": "../..",
     "paths": {
-      "@/*": ["./src/*"],
-      "dtos": ["../../libs/dtos/src/index.ts"],
-      "qu-constants": ["../../libs/qu-constants/src/index.ts"],
-      "@shared/dtos": ["../../libs/dtos/src/index.ts"],
-      "@shared/constants": ["../../libs/qu-constants/src/index.ts"]
+      "@/*": ["apps/BE/src/*"],
+      "qu-constants": ["libs/qu-constants/src/index.ts"],
+      "dtos": ["libs/dtos/src/index.ts"],
+      "@shared/dtos": ["libs/dtos/src/index.ts"],
+      "@shared/constants": ["libs/qu-constants/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"]

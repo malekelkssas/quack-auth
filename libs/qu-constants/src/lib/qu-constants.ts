@@ -1,3 +1,1 @@
-export function quConstants(): string {
-  return 'qu-constants';
-}
+export const APP_NAME = 'quack-auth';

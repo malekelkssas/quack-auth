@@ -57,16 +57,18 @@ API is served at http://localhost:3000/api
 
 ## Step 4 — Path aliases (`@/*`)
 
-Add to `compilerOptions` in both `apps/FE/tsconfig.app.json` and `apps/BE/tsconfig.app.json`:
+Set `baseUrl` to the monorepo root (`"../.."`) in each app's `tsconfig.app.json` and add an app-scoped `@/*` path:
 
 ```json
-"baseUrl": ".",
+"baseUrl": "../..",
 "paths": {
-  "@/*": ["./src/*"]
+  "@/*": ["apps/FE/src/*"]
 }
 ```
 
-Enables imports like `import { Foo } from '@/components/Foo'` from each app's `src/` directory. FE resolves these via the Nx Vite tsconfig-paths plugin; BE via webpack/tsc.
+Use `apps/BE/src/*` for the backend. Enables imports like `import { Foo } from '@/components/Foo'` from each app's `src/` directory. FE resolves these via the Nx Vite tsconfig-paths plugin; BE via webpack/tsc.
+
+**FE only:** `tsconfig.app.json` must extend `./tsconfig.json` (not `tsconfig.base.json` directly) so it inherits `jsx: "react-jsx"` and other React compiler options from the Nx-generated `apps/FE/tsconfig.json`. Extending the base config alone causes `Module was resolved to '.tsx', but '--jsx' is not set`.
 
 ## Step 5 — Shared libraries (constants & DTOs)
 
@@ -105,16 +107,23 @@ pnpm add zod nestjs-zod
 - `zod` — schema definitions and inferred TypeScript types (used in FE and BE)
 - `nestjs-zod` — NestJS pipes/guards that validate request bodies against Zod schemas on the BE
 
-Example DTO in `libs/dtos/src/lib/`:
+Example schemas in `libs/dtos/src/lib/greeting.dto.ts`:
 
 ```ts
 import { z } from 'zod';
 
-export const TestDto = z.object({
-  name: z.string(),
+export const GreetingQuery = z.object({
+  name: z.string().min(1),
 });
 
-export type TestDto = z.infer<typeof TestDto>;
+export type GreetingQuery = z.infer<typeof GreetingQuery>;
+
+export const GreetingResponse = z.object({
+  name: z.string(),
+  appName: z.string(),
+});
+
+export type GreetingResponse = z.infer<typeof GreetingResponse>;
 ```
 
 Re-export from `libs/dtos/src/index.ts`.
@@ -132,23 +141,161 @@ Register the libs at the monorepo root in `tsconfig.base.json` under `compilerOp
 }
 ```
 
-Add the same aliases (with relative paths from each app) to `compilerOptions.paths` in both `apps/FE/tsconfig.app.json` and `apps/BE/tsconfig.app.json`, alongside the existing `@/*` entry:
+In each app's `tsconfig.app.json`, set `baseUrl` to `"../.."` and repeat the shared lib paths from `tsconfig.base.json` using root-relative paths (same strings as the root config, without `./`). Only `@/*` is app-specific.
+
+**FE** — extend `./tsconfig.json` (keeps `jsx: "react-jsx"`):
 
 ```json
-"paths": {
-  "@/*": ["./src/*"],
-  "dtos": ["../../libs/dtos/src/index.ts"],
-  "qu-constants": ["../../libs/qu-constants/src/index.ts"],
-  "@shared/dtos": ["../../libs/dtos/src/index.ts"],
-  "@shared/constants": ["../../libs/qu-constants/src/index.ts"]
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@/*": ["apps/FE/src/*"],
+      "qu-constants": ["libs/qu-constants/src/index.ts"],
+      "dtos": ["libs/dtos/src/index.ts"],
+      "@shared/dtos": ["libs/dtos/src/index.ts"],
+      "@shared/constants": ["libs/qu-constants/src/index.ts"]
+    }
+  }
 }
 ```
+
+**BE** — extend `../../tsconfig.base.json` directly (no JSX):
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": "../..",
+    "paths": {
+      "@/*": ["apps/BE/src/*"],
+      "qu-constants": ["libs/qu-constants/src/index.ts"],
+      "dtos": ["libs/dtos/src/index.ts"],
+      "@shared/dtos": ["libs/dtos/src/index.ts"],
+      "@shared/constants": ["libs/qu-constants/src/index.ts"]
+    }
+  }
+}
+```
+
+Avoid `baseUrl: "."` with `../../libs/...` paths — that duplicates root aliases and drifts easily from `tsconfig.base.json`.
 
 Prefer the `@shared/*` aliases in app code — they read clearly as cross-app imports:
 
 ```ts
-import { TestDto } from '@shared/dtos';
-import { SOME_CONSTANT } from '@shared/constants';
+import { GreetingQuery } from '@shared/dtos';
+import { APP_NAME } from '@shared/constants';
 ```
 
 The bare `dtos` and `qu-constants` aliases are kept for Nx project-name resolution and tooling compatibility.
+
+## Step 6 — nestjs-zod on the backend
+
+Wire up [nestjs-zod](https://github.com/BenLorantfy/nestjs-zod) so request query/body/params and response bodies are validated against the shared Zod schemas.
+
+### 6a — Dependencies
+
+Already added in Step 5b. Also install Swagger for OpenAPI docs:
+
+```bash
+pnpm add zod nestjs-zod @nestjs/swagger
+pnpm approve-builds
+```
+
+### 6b — `ZodValidationPipe` and `ZodSerializerInterceptor`
+
+Register both globally in `apps/BE/src/app/app.module.ts`:
+
+```ts
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import {
+  ZodSerializerInterceptor,
+  ZodValidationPipe,
+} from 'nestjs-zod';
+
+@Module({
+  providers: [
+    {
+      provide: APP_PIPE,
+      useClass: ZodValidationPipe,
+    },
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: ZodSerializerInterceptor,
+    },
+    // HttpExceptionFilter — see 6c
+  ],
+})
+export class AppModule {}
+```
+
+- `ZodValidationPipe` — validates `@Body()`, `@Query()`, and `@Param()` inputs against Zod DTOs
+- `ZodSerializerInterceptor` — serializes controller return values through `@ZodResponse` / `@ZodSerializerDto` schemas
+
+### 6c — Exception filters
+
+Add filters under `apps/BE/src/filters/`:
+
+- `http-exception.filter.ts` — maps `ZodSerializationException` to the same `{ statusCode, message, errors }` shape as request validation failures
+- `global-exception.filter.ts` — catch-all for unhandled errors (500)
+
+Register both in `app.module.ts`:
+
+```ts
+import { GlobalExceptionFilter } from '../filters/global-exception.filter';
+import { HttpExceptionFilter } from '../filters/http-exception.filter';
+
+{
+  provide: APP_FILTER,
+  useClass: HttpExceptionFilter,
+},
+{
+  provide: APP_FILTER,
+  useClass: GlobalExceptionFilter,
+},
+```
+
+### 6d — Swagger + `cleanupOpenApiDoc`
+
+In `apps/BE/src/main.ts`, post-process the OpenAPI document so nestjs-zod DTOs render correctly:
+
+```ts
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { cleanupOpenApiDoc } from 'nestjs-zod';
+
+const openApiDoc = SwaggerModule.createDocument(
+  app,
+  new DocumentBuilder().setTitle('Quack Auth API').setVersion('1.0').build(),
+);
+SwaggerModule.setup('docs', app, cleanupOpenApiDoc(openApiDoc));
+```
+
+Swagger UI: http://localhost:3000/docs
+
+### 6e — NestJS DTO classes from shared schemas
+
+Keep Zod schemas in `libs/dtos` (shared with FE). In the BE app, wrap them with `createZodDto`:
+
+```ts
+// apps/BE/src/app/app.dto.ts
+import { createZodDto } from 'nestjs-zod';
+import { GreetingQuery, GreetingResponse } from '@shared/dtos';
+
+export class GreetingQueryDto extends createZodDto(GreetingQuery) {}
+export class GreetingResponseDto extends createZodDto(GreetingResponse) {}
+```
+
+> **Keep `app.dto.ts` in sync.** Adding a schema to `libs/dtos` is not enough for the backend — each schema used in a controller (`@Query()`, `@Body()`, `@ZodResponse()`, etc.) needs a matching `createZodDto` class in `apps/BE/src/app/app.dto.ts` (or a feature-scoped `*.dto.ts` as the API grows). The FE only imports the Zod schema/type from `@shared/dtos`; NestJS validation and OpenAPI require the wrapper on the BE side.
+
+Use in the controller:
+
+```ts
+@Get()
+@ZodResponse({ type: GreetingResponseDto })
+getGreeting(@Query() query: GreetingQueryDto) {
+  return this.appService.getGreeting(query.name);
+}
+```
+
+Example request: `GET /api?name=world` → `{ "name": "world", "appName": "quack-auth" }`

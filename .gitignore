@@ -147,3 +147,6 @@ vite.config.ts.timestamp-*
 .nx/cache
 .nx/workspace-data
 vite.config.*.timestamp*
+
+# tmp dir
+tmp/
