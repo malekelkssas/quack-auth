@@ -2,6 +2,7 @@
 import { dirname } from 'path';
 import { fileURLToPath } from 'url';
 
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import { nxCopyAssetsPlugin } from '@nx/vite/plugins/nx-copy-assets.plugin';
 import { nxViteTsPaths } from '@nx/vite/plugins/nx-tsconfig-paths.plugin';
@@ -25,7 +26,12 @@ export default defineConfig(() => {
       host: process.env.VITE_HOST || 'localhost',
       allowedHosts,
     },
-    plugins: [react(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
+    plugins: [
+      react(),
+      tailwindcss(),
+      nxViteTsPaths(),
+      nxCopyAssetsPlugin(['*.md']),
+    ],
     // Uncomment this if you are using workers.
     // worker: {
     //   plugins: () => [ nxViteTsPaths() ],

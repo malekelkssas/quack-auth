@@ -9,13 +9,17 @@ let runtimeSecretKey: string | undefined;
 export function getDevPersistSecretKey(): string {
   const key = import.meta.env[ENV_KEYS.VITE_REDUX_PERSIST_SECRET_KEY];
   if (!key) {
-    throw new Error(`Missing ${ENV_KEYS.VITE_REDUX_PERSIST_SECRET_KEY} in environment`);
+    throw new Error(
+      `Missing ${ENV_KEYS.VITE_REDUX_PERSIST_SECRET_KEY} in environment`,
+    );
   }
   return key;
 }
 
 /** Override encryption key at runtime (e.g. JWT / session token after login). */
-export function setRuntimePersistSecretKey(secretKey: string | undefined): void {
+export function setRuntimePersistSecretKey(
+  secretKey: string | undefined,
+): void {
   runtimeSecretKey = secretKey;
 }
 

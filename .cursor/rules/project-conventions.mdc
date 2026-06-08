@@ -59,6 +59,13 @@ mongoose/
 └── tsconfig.json
 ```
 
+## FE styling (Tailwind v4)
+
+- **Nx scaffold** shipped Tailwind **v3** (`tailwind.config.js` + PostCSS); FE is migrated to **v4** (`tailwindcss@4`, `@tailwindcss/vite`).
+- **Vite plugin** — `@tailwindcss/vite` in `apps/FE/vite.config.mts` (not PostCSS `tailwindcss` plugin).
+- **CSS-first theme** — `apps/FE/src/styles.css`: `@import "tailwindcss"`, `@import "tw-animate-css"`, `@theme inline` for shadcn tokens; no `apps/FE/tailwind.config.js`.
+- **shadcn CLI** — `apps/FE/components.json` with `"config": ""`; add components via `pnpm dlx shadcn@latest add …` from `apps/FE`.
+
 ## FE HTTP client (`apps/FE/src/api/`)
 
 - **One shared axios instance** — `axiosConfig.ts` exports the default client; **do not** call `axios.create()` elsewhere in FE.

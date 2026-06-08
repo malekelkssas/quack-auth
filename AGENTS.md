@@ -19,7 +19,7 @@ Overview for AI agents and contributors. **Detailed conventions live in `.cursor
 
 | Rule                 | Path                                                                                 | Summary                                                                             |
 | -------------------- | ------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| Project conventions  | [`.cursor/rules/project-conventions.mdc`](./.cursor/rules/project-conventions.mdc)   | DTO suffixes, Mongoose layout, FE `api/axiosConfig.ts`, imports, branch/workflow   |
+| Project conventions  | [`.cursor/rules/project-conventions.mdc`](./.cursor/rules/project-conventions.mdc)   | DTO suffixes, Mongoose layout, FE Tailwind v4 + `api/axiosConfig.ts`, imports       |
 | AI-first engineering | [`.cursor/rules/ai-first-engineering.mdc`](./.cursor/rules/ai-first-engineering.mdc) | Verify output, log `AI.md` sessions with `YYYY-MM-DD HH:MM` headings, quality gates |
 | Subagent delegation  | [`.cursor/rules/ai-first-subagent.mdc`](./.cursor/rules/ai-first-subagent.mdc)       | Delegate non-trivial work to ai-first-engineering subagent                          |
 | Docusaurus docs      | [`.cursor/rules/docusaurus-docs.mdc`](./.cursor/rules/docusaurus-docs.mdc)           | `apps/DOCS` structure and when to update setup docs                                 |

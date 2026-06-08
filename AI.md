@@ -515,10 +515,10 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 **Decisions different from Developer’s initial package list**
 
-| Developer listed | Chosen | Why |
-| ---------------- | ------ | --- |
-| `redux-persist-transform-encrypt` | `encrypt-storage` | Original archived; storage-level encryption is the maintained redux-persist integration path |
-| Static `VITE_` key as “security” | Dev fallback + `setRuntimePersistSecretKey()` | `VITE_*` is in client bundle; real key should be runtime session/JWT when auth exists |
+| Developer listed                  | Chosen                                        | Why                                                                                          |
+| --------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `redux-persist-transform-encrypt` | `encrypt-storage`                             | Original archived; storage-level encryption is the maintained redux-persist integration path |
+| Static `VITE_` key as “security”  | Dev fallback + `setRuntimePersistSecretKey()` | `VITE_*` is in client bundle; real key should be runtime session/JWT when auth exists        |
 
 **Verified**
 
@@ -626,4 +626,42 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 **Verified**
 
+- [x] `pnpm nx run FE:build`
+
+---
+
+## 2026-06-08 22:37 — FE Tailwind v3 → v4 migration
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:37`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5 (Developer switched to **Plan mode** for migration planning; implementation resumed in Agent mode on a **different model/context handoff** from the planning turn)
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- Implement attached **FE Tailwind v4 Migration Plan** after committing pending vite-host work.
+- Developer explicitly flipped assistant to **Plan mode** because migration is annoying/complex; requested **AI.md** note about Plan mode and **model switch**.
+- Note that **Nx template ships Tailwind v3** — FE migrated to latest v4.
+
+**Implemented**
+
+- Committed `feat(FE): add Vite host env and build chunk tuning` (`b883208`) before migration.
+- Deps: `tailwindcss@4.3.0`, `@tailwindcss/vite@4.3.0`, `tw-animate-css`; removed `tailwindcss@3.4.3`, `tailwindcss-animate`, `autoprefixer`.
+- `apps/FE/vite.config.mts` — `@tailwindcss/vite` plugin (host/chunk settings preserved).
+- `apps/FE/src/styles.css` — `@import "tailwindcss"`, `@import "tw-animate-css"`, `@custom-variant dark`, `@theme inline` shadcn tokens, `--academic-blue`, `animate-progress`.
+- Removed `apps/FE/tailwind.config.js` and `apps/FE/postcss.config.js` (v4 CSS-first).
+- `apps/FE/components.json` — `"config": ""` for shadcn v4 CLI.
+- `ProgressLoader` — `var(--academic-blue)` + `animate-progress` token.
+- Docs/conventions: `project-conventions.mdc`, `AGENTS.md`, `apps/DOCS/docs/setup/02-frontend.md`.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
 - [x] `pnpm nx run FE:build`

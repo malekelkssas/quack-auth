@@ -19,10 +19,10 @@ const ProgressLoader = ({
       )}
     >
       <div
-        className="h-full bg-academic-blue animate-[progress_2s_ease-in-out_infinite]"
+        className="h-full bg-academic-blue animate-progress"
         style={{
           background:
-            'linear-gradient(90deg, transparent, hsl(var(--academic-blue)), transparent)',
+            'linear-gradient(90deg, transparent, var(--academic-blue), transparent)',
           backgroundSize: '200% 100%',
           animation: 'progress 2s ease-in-out infinite',
         }}
