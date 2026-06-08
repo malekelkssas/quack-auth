@@ -40,3 +40,9 @@ Overview for AI agents and contributors. **Detailed conventions live in `.cursor
 | MongoDB | Connection tuning, schema design, query/aggregation help, index advice, Atlas Stream Processing — use MCP tools when working with MongoDB data or performance |
 
 Installed by Developer (2026-06-08). Agents may call MongoDB MCP for exploration and optimization; app code still uses `mongoose/` + `@quack/mongoose/*`.
+
+## Technical backlog (`TODO.md`)
+
+Root [`TODO.md`](./TODO.md) tracks security, conventions, and feature work (aligned with `docs/quack-auth-tech-decisions.pdf`).
+
+**Agents must keep it current:** when you complete work that satisfies an open item in `TODO.md`, update that file in the **same branch/PR** — set table status to `[x]` (or `[~]` if partial), check off list tasks, and refresh **Last audited** with the date and branch. Do not leave finished work marked `[ ]`.

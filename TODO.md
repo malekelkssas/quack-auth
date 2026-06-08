@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-08 — against `main` @ `b0449f8` plus `quack-03-signup-endpoint` (signup API, BE conventions).
+**Last audited:** 2026-06-08 — `quack-03-signup-endpoint` @ `27ee04b` (signup API, ErrorResponse DTO, exception filters).
 
 ---
 
@@ -124,6 +124,7 @@ The PDF uses older names; the repo has evolved:
 | 4.5 | `login.dto.ts`                         | [ ]    | —                                                             |
 | 4.6 | XSS sanitization in Zod `.transform()` | [ ]    | PDF: strip `<script>`, `<img onerror>`, etc. on FE **and** BE |
 | 4.7 | nestjs-zod bridge                      | [x]    | Global pipe + greeting DTOs                                   |
+| 4.8 | Shared `ErrorResponse` DTO             | [x]    | `libs/dtos/src/lib/error/error-response.dto.ts`               |
 
 ### Validation tasks
 
@@ -131,6 +132,7 @@ The PDF uses older names; the repo has evolved:
 - [ ] Implement shared sanitize helper used inside Zod transforms (both apps)
 - [ ] Export user schemas from `libs/dtos/src/index.ts` / `user/index.ts` as needed
 - [x] BE: `createZodDto` wrapper for Signup (`users/users.dto.ts`)
+- [x] Zod validation errors → `ErrorResponse` (first issue only) in `http-exception.filter.ts`
 - [ ] BE: `createZodDto` wrappers for Login, User response
 
 ---
@@ -241,11 +243,11 @@ The PDF uses older names; the repo has evolved:
 
 Other local branches (check worktrees before merging):
 
-| Branch                     | Worktree                              | Likely focus                                                                                                |
-| -------------------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `quack-02-fe-setup`        | `~/.cursor/worktrees/quack-auth/iya6` | FE setup                                                                                                    |
-| `quack-03-signup-endpoint` | `~/.cursor/worktrees/quack-auth/bo10` | Signup API — **in progress** (signup endpoint, repo/service, Argon2id, `BE_ROUTES`, mongoose error handler) |
-| `quack-02-user-model`      | —                                     | User model / DTOs                                                                                           |
+| Branch                     | Worktree                              | Likely focus                                                                                                         |
+| -------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `quack-02-fe-setup`        | `~/.cursor/worktrees/quack-auth/iya6` | FE setup                                                                                                             |
+| `quack-03-signup-endpoint` | `~/.cursor/worktrees/quack-auth/bo10` | Signup API — **ready for PR** (signup, repo/service, Argon2id, `BE_ROUTES`, mongoose error handler, `ErrorResponse`) |
+| `quack-02-user-model`      | —                                     | User model / DTOs                                                                                                    |
 
 Before implementing items above, **reconcile** with open PRs/branches to avoid duplicate work.
 
