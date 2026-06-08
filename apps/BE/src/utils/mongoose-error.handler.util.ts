@@ -11,7 +11,7 @@ import mongoose from 'mongoose';
 
 /**
  * Maps Mongoose/MongoDB driver errors to NestJS HTTP exceptions.
- * Use in services/repositories via {@link rethrow} or register globally in exception filters.
+ * Use in services via {@link rethrow}; {@link GlobalExceptionFilter} calls {@link transformError}.
  */
 export class MongooseErrorHandler {
   private static readonly logger = new Logger(MongooseErrorHandler.name);
@@ -19,34 +19,7 @@ export class MongooseErrorHandler {
   /**
    * Transform a caught error into an HTTP exception, or return null if not Mongoose/Mongo-related.
    */
-  static toHttpException(
-    error: unknown,
-    fallbackMessage: string,
-  ): HttpException | null {
-    return this.transformError(error, fallbackMessage);
-  }
-
-  /**
-   * Transform and throw — use in `catch` blocks.
-   */
-  static rethrow(
-    error: unknown,
-    fallbackMessage: string,
-    context?: string,
-  ): never {
-    if (error instanceof HttpException) {
-      throw error;
-    }
-
-    const httpException =
-      this.transformError(error, fallbackMessage) ??
-      new InternalServerErrorException(fallbackMessage);
-
-    this.logError(error, httpException, fallbackMessage, context);
-    throw httpException;
-  }
-
-  private static transformError(
+  static transformError(
     error: unknown,
     fallbackMessage: string,
   ): HttpException | null {
@@ -95,13 +68,31 @@ export class MongooseErrorHandler {
 
     if (error instanceof mongoose.Error) {
       return new BadRequestException(
-        error.message ||
-          fallbackMessage ||
-          'Database operation failed. Please check your input.',
+        'Database operation failed. Please check your input.',
       );
     }
 
     return null;
+  }
+
+  /**
+   * Transform and throw — use in `catch` blocks.
+   */
+  static rethrow(
+    error: unknown,
+    fallbackMessage: string,
+    context?: string,
+  ): never {
+    if (error instanceof HttpException) {
+      throw error;
+    }
+
+    const httpException =
+      this.transformError(error, fallbackMessage) ??
+      new InternalServerErrorException(fallbackMessage);
+
+    this.logError(error, httpException, fallbackMessage, context);
+    throw httpException;
   }
 
   private static handleMongoServerError(
@@ -119,7 +110,7 @@ export class MongooseErrorHandler {
       case 13:
       case 18:
         return new ServiceUnavailableException(
-          'Database authentication failed. Check MONGODB_URI credentials in .env.',
+          'Database is temporarily unavailable. Please try again later.',
         );
       default:
         return new InternalServerErrorException(fallbackMessage);
@@ -159,9 +150,6 @@ export class MongooseErrorHandler {
         `${prefix}${fallbackMessage}: ${message}`,
         original instanceof Error ? original.stack : undefined,
       );
-      return;
     }
-
-    this.logger.warn(`${prefix}${fallbackMessage}: ${message}`);
   }
 }

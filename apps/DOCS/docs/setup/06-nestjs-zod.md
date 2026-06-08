@@ -33,7 +33,7 @@ import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
       provide: APP_INTERCEPTOR,
       useClass: ZodSerializerInterceptor,
     },
-    // HttpExceptionFilter — see 6c
+    // GlobalExceptionFilter — see 6c
   ],
 })
 export class AppModule {}
@@ -42,28 +42,49 @@ export class AppModule {}
 - `ZodValidationPipe` — validates `@Body()`, `@Query()`, and `@Param()` inputs against Zod DTOs
 - `ZodSerializerInterceptor` — serializes controller return values through `@ZodResponse` / `@ZodSerializerDto` schemas
 
-### 6c — Exception filters
+### 6c — Exception filters and `ErrorResponse`
 
-Add filters under `apps/BE/src/filters/`:
+API error bodies use the shared **`ErrorResponse`** schema in `libs/dtos/src/lib/error/error-response.dto.ts`:
 
-- `http-exception.filter.ts` — maps `ZodSerializationException` to the same `{ statusCode, message, errors }` shape as request validation failures
-- `global-exception.filter.ts` — catch-all for unhandled errors (500)
+```ts
+export const ErrorResponse = z.object({
+  message: z.string(),
+  code: z.string().optional(),
+});
+```
 
-Register both in `app.module.ts`:
+- HTTP status lives in the **response status code** only — not in the JSON body.
+- Zod validation failures return the **first** issue only (`message` + optional Zod `code`, e.g. `invalid_format`).
+- Other `HttpException`s (e.g. `ConflictException`) map to `{ message: "…" }` via `fromHttpException()` in `apps/BE/src/utils/error-response.util.ts`.
+
+Example validation failure (`POST /api/users/signup` with invalid body):
+
+```json
+{ "message": "A valid email is required", "code": "invalid_format" }
+```
+
+Example conflict:
+
+```json
+{ "message": "Email is already registered" }
+```
+
+Register a single global filter in `app.module.ts` — `apps/BE/src/filters/global-exception.filter.ts` (`@Catch()`):
+
+1. **`HttpException`** (including `ZodValidationException` / `ZodSerializationException`) → `ErrorResponse` via `fromZodError()` or `fromHttpException()`
+2. **Mongoose/Mongo errors** → `MongooseErrorHandler.transformError()` then `ErrorResponse`
+3. **Everything else** → 500 `{ message: "Internal server error" }`
 
 ```ts
 import { GlobalExceptionFilter } from '../filters/global-exception.filter';
-import { HttpExceptionFilter } from '../filters/http-exception.filter';
 
-{
-  provide: APP_FILTER,
-  useClass: HttpExceptionFilter,
-},
 {
   provide: APP_FILTER,
   useClass: GlobalExceptionFilter,
 },
 ```
+
+One filter avoids Nest’s reversed multi-filter ordering (two `APP_FILTER` providers with `@Catch()` vs `@Catch(HttpException)` are easy to mis-register).
 
 ### 6d — Swagger + `cleanupOpenApiDoc`
 

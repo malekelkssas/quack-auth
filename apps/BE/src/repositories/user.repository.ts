@@ -1,20 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import {
-  IUserDocument,
-  UserModel,
-  UserPaths,
-} from '@quack/mongoose/models/user';
+import type { IUser } from '@quack/mongoose/models/user';
+import { UserModel, UserPaths } from '@quack/mongoose/models/user';
 
-export type CreateUserData = {
-  email: string;
-  name: string;
-  password: string;
-};
+export type CreateUserData = Pick<IUser, 'email' | 'name' | 'password'>;
 
 @Injectable()
 export class UserRepository {
-  async findByEmail(email: string): Promise<IUserDocument | null> {
-    return UserModel.findOne({ [UserPaths.email]: email });
+  async findByEmail(email: string): Promise<boolean> {
+    const existing = await UserModel.exists({ [UserPaths.email]: email });
+    return existing !== null;
   }
 
   async create(data: CreateUserData): Promise<void> {

@@ -86,7 +86,7 @@ The PDF uses older names; the repo has evolved:
 | ---- | ------------------------------------ | ------ | -------------------------------------------------------------------------------- |
 | 3.1  | NestJS app                           | [x]    | `apps/BE/`                                                                       |
 | 3.2  | Global Zod validation pipe           | [x]    | `ZodValidationPipe` in `app.module.ts`                                           |
-| 3.3  | Global exception filters             | [x]    | `http-exception.filter.ts`, `global-exception.filter.ts`                         |
+| 3.3  | Global exception filter              | [x]    | `global-exception.filter.ts` (HttpException + Zod + Mongoose + 500)              |
 | 3.4  | Swagger at `/docs`                   | [x]    | `apps/BE/src/main.ts` + `cleanupOpenApiDoc`                                      |
 | 3.5  | Mongoose user schema                 | [x]    | `mongoose/models/user/user.schema.ts`                                            |
 | 3.6  | `MongooseModule` wired in BE         | [~]    | `dbClient()` in `main.ts`; direct `UserModel` — no `@nestjs/mongoose` module yet |
@@ -132,7 +132,7 @@ The PDF uses older names; the repo has evolved:
 - [ ] Implement shared sanitize helper used inside Zod transforms (both apps)
 - [ ] Export user schemas from `libs/dtos/src/index.ts` / `user/index.ts` as needed
 - [x] BE: `createZodDto` wrapper for Signup (`users/users.dto.ts`)
-- [x] Zod validation errors → `ErrorResponse` (first issue only) in `http-exception.filter.ts`
+- [x] Zod validation errors → `ErrorResponse` (first issue only) in `global-exception.filter.ts`
 - [ ] BE: `createZodDto` wrappers for Login, User response
 
 ---

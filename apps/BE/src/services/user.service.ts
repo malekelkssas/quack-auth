@@ -1,8 +1,7 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import type { Signup } from '@shared/dtos';
 import { UserRepository } from '../repositories/user.repository';
 import { MongooseErrorHandler } from '../utils/mongoose-error.handler.util';
-import { hashPassword } from '../utils/password.util';
 
 @Injectable()
 export class UserService {
@@ -10,17 +9,10 @@ export class UserService {
 
   async signup(input: Signup): Promise<void> {
     try {
-      const existing = await this.userRepository.findByEmail(input.email);
-      if (existing) {
-        throw new ConflictException('Email is already registered');
-      }
-
-      const passwordHash = await hashPassword(input.password);
-
       await this.userRepository.create({
         email: input.email,
         name: input.name,
-        password: passwordHash,
+        password: input.password,
       });
     } catch (error) {
       MongooseErrorHandler.rethrow(

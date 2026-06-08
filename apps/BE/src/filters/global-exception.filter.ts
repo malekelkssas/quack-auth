@@ -6,6 +6,9 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { ZodSerializationException, ZodValidationException } from 'nestjs-zod';
+import { ZodError } from 'zod';
+import { fromHttpException, fromZodError } from '../utils/error-response.util';
 import { MongooseErrorHandler } from '../utils/mongoose-error.handler.util';
 
 @Catch()
@@ -13,40 +16,23 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   private readonly logger = new Logger(GlobalExceptionFilter.name);
 
   catch(exception: unknown, host: ArgumentsHost) {
+    const response = host.switchToHttp().getResponse();
+
     if (exception instanceof HttpException) {
-      const response = host.switchToHttp().getResponse();
-      const status = exception.getStatus();
-      const body = exception.getResponse();
-      response
-        .status(status)
-        .json(
-          typeof body === 'string'
-            ? { statusCode: status, message: body }
-            : body,
-        );
+      this.sendHttpException(response, exception);
       return;
     }
 
-    const mongooseException = MongooseErrorHandler.toHttpException(
+    const mongooseException = MongooseErrorHandler.transformError(
       exception,
       'Internal server error',
     );
 
     if (mongooseException) {
-      const response = host.switchToHttp().getResponse();
-      const status = mongooseException.getStatus();
-      const body = mongooseException.getResponse();
-      response
-        .status(status)
-        .json(
-          typeof body === 'string'
-            ? { statusCode: status, message: body }
-            : body,
-        );
+      this.sendHttpException(response, mongooseException);
       return;
     }
 
-    const response = host.switchToHttp().getResponse();
     const request = host.switchToHttp().getRequest();
 
     const label =
@@ -60,8 +46,38 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     );
 
     response.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-      statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
       message: 'Internal server error',
     });
+  }
+
+  private sendHttpException(
+    response: { status: (code: number) => { json: (body: unknown) => void } },
+    exception: HttpException,
+  ): void {
+    const status = exception.getStatus();
+
+    if (
+      exception instanceof ZodValidationException ||
+      exception instanceof ZodSerializationException
+    ) {
+      const zodError = exception.getZodError();
+
+      if (zodError instanceof ZodError) {
+        const first = zodError.issues[0];
+        if (first) {
+          this.logger.warn(`${exception.constructor.name}: ${first.message}`);
+        }
+      }
+
+      const body =
+        zodError instanceof ZodError
+          ? fromZodError(zodError)
+          : { message: 'Validation failed' };
+
+      response.status(status).json(body);
+      return;
+    }
+
+    response.status(status).json(fromHttpException(exception));
   }
 }
