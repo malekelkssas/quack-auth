@@ -527,3 +527,14 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Developer asked for (same session, next)**
 
 - Commit Redux work; then shadcn scaffold (`apps/FE/src/components/ui`, `@/lib/utils.ts`); `ProgressLoader` on `PersistGate` instead of `null` loading.
+
+**Implemented (continued)**
+
+- Committed `feat(FE): add Redux store with encrypted redux-persist` (`8fcd399`).
+- shadcn scaffold: `apps/FE/components.json` (CLI-ready, `ui` → `@/components/ui`), `src/lib/utils.ts` (`cn`), empty `src/components/ui/`.
+- Deps: `tailwind-merge`, `class-variance-authority`, `lucide-react`, `tailwindcss-animate`; Tailwind theme tokens + `--academic-blue` in `styles.css`.
+- `ProgressLoader` at `src/components/ProgressLoader.tsx`; `PersistGate loading={<ProgressLoader />}`.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck` (shadcn + ProgressLoader)

@@ -81,6 +81,7 @@
     "prettier": "~3.6.2",
     "prism-react-renderer": "2.4.1",
     "tailwindcss": "3.4.3",
+    "tailwindcss-animate": "^1.0.7",
     "ts-jest": "^29.4.0",
     "ts-node": "10.9.1",
     "tslib": "^2.3.0",
@@ -98,7 +99,9 @@
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.4",
     "@reduxjs/toolkit": "^2.12.0",
+    "class-variance-authority": "^0.7.1",
     "encrypt-storage": "^2.14.7",
+    "lucide-react": "^1.17.0",
     "mongoose": "^9.6.3",
     "nestjs-zod": "^5.4.0",
     "react": "^19.0.0",
@@ -107,6 +110,7 @@
     "redux-persist": "^6.0.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
+    "tailwind-merge": "^3.6.0",
     "zod": "^4.4.3"
   }
 }

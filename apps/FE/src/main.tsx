@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { PersistGate } from 'redux-persist/integration/react';
 
 import App from './app/app';
+import ProgressLoader from './components/ProgressLoader';
 import { persistor, store } from './store';
 
 const root = ReactDOM.createRoot(
@@ -13,7 +14,7 @@ const root = ReactDOM.createRoot(
 root.render(
   <StrictMode>
     <Provider store={store}>
-      <PersistGate loading={null} persistor={persistor}>
+      <PersistGate loading={<ProgressLoader />} persistor={persistor}>
         <App />
       </PersistGate>
     </Provider>
