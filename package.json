@@ -99,6 +99,7 @@
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.4",
     "@reduxjs/toolkit": "^2.12.0",
+    "axios": "^1.17.0",
     "class-variance-authority": "^0.7.1",
     "encrypt-storage": "^2.14.7",
     "lucide-react": "^1.17.0",

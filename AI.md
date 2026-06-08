@@ -538,3 +538,62 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Verified**
 
 - [x] `pnpm nx run FE:typecheck` (shadcn + ProgressLoader)
+
+---
+
+## 2026-06-08 22:20 — FE axios client convention
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:20`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Install **axios**; create FE convention; `apps/FE/src/api/axiosConfig.ts` only — keep it simple (no interceptors, domain modules, or env wiring yet); **log in `AI.md`**.
+
+**Implemented**
+
+- `pnpm add axios`.
+- `apps/FE/src/api/axiosConfig.ts` — default-exported instance, JSON content-type (baseURL initially wrong — see fix below).
+- Convention in `.cursor/rules/project-conventions.mdc` — single shared instance, no stray `axios.create()`, future `*.api.ts` + interceptors rules; one-line pointer in `AGENTS.md`.
+
+**Output that needed fixing**
+
+- **Hard-coded API `baseURL`** — AI set `http://localhost:3000/api` directly in `axiosConfig.ts` instead of `VITE_API_URL` + `ENV_KEYS`. Developer corrected immediately.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+---
+
+## 2026-06-08 22:23 — Fix axios baseURL env (Developer correction)
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:23`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Developer asked for**
+
+- Replace hard-coded `baseURL` with **`VITE_API_URL`**; update `.env.example` and `libs/qu-constants/src/lib/env.constants.ts`; log the mistake.
+
+**Fixed**
+
+- `VITE_API_URL=http://localhost:3000/api` in `.env.example`.
+- `ENV_KEYS.VITE_API_URL` in `env.constants.ts`.
+- `axiosConfig.ts` reads `import.meta.env[ENV_KEYS.VITE_API_URL]` with throw if missing.
+- `project-conventions.mdc` — `baseURL` must come from `VITE_API_URL`, never hard-coded.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`

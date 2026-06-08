@@ -59,6 +59,13 @@ mongoose/
 └── tsconfig.json
 ```
 
+## FE HTTP client (`apps/FE/src/api/`)
+
+- **One shared axios instance** — `axiosConfig.ts` exports the default client; **do not** call `axios.create()` elsewhere in FE.
+- **`baseURL`** — from `VITE_API_URL` via `ENV_KEYS` (see `.env.example`); never hard-code API hosts in FE.
+- **Import** — `import axiosConfig from '@/api/axiosConfig'` (or relative path under `api/`).
+- **Future growth** — domain call sites (`user.api.ts`, …) live in `api/` and use the shared instance; interceptors (auth token, errors) stay in `axiosConfig.ts` only.
+
 ## Imports
 
 - `@shared/dtos`, `@shared/constants` from apps and `mongoose/`
