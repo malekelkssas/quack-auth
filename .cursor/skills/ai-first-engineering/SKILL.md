@@ -29,6 +29,29 @@ What good AI-first engineering looks like here:
 5. **Update AI.md** — after meaningful sessions, append **session id**, model, prompts, fixes, and decisions (not just "used AI").
 6. **Log chat summaries** — when Cursor compacts/summarizes the conversation, append a **Chat summary** note to `AI.md` (see below).
 
+## Branch per chat (Agents / multi-chat)
+
+**Every new chat** starts on a **new git branch** — one branch per conversation for harmony across parallel agents.
+
+| Pattern                   | Example                                    |
+| ------------------------- | ------------------------------------------ |
+| `quack-XX-<feature-slug>` | `quack-01-auth-login`, `quack-02-husky-ci` |
+
+`XX` = next zero-padded number after existing `quack-*` branches. **First action** in a new chat:
+
+```bash
+git branch -a | grep quack-   # inspect existing
+./scripts/next-quack-branch.sh <feature-slug>
+```
+
+Do not share a branch across chats. Log branch name in `AI.md` when relevant.
+
+## Commits (Conventional Commits)
+
+Husky **`commit-msg`** runs **commitlint**. Use prefixes the Developer prefers:
+
+`feat:`, `fix:`, `docs:`, `test:`, `chore:`, `refactor:`, `ci:` — see `apps/DOCS/docs/setup/10-git-branches-commits.md`.
+
 ## Session ID
 
 One **session id** per **chat** — all work logged from the same conversation shares the same id.
@@ -96,6 +119,10 @@ Append to project root `AI.md`. Use **local time** when the session started (`HH
 ## [YYYY-MM-DD HH:MM] — <short title>
 
 **Session** — S###-short-slug (same id for all entries from this chat)
+
+**Cursor surface** — `Editor` or `Agents` (which Cursor UI hosted this chat)
+
+**Branch** — e.g. `quack-07-auth-login` (if applicable)
 
 **Model** — full name + version, e.g. Composer 2.5, Claude Opus 4.6, GPT-4.1 (parent and/or subagent; not “Composer” alone)
 

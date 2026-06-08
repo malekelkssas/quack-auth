@@ -10,7 +10,9 @@
     "typecheck": "nx run-many -t typecheck --all --exclude=quack-auth && tsc --noEmit -p mongoose/tsconfig.json",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "pnpm lint && pnpm typecheck && pnpm format:check"
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check",
+    "build": "nx run-many -t build --all --exclude=quack-auth",
+    "ci": "pnpm check && pnpm build"
   },
   "lint-staged": {
     "*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,scss,yml,yaml}": "prettier --write",
@@ -28,6 +30,8 @@
     }
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.0.2",
+    "@commitlint/config-conventional": "^21.0.2",
     "@docusaurus/core": "3.10.1",
     "@docusaurus/module-type-aliases": "3.10.1",
     "@docusaurus/preset-classic": "3.10.1",

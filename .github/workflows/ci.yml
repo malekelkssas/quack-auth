@@ -37,9 +37,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - uses: nrwl/nx-set-shas@v5
 
-      # Same verification as Husky pre-commit step 2 (.husky/pre-commit → pnpm check).
-      # lint-staged (step 1) auto-fixes staged files locally; CI uses format:check on the full tree instead.
-      - run: pnpm check
+      # Husky pre-commit: lint-staged + pnpm check. CI adds full builds (too slow for every commit).
+      - run: pnpm ci
 
       # TODO — enable when BE unit tests exist (do not forget):
       # - run: pnpm nx run-many -t test --all --exclude=quack-auth

@@ -67,7 +67,7 @@ pnpm format         # Prettier write
 pnpm format:check   # Prettier check
 ```
 
-**CI** (`.github/workflows/ci.yml`) runs the same **`pnpm check`** as Husky on push/PR. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). BE unit tests and FE E2E are commented in `ci.yml` until ready.
+**CI** (`.github/workflows/ci.yml`) runs **`pnpm ci`** (`pnpm check` + **`pnpm build`**) on push/PR. Husky pre-commit stays on `pnpm check` only — builds are too slow for every commit. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). BE unit tests and FE E2E are commented in `ci.yml` until ready.
 
 ### GitHub Actions secrets (maintainers)
 
@@ -84,6 +84,16 @@ The Developer has added **`CURSOR_API_KEY`** under **Settings → Secrets and va
 Shared Zod schemas live in `libs/dtos`; NestJS needs separate `createZodDto` wrappers in `apps/BE/src/app/app.dto.ts`. That pairing is easy to forget — see the sync warning in **Setup → nestjs-zod** (`pnpm nx serve DOCS` → http://localhost:4001).
 
 The Developer maintains **[filelinks](https://github.com/Vilancer/filelinks)** — a tool that declares semantic links between files (and directories). On `filelinks check`, staged **triggers** flag missing **affects** companions; with **`--run-agents`**, it can spawn a Cursor agent (configured prompt/model per link) to fix them — e.g. update `app.dto.ts` after `libs/dtos` changes. The upstream README shows `pnpm add -D filelinks @filelinks/core`, but **it is not published on npm yet** — use the GitHub repo until release.
+
+## Git workflow (multi-chat / Agents)
+
+Each Cursor chat uses its own branch: **`quack-XX-<feature>`** (e.g. `quack-01-auth-login`). Start with:
+
+```bash
+./scripts/next-quack-branch.sh <feature-slug>
+```
+
+Commits use **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`, …) — enforced by commitlint + Husky. Details in DOCS → **Setup → Git branches & commits**.
 
 ## AI-assisted development
 

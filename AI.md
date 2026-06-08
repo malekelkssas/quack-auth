@@ -1,6 +1,39 @@
 # AI.md — quack-auth
 
-Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **session id**, **model** (full name + version, e.g. **Composer 2.5** — not just “Composer”), prompts, fixes, judgement calls, and **chat summaries**.
+Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **session id**, **Cursor surface** (editor vs agents), **model** (full name + version, e.g. **Composer 2.5** — not just “Composer”), prompts, fixes, judgement calls, and **chat summaries**.
+
+## Cursor surface (editor vs agents)
+
+Log which Cursor UI hosted the chat:
+
+| Value      | Meaning                                                    |
+| ---------- | ---------------------------------------------------------- |
+| **Editor** | Cursor **editor** app — inline chat / Composer in the IDE  |
+| **Agents** | Cursor **Agents** window — dedicated multi-chat agent runs |
+
+**From now on**, every session entry must include **`Cursor surface`** — `Editor` or `Agents`.
+
+### Setup-first (Developer)
+
+All work logged in this file through session **`S006-quality-gates`** was done in the **Editor** app. The Developer stressed that **initial setup** (monorepo, Husky, CI, DOCS, quality gates) is the **most important** foundation — keep a **close eye** on setup docs, hooks, and `apps/DOCS/docs/setup/` staying accurate as the repo evolves.
+
+The Developer is moving to the **Agents** window next for **multi-chat / multi-branch** work (parallel agents on separate branches). Editor remains fine for focused setup edits; Agents is the preferred surface for parallel feature work.
+
+## Branch per chat
+
+**Every new chat** must start on a dedicated branch:
+
+| Pattern                   | Example               |
+| ------------------------- | --------------------- |
+| `quack-XX-<feature-slug>` | `quack-01-auth-login` |
+
+1. Inspect: `git branch -a | grep quack-`
+2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>`
+3. Log **branch name** in session entries when useful.
+
+`XX` = next zero-padded number. One branch per chat — do not share across agents.
+
+**Commits:** Conventional Commits enforced by commitlint (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, …). See `apps/DOCS/docs/setup/10-git-branches-commits.md`.
 
 ## Session IDs
 
@@ -45,17 +78,18 @@ Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `
 
 Nx monorepo (`pnpm` + Nx 22) with:
 
-| Area            | What exists                                                                                              |
-| --------------- | -------------------------------------------------------------------------------------------------------- |
-| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                        |
-| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                 |
-| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                  |
-| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                |
-| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                          |
-| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                  |
-| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                 |
-| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                    |
-| **CI**          | `.github/workflows/ci.yml` — `pnpm check`; `pr-open-change-summary.yml` — Cursor digest on PR **opened** |
+| Area            | What exists                                                                                                           |
+| --------------- | --------------------------------------------------------------------------------------------------------------------- |
+| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                                     |
+| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                              |
+| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                               |
+| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                             |
+| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                                       |
+| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                               |
+| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                              |
+| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                                 |
+| **CI**          | `.github/workflows/ci.yml` — `pnpm ci` (check + build); `pr-open-change-summary.yml` — Cursor digest on PR **opened** |
+| **AI surface**  | Sessions through `S006` — **Editor**; from here prefer **Agents** window for parallel work                            |
 
 ### Completed setup steps
 
@@ -68,6 +102,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 7. AI policy skill + subagent + this log
 8. Docusaurus DOCS app — migrated from root `docs/setup.md`
 9. Husky + lint-staged + Prettier + ESLint/typecheck gates (`pnpm check`)
+10. Commitlint + `quack-XX-*` branch-per-chat workflow (`scripts/next-quack-branch.sh`)
 
 ### Cursor agents & skills
 
@@ -82,6 +117,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 ## 2026-06-08 18:30 — Initial scaffolding & shared libs
 
 **Session** — `S001-initial-scaffold`
+
+**Cursor surface** — Editor
 
 **Model** — not recorded (session predates model logging in AI.md)
 
@@ -127,6 +164,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 **Session** — `S005-docusaurus`
 
+**Cursor surface** — Editor
+
 **Model** — Composer (exact version not recorded for this session)
 
 **Chat summary** — No (single continuous thread for DOCS migration)
@@ -146,6 +185,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 ## 2026-06-08 — Husky, README, multi-agent prep
 
 **Session** — `S006-quality-gates`
+
+**Cursor surface** — Editor (entire session through CI, PR summary, secrets; Developer next moves to **Agents** for multi-chat/branch work)
 
 **Model** — Composer 2.5
 
@@ -188,6 +229,9 @@ Nx monorepo (`pnpm` + Nx 22) with:
 - **PR open change summary** — Developer asked for main-branch email digest pattern adapted to PRs: `.github/workflows/pr-open-change-summary.yml` (renamed from bad “main change summary” naming), same Cursor agent provider, appends digest to **PR description** on `pull_request: opened` only (no Gmail)
 - **CI Node version** — Developer reported CI failure: pnpm 11.5.2 on Node 20 → `ERR_UNKNOWN_BUILTIN_MODULE: node:sqlite`; fixed `ci.yml` to `node-version: 22`
 - Developer added **`CURSOR_API_KEY`** to GitHub Actions repo secrets; documented in README (maintainers) and DOCS PR summary section
+- Log **Cursor surface** (`Editor` \| `Agents`) per session; note all `AI.md` work through `S006` was **Editor** — setup is highest priority; Developer shifting to **Agents** window for efficient multi-chat / multi-branch work
+- Developer noted CI was missing **build** — added `pnpm build` / `pnpm ci` (`check` + `build`); `ci.yml` now runs `pnpm ci` (Husky still `check` only)
+- Before **Agents** window: **one branch per chat** (`quack-XX-<feature>`); `@commitlint/cli` + `@commitlint/config-conventional` + `.commitlintrc.json` + Husky `commit-msg`; Developer prefers `feat:` / `fix:` / `docs:` / `test:` prefixes
 
 ---
 
@@ -196,6 +240,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 After each significant AI-assisted session, append:
 
 - **Session id** (`S###-slug`) — one id per chat; reuse for all entries from the same conversation
+- **Cursor surface** — `Editor` or `Agents`
+- **Branch** — e.g. `quack-07-auth-login` (optional but recommended for Agents chats)
 - **Local start time** (`YYYY-MM-DD HH:MM`)
 - **Model** — full product name + version (e.g. Composer 2.5, Claude Opus 4.6)
 - **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted

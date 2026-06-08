@@ -19,7 +19,11 @@ Invoke: `Use the ai-first-engineering subagent to [task]`
 
 ## AI.md entries
 
-Each chat should log one **session id** (`S###-slug` — all entries from the same conversation share it), **date**, **time**, **model**, plus prompts that worked, fixes needed, and decisions vs AI defaults.
+Each chat should log one **session id** (`S###-slug` — all entries from the same conversation share it), **Cursor surface** (`Editor` or `Agents`), **date**, **time**, **model** (full version, e.g. Composer 2.5), plus prompts that worked, fixes needed, and decisions vs AI defaults.
+
+**Setup-first:** early repo work (through `S006-quality-gates` in `AI.md`) ran in the **Editor**; keep `apps/DOCS/docs/setup/` accurate. Parallel feature work should use the **Agents** window with separate chats/branches.
+
+**One branch per chat:** `quack-XX-<feature>` — see [Git branches & commits](../setup/10-git-branches-commits.md). **Conventional Commits** via commitlint (`feat:`, `fix:`, `docs:`, `test:`, …).
 
 If Cursor **summarizes / compacts** chat context, log a **Chat summary** block — note what was carried forward and what may need re-reading.
 
