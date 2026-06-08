@@ -4,15 +4,19 @@ import { UserPaths } from '../models/user/user.paths';
 import { userFixtures } from './user.fixtures';
 
 export interface LoadFixturesOptions {
-  /** Drop existing documents in seeded collections before insert. */
   reset?: boolean;
 }
 
-export async function loadUserFixtures(
+export async function loadFixtures(
   options: LoadFixturesOptions = {},
 ): Promise<IUserDocument[]> {
   if (options.reset) {
     await UserModel.deleteMany({});
+    const documents: IUserDocument[] = [];
+    for (const fixture of userFixtures) {
+      documents.push(await UserModel.create(fixture));
+    }
+    return documents;
   }
 
   const documents: IUserDocument[] = [];
@@ -27,11 +31,4 @@ export async function loadUserFixtures(
     documents.push(await UserModel.create(fixture));
   }
   return documents;
-}
-
-export async function loadFixtures(
-  options: LoadFixturesOptions = {},
-): Promise<{ users: IUserDocument[] }> {
-  const users = await loadUserFixtures(options);
-  return { users };
 }

@@ -1,13 +1,12 @@
+import type { IUser } from '../models/user/user.model';
 import { UserPaths } from '../models/user/user.paths';
 
 /** Plaintext password shared by default user fixtures (meets `Password` Zod schema). */
 export const FIXTURE_USER_PASSWORD = 'Password1!' as const;
 
-export interface UserFixture {
-  [UserPaths.email]: string;
-  [UserPaths.name]: string;
-  [UserPaths.password]: string;
-}
+export const FIXTURE_ADMIN_PASSWORD = 'AdminPass1!' as const;
+
+export type UserFixture = Pick<IUser, 'email' | 'name' | 'password'>;
 
 export const userFixtures: UserFixture[] = [
   {
@@ -23,6 +22,6 @@ export const userFixtures: UserFixture[] = [
   {
     [UserPaths.email]: 'admin@quack.dev',
     [UserPaths.name]: 'Admin Quack',
-    [UserPaths.password]: 'AdminPass1!',
+    [UserPaths.password]: FIXTURE_ADMIN_PASSWORD,
   },
 ];

@@ -7,7 +7,7 @@ async function main(): Promise<void> {
 
   await dbClient();
   try {
-    const { users } = await loadFixtures({ reset });
+    const users = await loadFixtures({ reset });
     console.log(
       `Seeded ${users.length} user(s)${reset ? ' (collections reset)' : ''}.`,
     );
