@@ -1,0 +1,27 @@
+{
+  "name": "quack-auth",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@11.5.2",
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "11.5.2",
+      "onFail": "download"
+    }
+  },
+  "type": "module",
+  "devDependencies": {
+    "@nx/node": "^22.7.5",
+    "@nx/react": "^22.7.5",
+    "nx": "22.7.5"
+  },
+  "nx": {}
+}
