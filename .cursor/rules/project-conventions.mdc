@@ -17,7 +17,7 @@ When the Developer states a **new convention** (or you extend an existing sectio
 
 | Convention area | Update these docs (minimum) |
 | --------------- | --------------------------- |
-| FE (HTTP client, styling, store, routing, …) | `apps/DOCS/docs/apps/frontend.md` |
+| FE (HTTP client, styling, store, routing, …) | `apps/DOCS/docs/apps/FE/` |
 | BE (modules, filters, validation, routes, …) | `apps/DOCS/docs/apps/backend.md` |
 | Mongoose / DB | `apps/DOCS/docs/apps/mongodb.md` |
 | Shared libs (`libs/dtos`, `libs/qu-constants`, `BE_ROUTES`, …) | Relevant `apps/DOCS/docs/apps/*.md` **and** setup page if cross-cutting (e.g. `06-nestjs-zod.md`) |
@@ -85,14 +85,14 @@ mongoose/
 - **[React Scan](https://react-scan.com/)** and **[React Grab](https://www.react-grab.com/)** — `dev-entry.ts` → `dev-tools.ts` (dev only) → `main.tsx`. Scan uses a static import in `dev-tools.ts` (must run before React); Grab uses dynamic `import()` there. Production entry skips `dev-tools` entirely.
 - **React Scan** — visual re-render highlights for performance debugging.
 - **React Grab** — ⌘C / Ctrl+C on a hovered element copies component context for coding agents.
-- Docs: `apps/DOCS/docs/apps/frontend.md` — **Dev-only tooling**.
+- Docs: `apps/DOCS/docs/apps/FE/08-dev-tooling.md` — **Dev-only tooling**.
 
 ## FE HTTP client (`apps/FE/src/api/`)
 
 - **One shared axios instance** — `axiosConfig.ts` exports the default client; **do not** call `axios.create()` elsewhere in FE.
 - **`baseURL`** — from `VITE_API_URL` via `ENV_KEYS` (see `.env.example`); never hard-code API hosts in FE.
 - **Import** — `import api from '@/api/axiosConfig'` (or relative `../axiosConfig` under `api/services/`).
-- **`handleError.ts`** — normalizes `unknown` / `AxiosError` into `ErrorResponse` from `@shared/dtos`; axios-specific codes/messages live in `apps/FE/src/utils/constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
+- **`handleError.ts`** — normalizes `unknown` / `AxiosError` into `ErrorResponse` from `@shared/dtos`; axios-specific codes/messages live in `apps/FE/src/utils/constants/axios.constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
 - **`services/`** — domain axios call sites (e.g. `authService.ts`); import `BE_ROUTES` from `@shared/constants` for path segments — **no magic route strings** in FE services.
 - Interceptors (auth token, global errors) stay in `axiosConfig.ts` only.
 - **`services/index.ts`** — barrel re-export for domain services (e.g. `import { AuthService } from '@/api/services'`).
@@ -138,6 +138,40 @@ API service → Redux slice → Slice hook → Page Context → component logic 
 - **Component logic:** no `fetch*` effects — delegate loads to page context; use slice hooks for mutations/select/clear.
 - **Forms:** react-hook-form + `zodResolver` + shared DTOs from `@shared/dtos`; `useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>` when defaults/transforms differ; child form components match parent input type.
 - **Cleanup:** clear page-owned Redux state on unmount unless persistence is required (`redux-persist` blacklist when appropriate).
+
+## FE pages (`apps/FE/src/pages/<Page>/`)
+
+- One folder per page (e.g. `pages/auth/Login/`, `pages/auth/Signup/`): `Page.tsx` (UI) + `usePage.ts` (component logic hook).
+- **Routing** uses `react-router` (`react-router-dom`): `<BrowserRouter>` in `main.tsx`, `<Routes>` + global `<Toaster/>` in `app/app.tsx`. Path segments live in `apps/FE/src/utils/constants/routes.constants.ts` (`FE_ROUTES`, `FE_DEFAULT_ROUTE`) — use them in `<Route>`, `<Navigate>`, and `<Link>`; no magic path strings in components.
+- **Shared layout** — colocate a layout next to the pages it serves (e.g. `pages/auth/AuthLayout.tsx`) and pass the form via `children`; do not duplicate the scene per page.
+- Mutations (e.g. signup) use a component logic hook calling a slice hook — **no page-context `fetch*` layer** when there is no data to load.
+
+## FE system hooks (`apps/FE/src/hooks/`) vs slice hooks (`hooks/slices/`)
+
+- **System hooks** live directly under `apps/FE/src/hooks/` — cross-cutting, non-slice utilities: `use-toast.ts`, `use-error.ts`, `use-success.ts`.
+- **Slice hooks** live under `apps/FE/src/hooks/slices/` — one per Redux slice (`useAuth.ts`), the typed facade over slice state + actions.
+- Do **not** put slice facades under `hooks/` root, and do **not** put generic utilities under `hooks/slices/`.
+
+## FE constants (`apps/FE/src/utils/constants/`)
+
+- `utils/constants/` is a **directory**, not a flat `constants.ts` file:
+  - `index.ts` — barrel (keeps `@/utils/constants` imports working).
+  - `axios.constants.ts` — `AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`.
+  - `routes.constants.ts` — `FE_ROUTES` (`HOME`, `LOGIN`, `SIGNUP`), `FE_DEFAULT_ROUTE`.
+  - `toast-variants.constants.ts` — `TOAST_VARIANTS = { SUCCESS, WARNING, ERROR }`.
+- Add new constant groups as `*.constants.ts` files re-exported from the barrel — do not reintroduce a single flat file.
+
+## FE toast variants
+
+- Classic **shadcn toast** (Radix `@radix-ui/react-toast`), **not** `sonner` — typed `cva` `toastVariants` + reducer queue that `use-error` / `use-success` can drive.
+- Variants: `default`, `success` (green), `warning` (amber), `error` (red / destructive); names centralized in `TOAST_VARIANTS`.
+- `use-error` skips the generic network fallback message, fires the `error` variant for real API errors, then clears the slice error; `use-success` is the analogous success-message hook.
+- Mount `<Toaster/>` once (in `app/app.tsx`).
+
+## FE public assets (`apps/FE/public/`)
+
+- Static assets (sprite sheets, etc.) live under `apps/FE/public/` and are served at the site root by Vite (e.g. `public/sprites/duckling.png` → `/sprites/duckling.png`).
+- Sprite/duck visuals: `public/sprites/` holds the walking-duck sheets (`duckling.png`, `mallard.png`); canvas components live in `components/duck/`.
 
 ## Backend routes (`libs/qu-constants/src/lib/be-routes.constants.ts`)
 

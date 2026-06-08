@@ -24,7 +24,7 @@ pnpm nx build DOCS      # onBrokenLinks: 'throw' — run after link changes
 | Repo change | Doc file |
 | ----------- | -------- |
 | Setup / deps / Docker | `docs/setup/NN-*.md` |
-| FE / BE / MongoDB | `docs/apps/frontend.md`, `backend.md`, `mongodb.md` |
+| FE / BE / MongoDB | `docs/apps/FE/`, `backend.md`, `mongodb.md` |
 | AI policy | `docs/ai/policy.md` + root `AI.md` |
 | Husky / CI | `docs/setup/09-husky-quality-gates.md` + `intro.md` |
 | Git branches / commitlint | `docs/setup/10-git-branches-commits.md` |

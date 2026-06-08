@@ -34,7 +34,7 @@ pnpm nx serve BE
 API path segments live in `libs/qu-constants/src/lib/be-routes.constants.ts` as the `BE_ROUTES` enum, exported via `@shared/constants`.
 
 - **No magic route strings** in controllers or `main.ts` — use `BE_ROUTES` in `@Controller`, HTTP method decorators, and `setGlobalPrefix(BE_ROUTES.BASE)`.
-- FE services import the same enum for client URLs (see [Frontend → HTTP client](./frontend.md#http-client-appsfesrcapi)).
+- FE services import the same enum for client URLs (see [Frontend → HTTP client](./FE/02-http-client.md)).
 
 | Constant           | Value    | Usage                    |
 | ------------------ | -------- | ------------------------ |

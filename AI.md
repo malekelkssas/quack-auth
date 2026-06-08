@@ -957,3 +957,60 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Deferred**
 
 - Full auth pages, page contexts, component logic hooks — structure only; login/checkAuth/logout thunks wait for BE routes.
+
+## 2026-06-09 01:15 — FE duck theme + auth pages + toast system
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 01:15`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Overview**
+
+> Retheme FE Tailwind tokens to the retro "duck pond" design language, build animated-duck Login + Sign-up pages with react-router, add a classic shadcn toast system with success/warning/error variants + `use-error`/`use-success`, and wire Sign-up to the `useAuth` slice hook via react-hook-form + the shared Zod `Signup` DTO.
+
+**Deps added** (root `package.json`, hoisted to FE)
+
+- `react-router-dom` — real `/login` + `/signup` routes.
+- `react-hook-form` + `@hookform/resolvers` — `zodResolver` (Zod v4 compatible).
+- `@radix-ui/react-toast` — classic shadcn toast primitive.
+
+**Implemented**
+
+- **Tokens & fonts** — full token replacement to the duck pond palette (single dark theme; dropped the `.dark` block), Google Fonts `@import` (Press Start 2P + VT323), `@theme inline` `--color-*` + `--font-pixel`/`--font-body`, `bob` keyframes + `.pixelated` helper; duck `index.html` title.
+- **Sprites + visuals** — walking-duck sprite sheets in `apps/FE/public/sprites/` (`duckling.png`, `mallard.png`); `components/duck/` `DuckCanvas` (6-frame animation, modes `duckling`/`mallard`/`both`), `StarField`, `PixelField`, `PixelButton`.
+- **Routing + pages** — `BrowserRouter` in `main.tsx`; `Routes` (`/login`, `/signup`, `/` → `/signup`) + `<Toaster/>` in `app/app.tsx`; `pages/auth/` with `AuthLayout`, `Login` (UI only) + `useLogin`, `Signup` + `useSignup`.
+- **Toast system** — classic shadcn `toast.tsx`/`toaster.tsx` + `use-toast`; `success`/`warning`/`error` variants; `utils/constants.ts` → `utils/constants/` dir (`index.ts` barrel, `axios.constants.ts`, `toast-variants.constants.ts`); `use-error` / `use-success` system hooks.
+- **Signup integration** — `useSignup` uses `useForm<z.input, unknown, z.output>` + `zodResolver(Signup)` from `@shared/dtos` → `useAuth().signup`; success toast "Welcome to the pond!", error via `use-error`, cleanup on unmount.
+- **Docs** — expanded `docs/apps/frontend.md` into the `docs/apps/FE/` directory (`_category_.json` + `01-overview`…`09-testing`, new testing page), deleted the old `frontend.md`, fixed cross-links (`backend.md`, `ai/maintenance.md`); updated `project-conventions.mdc` (FE docs-map row + new pages/system-hooks/constants-dir/toast-variant/public-assets conventions), `AGENTS.md`, `ai-first-engineering.mdc`, `docusaurus-docs.mdc`, and `TODO.md`.
+
+**Judgement calls / deviations**
+
+- **Classic toast vs `sonner`** — chose the classic shadcn Radix toast for a typed `cva` variant API + reducer queue that `use-error`/`use-success` can drive, rather than `sonner`.
+- **`useEffectEvent` availability** — verified the installed React supports it; otherwise the toast hooks fall back to a `useRef`-of-latest-values pattern.
+- **Single dark duck theme** — dropped the shadcn light/dark split in favor of one dark pond theme per the design language.
+
+## 2026-06-09 01:50 — FE route path constants
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 01:50`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Developer request**
+
+> Use a constants file for FE route paths (e.g. redirects in `app.tsx` and cross-links in Login/Signup) instead of scattered magic strings like `"/login"` and `"/signup"`. Log this in `AI.md`.
+
+**Done**
+
+- Added `apps/FE/src/utils/constants/routes.constants.ts` — `FE_ROUTES` (`HOME`, `LOGIN`, `SIGNUP`), `FE_DEFAULT_ROUTE` (`FE_ROUTES.SIGNUP`); re-exported from `@/utils/constants`.
+- Wired `app/app.tsx` (`<Route>`, `<Navigate>`), `Login.tsx` and `Signup.tsx` (`<Link>`) to the constants.
+- Updated `project-conventions.mdc` (FE pages routing + `utils/constants/` list) and `apps/DOCS/docs/apps/FE/04-routing-pages.md`.

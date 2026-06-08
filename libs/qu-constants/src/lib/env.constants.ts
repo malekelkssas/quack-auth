@@ -8,4 +8,6 @@ export const ENV_KEYS = {
   VITE_ALLOWED_HOSTS: 'VITE_ALLOWED_HOSTS',
   VITE_HOST: 'VITE_HOST',
   VITE_REDUX_PERSIST_SECRET_KEY: 'VITE_REDUX_PERSIST_SECRET_KEY',
+  /** Comma-separated origins allowed by BE CORS (must include the FE dev URL). */
+  CORS_ORIGIN: 'CORS_ORIGIN',
 };
