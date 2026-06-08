@@ -6,12 +6,16 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import { BE_ROUTES } from '@shared/constants';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
+import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from './app/app.module';
 
 async function bootstrap() {
+  await dbClient();
+
   const app = await NestFactory.create(AppModule);
-  const globalPrefix = 'api';
+  const globalPrefix = BE_ROUTES.BASE;
   app.setGlobalPrefix(globalPrefix);
 
   const openApiDoc = SwaggerModule.createDocument(

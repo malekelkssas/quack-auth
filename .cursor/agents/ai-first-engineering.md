@@ -29,7 +29,8 @@ AI assistance is expected. What matters is **judgement**: what you generated, ad
    - `curl` for API endpoints
    - `docker compose config` for compose changes
 2. **Follow repo conventions** — read `.cursor/rules/project-conventions.mdc` and `.cursor/rules/ai-first-engineering.mdc`; use `AGENTS.md` as the index. Doc updates → **docs-maintainer** subagent.
-3. **Use shared paths** — `@shared/constants`, `@shared/dtos`, `baseUrl: "../.."` in app tsconfigs; FE extends `./tsconfig.json` for `jsx`.
+3. **Use shared paths** — `@shared/constants`, `@shared/dtos`, `@quack/mongoose/*`, `baseUrl: "../.."` in app tsconfigs; FE extends `./tsconfig.json` for `jsx`.
+4. **MongoDB Cursor plugin** — MCP server available for connection config, schema design, queries, and index/performance advice. Use when investigating MongoDB behavior; persistence code stays in `mongoose/` and BE repositories.
 
 ## Return format
 

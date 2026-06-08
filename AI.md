@@ -482,3 +482,92 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - Deleted `user.fields.ts`.
 - Restored inline `email` / `name` validation in `user.model.ts` and `signup.dto.ts` as before the simplify pass.
+
+---
+
+## 2026-06-08 21:50 — BE utils + mongoose path aliases
+
+**Session** — `S012-be-utils-mongoose-alias`
+
+**Local start time** — `2026-06-08 21:50`
+
+**Cursor surface** — Agents (subagent)
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint`
+
+**Developer preferences (new conventions)**
+
+- BE utility files live under `apps/BE/src/utils/` with **`.util.ts`** suffix (e.g. `password.util.ts`, `mongo-error.util.ts`).
+- External service wrappers (S3, logger, email providers, …) go under `apps/BE/src/utils/libs/<domain-name-for-service>/` (e.g. `utils/libs/s3/`).
+- **Rejected** deep relative imports to the repo Mongoose layer (e.g. `../../../../mongoose/models/user`). Use path alias **`@quack/mongoose/*`** instead — avoids npm `mongoose` package collision.
+
+**Implemented**
+
+- Documented BE `/utils` + `.util.ts` and `utils/libs/<service>/` in `.cursor/rules/project-conventions.mdc`; one-line pointer in `AGENTS.md`.
+- Added `@quack/mongoose/*` → `mongoose/*` in `tsconfig.base.json` and `apps/BE/tsconfig.app.json`.
+- Replaced deep relative mongoose imports in `user.repository.ts`, `password.util.ts`, `main.ts`.
+
+---
+
+## 2026-06-08 21:58 — BE route segments in shared constants
+
+**Session** — `S013-be-routes-convention`
+
+**Local start time** — `2026-06-08 21:58`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint`
+
+**Developer preference**
+
+- BE endpoint path segments must live in **`libs/qu-constants/src/lib/be-routes.constants.ts`** as a **`BE_ROUTES` enum**, exported via `@shared/constants` — not hardcoded in controllers or `main.ts`.
+- Align global prefix with `BE_ROUTES.BASE` (`api`).
+
+**Related conventions (already logged)**
+
+- BE `*.util.ts` / `utils/libs/<service>/` — see `S012-be-utils-mongoose-alias`.
+- `@quack/mongoose/*` path alias (no deep relative mongoose imports) — same session.
+
+**Implemented**
+
+- Added `BE_ROUTES` enum: `BASE`, `USERS`, `SIGNUP`.
+- `users.controller.ts` — `@Controller(BE_ROUTES.USERS)`, `@Post(BE_ROUTES.SIGNUP)`.
+- `main.ts` — `setGlobalPrefix(BE_ROUTES.BASE)`.
+- Documented in `.cursor/rules/project-conventions.mdc`; pointer in `AGENTS.md`.
+
+**Verified** — `pnpm nx run BE:typecheck`, lint on changed files.
+
+---
+
+## 2026-06-08 22:15 — Signup endpoint, conventions, MongoDB plugin
+
+**Session** — `S014-signup-endpoint`
+
+**Local start time** — `2026-06-08 22:15`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint`
+
+**Developer preferences (new / confirmed)**
+
+- **Feature DTO wrappers** colocated with controller: `apps/BE/src/<feature>/<feature>.dto.ts` (e.g. `users/users.dto.ts` + `SignupDto`) — keep this pattern.
+- **Global Mongoose error handler** — `MongooseErrorHandler` in `mongoose-error.handler.util.ts`; maps ValidationError, CastError, DocumentNotFoundError, VersionError, duplicate key (11000), network/selection errors to Nest HTTP exceptions; used in services via `rethrow` and globally in `GlobalExceptionFilter`.
+- **MongoDB Cursor plugin** installed — MCP available for connection tuning, schema design, queries, index advice; documented in `AGENTS.md` and `ai-first-engineering` subagent.
+- **Repository follow-ups** (TODO only, not implemented): unified repository interface + atomic transaction setup.
+
+**Implemented**
+
+- Signup stack: `UserRepository`, `UserService`, `UsersModule`, `POST /api/users/signup` → 201, Argon2id hashing.
+- `BE_ROUTES`, `@quack/mongoose/*`, BE `*.util.ts` conventions.
+- Synced root `TODO.md` from `main` worktree (remote pull unavailable — SSH); audited completed items; added repository-interface + atomic-transaction TODOs.
+- Replaced minimal `mongo-error.util.ts` with `mongoose-error.handler.util.ts`.
+
+**Remote** — `git pull` failed (SSH key); used main worktree copy for `TODO.md` + tech-decisions PDF.
