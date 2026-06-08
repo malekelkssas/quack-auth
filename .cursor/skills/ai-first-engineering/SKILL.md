@@ -97,6 +97,8 @@ Append to project root `AI.md`. Use **local time** when the session started (`HH
 
 **Session** — S###-short-slug (same id for all entries from this chat)
 
+**Cursor surface** — `Editor` or `Agents` (which Cursor UI hosted this chat)
+
 **Model** — full name + version, e.g. Composer 2.5, Claude Opus 4.6, GPT-4.1 (parent and/or subagent; not “Composer” alone)
 
 **Chat summary** — omit if none; otherwise `Yes — [YYYY-MM-DD HH:MM]` + link to `### Chat summary` block below, or one-line note
