@@ -27,8 +27,8 @@ The Developer is moving to the **Agents** window next for **multi-chat / multi-b
 | ------------------------- | --------------------- |
 | `quack-XX-<feature-slug>` | `quack-01-auth-login` |
 
-1. Inspect: `git branch -a | grep quack-`
-2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>`
+1. Inspect: `git branch -a | grep quack-` and `git worktree list` (parallel agents may hold `quack-XX-*` only in another worktree).
+2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>` — the script scans refs **and** checked-out worktree branches when picking the next `XX`.
 3. Log **branch name** in session entries when useful.
 
 `XX` = next zero-padded number. One branch per chat — do not share across agents.
@@ -849,3 +849,57 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 - Merged `main` (tech-decisions TODO branch); resolved `AI.md` / `TODO.md` conflicts.
 
 **Verified** — `pnpm check`, `pnpm nx build DOCS`.
+
+---
+
+## 2026-06-08 23:50 — FE auth branch + worktree-aware branch script
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-08 23:50`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages` (created from `main` @ `166ba97`)
+
+**Developer request**
+
+- Start a branch for FE theme/design and sign-up + login pages (sign-up wired first; login UI only for now).
+- When running `./scripts/next-quack-branch.sh`, **do not miss `quack-XX-*` branches checked out in other Cursor worktrees** — Developer noticed parallel worktrees (`quack-04-be-tests-setup`, `quack-05-db-seed-fixtures`) and asked for script + doc updates.
+
+**Implemented**
+
+- Updated `scripts/next-quack-branch.sh` to union branch names from `refs/heads`, `refs/remotes/origin`, and `git worktree list --porcelain` (`branch refs/heads/...`); prints active worktrees on quack branches before creating the next branch.
+- Ran `./scripts/next-quack-branch.sh fe-auth-pages` → `quack-06-fe-auth-pages` (next after `05`, worktrees listed correctly).
+- Updated **Branch per chat** section above to mention worktree inspection + script behavior.
+
+**Planned on this branch (not started this turn)**
+
+- FE theme/design system baseline, sign-up page (functional), login page (static/shell).
+
+---
+
+## 2026-06-09 00:05 — FE API conventions (`handleError`, `services/`)
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:05`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer conventions (new)**
+
+1. **`apps/FE/src/api/handleError.ts`** — maps `AxiosError` / network failures to `ErrorResponse` (`@shared/dtos`); axios codes/messages in `apps/FE/src/utils/constants.ts`.
+2. **`apps/FE/src/api/services/`** — domain axios call sites (e.g. `authService.ts`); routes built from `BE_ROUTES` (`@shared/constants`), shared `api` instance from `axiosConfig.ts`.
+
+**Implemented**
+
+- `handleError.ts`, `utils/constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
+- `services/authService.ts` — `AuthService.signup` → `POST /users/signup`.
+- Updated `.cursor/rules/project-conventions.mdc` (FE HTTP client section).

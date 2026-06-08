@@ -77,8 +77,10 @@ mongoose/
 
 - **One shared axios instance** — `axiosConfig.ts` exports the default client; **do not** call `axios.create()` elsewhere in FE.
 - **`baseURL`** — from `VITE_API_URL` via `ENV_KEYS` (see `.env.example`); never hard-code API hosts in FE.
-- **Import** — `import axiosConfig from '@/api/axiosConfig'` (or relative path under `api/`).
-- **Future growth** — domain call sites (`user.api.ts`, …) live in `api/` and use the shared instance; interceptors (auth token, errors) stay in `axiosConfig.ts` only.
+- **Import** — `import api from '@/api/axiosConfig'` (or relative `../axiosConfig` under `api/services/`).
+- **`handleError.ts`** — normalizes `unknown` / `AxiosError` into `ErrorResponse` from `@shared/dtos`; axios-specific codes/messages live in `apps/FE/src/utils/constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
+- **`services/`** — domain axios call sites (e.g. `authService.ts`); import `BE_ROUTES` from `@shared/constants` for path segments — **no magic route strings** in FE services.
+- Interceptors (auth token, global errors) stay in `axiosConfig.ts` only.
 
 ## Backend routes (`libs/qu-constants/src/lib/be-routes.constants.ts`)
 
