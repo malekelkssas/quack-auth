@@ -82,6 +82,16 @@ pnpm nx g @nx/js:lib qu-constants --directory=libs/qu-constants --no-interactive
 
 **Naming convention:** use the `qu` prefix. It is optional for other libs, but required for the constants library to avoid conflicts with Node's built-in `node:constants` module, which can cause import issues.
 
+**File naming:** one concern per file, suffixed with `.constants.ts` under `libs/qu-constants/src/lib/`:
+
+| File | Purpose |
+|---|---|
+| `app.constants.ts` | App-wide values (e.g. `APP_NAME`) |
+| `env.constants.ts` | `.env` variable keys (`ENV_KEYS`) — use these instead of raw strings when reading `process.env` |
+| `node-env.constants.ts` | Allowed `NODE_ENV` values (`NODE_ENV.DEVELOPMENT`, `NODE_ENV.E2E`, etc.) |
+
+Re-export everything from `libs/qu-constants/src/index.ts`.
+
 **Skip tests:** remove the Jest scaffolding — not needed for static constant files:
 
 - `libs/qu-constants/jest.config.cts`
@@ -185,7 +195,7 @@ Prefer the `@shared/*` aliases in app code — they read clearly as cross-app im
 
 ```ts
 import { GreetingQuery } from '@shared/dtos';
-import { APP_NAME } from '@shared/constants';
+import { APP_NAME, ENV_KEYS, NODE_ENV } from '@shared/constants';
 ```
 
 The bare `dtos` and `qu-constants` aliases are kept for Nx project-name resolution and tooling compatibility.
@@ -299,3 +309,66 @@ getGreeting(@Query() query: GreetingQueryDto) {
 ```
 
 Example request: `GET /api?name=world` → `{ "name": "world", "appName": "quack-auth" }`
+
+## Step 7 — MongoDB (Mongoose)
+
+### 7a — Dependencies
+
+```bash
+pnpm add @nestjs/mongoose mongoose
+pnpm add -D mongodb-memory-server
+pnpm approve-builds
+```
+
+- `@nestjs/mongoose` + `mongoose` — runtime MongoDB integration (BE)
+- `mongodb-memory-server` — in-memory MongoDB for tests (devDependency)
+
+### 7b — Environment variables
+
+Add `.env.example` at the repo root (committed). Copy to `.env` locally (gitignored):
+
+```bash
+cp .env.example .env
+```
+
+`.gitignore` should include `.env` and `.env.*`, with `!.env.example` so the template stays tracked.
+
+```env
+# MongoDB
+MONGODB_URI=mongodb://localhost:27017/quack-auth
+E2E_MONGODB_URI=mongodb://localhost:27017/quack-auth-e2e
+MONGODB_DATABASE=quack-auth
+
+# Node Environment
+NODE_ENV=development
+VITE_NODE_ENV=development
+```
+
+Use `ENV_KEYS` from `@shared/constants` when reading these in code — keeps key names in one place for FE, BE, and scripts.
+
+### 7c — `mongoose/` directory (repo root)
+
+Standalone Mongoose layer at the monorepo root (not an Nx app):
+
+```
+mongoose/
+├── client.ts       # connection helper (picks URI by NODE_ENV)
+├── seed.ts         # planned — database seeding
+├── tsconfig.json   # extends tsconfig.base.json, resolves @shared/constants
+├── fixtures/       # test/dev fixture data
+└── models/         # Mongoose model definitions
+```
+
+`mongoose/client.ts` connects using `ENV_KEYS` and switches to `E2E_MONGODB_URI` when `NODE_ENV` is `e2e`:
+
+```ts
+import { ENV_KEYS, NODE_ENV } from '@shared/constants';
+
+if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.E2E) {
+  mongoUri = process.env[ENV_KEYS.E2E_MONGODB_URI];
+} else {
+  mongoUri = process.env[ENV_KEYS.MONGODB_URI];
+}
+```
+
+NestJS `@nestjs/mongoose` module wiring in the BE app is a follow-up step.

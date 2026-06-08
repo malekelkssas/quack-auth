@@ -49,6 +49,7 @@
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
+    "mongodb-memory-server": "^11.2.0",
     "nx": "22.7.5",
     "postcss": "8.4.38",
     "prettier": "~3.6.2",
@@ -66,8 +67,10 @@
   "dependencies": {
     "@nestjs/common": "^11.0.0",
     "@nestjs/core": "^11.0.0",
+    "@nestjs/mongoose": "^11.0.4",
     "@nestjs/platform-express": "^11.0.0",
     "@nestjs/swagger": "^11.4.4",
+    "mongoose": "^9.6.3",
     "nestjs-zod": "^5.4.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

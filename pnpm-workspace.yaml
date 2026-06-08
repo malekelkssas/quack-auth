@@ -4,5 +4,6 @@ allowBuilds:
   '@scarf/scarf': true
   '@swc/core': true
   less: true
+  mongodb-memory-server: true
   nx: true
   unrs-resolver: true
