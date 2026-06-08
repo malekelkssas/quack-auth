@@ -35,7 +35,7 @@ Example — signup (`AuthService.signup`):
 await api.post(`/${BE_ROUTES.USERS}/${BE_ROUTES.SIGNUP}`, body);
 ```
 
-Shared route segments are defined in `libs/qu-constants/src/lib/be-routes.constants.ts` (see [Backend](../backend.md#routes)).
+Shared route segments are defined in `libs/qu-constants/src/lib/be-routes.constants.ts` (see [Backend routes](../be/overview.md#routes)).
 
 ## Services barrel
 

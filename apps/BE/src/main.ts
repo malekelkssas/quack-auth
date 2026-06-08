@@ -6,31 +6,17 @@
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { BE_ROUTES, ENV_KEYS } from '@shared/constants';
+import { BE_ROUTES } from '@shared/constants';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from './app/app.module';
-
-function resolveCorsOrigins(): string | string[] {
-  const origins =
-    process.env[ENV_KEYS.CORS_ORIGIN]
-      ?.split(',')
-      .map((origin) => origin.trim())
-      .filter(Boolean) ?? [];
-  return origins.length > 0 ? origins : 'http://localhost:4200';
-}
+import { configureApp } from './app/configure-app';
 
 async function bootstrap() {
   await dbClient();
 
-  const app = await NestFactory.create(AppModule, {
-    cors: {
-      origin: resolveCorsOrigins(),
-      credentials: true,
-    },
-  });
-  const globalPrefix = BE_ROUTES.BASE;
-  app.setGlobalPrefix(globalPrefix);
+  const app = await NestFactory.create(AppModule);
+  configureApp(app);
 
   const openApiDoc = SwaggerModule.createDocument(
     app,
@@ -45,7 +31,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+    `🚀 Application is running on: http://localhost:${port}/${BE_ROUTES.BASE}`,
   );
   Logger.log(`📚 Swagger docs: http://localhost:${port}/docs`);
 }

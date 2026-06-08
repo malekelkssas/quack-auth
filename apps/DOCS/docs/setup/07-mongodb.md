@@ -47,9 +47,10 @@ Standalone Mongoose layer at the monorepo root (not an Nx app):
 ```
 mongoose/
 ├── client.ts       # connection helper (picks URI by NODE_ENV)
-├── seed.ts         # planned — database seeding
-├── tsconfig.json   # extends tsconfig.base.json, resolves @shared/constants
-├── fixtures/       # test/dev fixture data
+├── seed.ts             # CLI entry — `pnpm db:seed` / `pnpm db:seed:reset`
+├── register-paths.js   # ts-node path aliases for seed script
+├── tsconfig.json       # extends tsconfig.base.json, resolves @shared/constants
+├── fixtures/           # test/dev fixture data + loaders
 └── models/         # domain folders (user/, …)
 ```
 
@@ -127,5 +128,16 @@ docker compose logs mongodb
 docker compose down        # stop
 docker compose down -v     # stop and wipe data
 ```
+
+### 7f — Seed dev fixtures
+
+After MongoDB is up and `.env` is configured:
+
+```bash
+pnpm db:seed           # upsert fixture users (skip existing emails)
+pnpm db:seed:reset     # drop all users, then seed
+```
+
+Fixture data lives in `mongoose/fixtures/`. Passwords are hashed by the user schema pre-save hook (Argon2id). Import `loadFixtures()` from `@quack/mongoose/fixtures` in tests.
 
 NestJS `@nestjs/mongoose` module wiring in the BE app is a follow-up step.

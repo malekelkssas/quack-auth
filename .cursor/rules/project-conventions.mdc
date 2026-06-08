@@ -18,7 +18,7 @@ When the Developer states a **new convention** (or you extend an existing sectio
 | Convention area | Update these docs (minimum) |
 | --------------- | --------------------------- |
 | FE (HTTP client, styling, store, routing, …) | `apps/DOCS/docs/apps/FE/` |
-| BE (modules, filters, validation, routes, …) | `apps/DOCS/docs/apps/backend.md` |
+| BE (modules, filters, validation, routes, …) | `apps/DOCS/docs/apps/be/` |
 | Mongoose / DB | `apps/DOCS/docs/apps/mongodb.md` |
 | Shared libs (`libs/dtos`, `libs/qu-constants`, `BE_ROUTES`, …) | Relevant `apps/DOCS/docs/apps/*.md` **and** setup page if cross-cutting (e.g. `06-nestjs-zod.md`) |
 | Setup / tooling / git / Husky / env | Matching `apps/DOCS/docs/setup/NN-*.md` |

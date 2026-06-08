@@ -27,12 +27,13 @@ The FE dev server runs on **http://localhost:4200** and calls the API on **:3000
 CORS_ORIGIN=http://localhost:4200
 ```
 
-Restart the BE after changing `.env` or `main.ts`:
+CORS is applied in `apps/BE/src/app/configure-app.ts` (shared with API tests). Restart the BE after changing `.env`:
 
 ```bash
-# stop whatever is on :3000, then:
 pnpm nx build BE --skip-nx-cache
 pnpm nx serve BE
 ```
 
-Without a fresh build + restart, the browser blocks FE requests with a CORS error — the **OPTIONS** preflight to `/api/users/signup` returns **404** and `Access-Control-Allow-Origin` is missing. The route path itself is correct (`POST /api/users/signup`); the problem is the running process, not the endpoint name.
+Without a fresh build + restart, the browser blocks FE requests with a CORS error — the **OPTIONS** preflight to `/api/users/signup` may return **404** and `Access-Control-Allow-Origin` is missing. The route path itself is correct (`POST /api/users/signup`).
+
+Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md).

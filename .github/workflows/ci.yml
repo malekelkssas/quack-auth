@@ -40,9 +40,6 @@ jobs:
       # Husky pre-commit: lint-staged + pnpm check. CI adds full builds (too slow for every commit).
       - run: pnpm ci
 
-      # TODO — enable when BE unit tests exist (do not forget):
-      # - run: pnpm nx run-many -t test --all --exclude=quack-auth
-
       # TODO — enable when FE E2E is set up, if runtime is acceptable on CI:
       # - run: pnpm nx run FE:e2e
 

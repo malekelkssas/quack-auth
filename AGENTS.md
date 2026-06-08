@@ -24,7 +24,7 @@ Overview for AI agents and contributors. **Detailed conventions live in `.cursor
 | Subagent delegation  | [`.cursor/rules/ai-first-subagent.mdc`](./.cursor/rules/ai-first-subagent.mdc)       | Delegate non-trivial work to ai-first-engineering subagent                                                                                                         |
 | Docusaurus docs      | [`.cursor/rules/docusaurus-docs.mdc`](./.cursor/rules/docusaurus-docs.mdc)           | `apps/DOCS` structure and when to update setup docs                                                                                                                |
 
-**New convention from Developer?** Update [`project-conventions.mdc`](./.cursor/rules/project-conventions.mdc) first, add a one-line pointer in the table above, then **must** update related Docusaurus docs (`apps/DOCS/docs/apps/FE/`, `backend.md`, setup pages, …) in the same branch.
+**New convention from Developer?** Update [`project-conventions.mdc`](./.cursor/rules/project-conventions.mdc) first, add a one-line pointer in the table above, then **must** update related Docusaurus docs (`apps/DOCS/docs/apps/FE/`, `apps/DOCS/docs/apps/be/`, setup pages, …) in the same branch.
 
 ## Cursor artifacts
 
