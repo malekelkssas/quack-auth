@@ -485,6 +485,32 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 ---
 
+## 2026-06-08 21:50 — BE utils + mongoose path aliases
+
+**Session** — `S012-be-utils-mongoose-alias`
+
+**Local start time** — `2026-06-08 21:50`
+
+**Cursor surface** — Agents (subagent)
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint`
+
+**Developer preferences (new conventions)**
+
+- BE utility files live under `apps/BE/src/utils/` with **`.util.ts`** suffix (e.g. `password.util.ts`, `mongo-error.util.ts`).
+- External service wrappers (S3, logger, email providers, …) go under `apps/BE/src/utils/libs/<domain-name-for-service>/` (e.g. `utils/libs/s3/`).
+- **Rejected** deep relative imports to the repo Mongoose layer (e.g. `../../../../mongoose/models/user`). Use path alias **`@quack/mongoose/*`** instead — avoids npm `mongoose` package collision.
+
+**Implemented**
+
+- Documented BE `/utils` + `.util.ts` and `utils/libs/<service>/` in `.cursor/rules/project-conventions.mdc`; one-line pointer in `AGENTS.md`.
+- Added `@quack/mongoose/*` → `mongoose/*` in `tsconfig.base.json` and `apps/BE/tsconfig.app.json`.
+- Replaced deep relative mongoose imports in `user.repository.ts`, `password.util.ts`, `main.ts`.
+
+---
+
 ## 2026-06-08 21:52 — Tech decisions TODO + PDF in repo
 
 **Session** — `S012-tech-decisions-todo`
@@ -512,3 +538,88 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - **Done:** Nx scaffold, FE/BE apps, `libs/dtos` + `qu-constants`, nestjs-zod + Swagger + exception filters, Mongoose user schema + paths, Mongo Docker, Husky/CI conventions, DOCS.
 - **Not done:** Auth endpoints, Passport/JWT, bcrypt, Helmet/throttler/CSRF, XSS transforms, pino/Seq, Redux/RTK/Router/auth UI, tests, app Dockerfiles.
+
+---
+
+## 2026-06-08 21:58 — BE route segments in shared constants
+
+**Session** — `S013-be-routes-convention`
+
+**Local start time** — `2026-06-08 21:58`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint`
+
+**Developer preference**
+
+- BE endpoint path segments must live in **`libs/qu-constants/src/lib/be-routes.constants.ts`** as a **`BE_ROUTES` enum**, exported via `@shared/constants` — not hardcoded in controllers or `main.ts`.
+- Align global prefix with `BE_ROUTES.BASE` (`api`).
+
+**Related conventions (already logged)**
+
+- BE `*.util.ts` / `utils/libs/<service>/` — see `S012-be-utils-mongoose-alias`.
+- `@quack/mongoose/*` path alias (no deep relative mongoose imports) — same session.
+
+**Implemented**
+
+- Added `BE_ROUTES` enum: `BASE`, `USERS`, `SIGNUP`.
+- `users.controller.ts` — `@Controller(BE_ROUTES.USERS)`, `@Post(BE_ROUTES.SIGNUP)`.
+- `main.ts` — `setGlobalPrefix(BE_ROUTES.BASE)`.
+- Documented in `.cursor/rules/project-conventions.mdc`; pointer in `AGENTS.md`.
+
+**Verified** — `pnpm nx run BE:typecheck`, lint on changed files.
+
+---
+
+## 2026-06-08 22:15 — Signup endpoint, conventions, MongoDB plugin
+
+**Session** — `S014-signup-endpoint`
+
+**Local start time** — `2026-06-08 22:15`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint`
+
+**Developer preferences (new / confirmed)**
+
+- **Feature DTO wrappers** colocated with controller: `apps/BE/src/<feature>/<feature>.dto.ts` (e.g. `users/users.dto.ts` + `SignupDto`) — keep this pattern.
+- **Global Mongoose error handler** — `MongooseErrorHandler` in `mongoose-error.handler.util.ts`; maps ValidationError, CastError, DocumentNotFoundError, VersionError, duplicate key (11000), network/selection errors to Nest HTTP exceptions; used in services via `rethrow` and globally in `GlobalExceptionFilter`.
+- **MongoDB Cursor plugin** installed — MCP available for connection tuning, schema design, queries, index advice; documented in `AGENTS.md` and `ai-first-engineering` subagent.
+- **Repository follow-ups** (TODO only, not implemented): unified repository interface + atomic transaction setup.
+
+**Implemented**
+
+- Signup stack: `UserRepository`, `UserService`, `UsersModule`, `POST /api/users/signup` → 201, Argon2id hashing.
+- `BE_ROUTES`, `@quack/mongoose/*`, BE `*.util.ts` conventions.
+- Synced root `TODO.md` from `main` worktree (remote pull unavailable — SSH); audited completed items; added repository-interface + atomic-transaction TODOs.
+- Replaced minimal `mongo-error.util.ts` with `mongoose-error.handler.util.ts`.
+
+**Remote** — `git pull` failed (SSH key); used main worktree copy for `TODO.md` + tech-decisions PDF.
+
+---
+
+## 2026-06-08 23:30 — Signup review, unified exception filter, PR #5
+
+**Session** — `S015-signup-review-pr`
+
+**Local start time** — `2026-06-08 23:30`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-signup-endpoint` → [PR #5](https://github.com/malekelkssas/quack-auth/pull/5)
+
+**Implemented**
+
+- Code review + simplify: consolidated `HttpExceptionFilter` into `GlobalExceptionFilter`; dropped `toHttpException` alias (`transformError` public); email normalize in `Signup` Zod; Mongoose pre-save owns hashing; unique index for duplicate email.
+- Docs: `06-nestjs-zod.md` + `backend.md` synced to `ErrorResponse` contract.
+- Merged `main` (tech-decisions TODO branch); resolved `AI.md` / `TODO.md` conflicts.
+
+**Verified** — `pnpm check`, `pnpm nx build DOCS`.

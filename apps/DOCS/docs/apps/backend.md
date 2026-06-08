@@ -27,7 +27,7 @@ pnpm nx serve BE
 
 ## Filters
 
-`apps/BE/src/filters/` — `http-exception.filter.ts`, `global-exception.filter.ts`
+`apps/BE/src/filters/global-exception.filter.ts` — `HttpException`, Zod, Mongoose, and 500 handling in one filter
 
 ## Database
 
