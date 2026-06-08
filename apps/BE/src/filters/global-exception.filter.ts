@@ -6,9 +6,12 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
-import { ZodSerializationException, ZodValidationException } from 'nestjs-zod';
-import { ZodError } from 'zod';
-import { fromHttpException, fromZodError } from '../utils/error-response.util';
+import {
+  fromHttpException,
+  fromZodError,
+  getZodErrorFromException,
+  isHttpExceptionLike,
+} from '../utils/error-response.util';
 import { MongooseErrorHandler } from '../utils/mongoose-error.handler.util';
 
 @Catch()
@@ -18,7 +21,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
   catch(exception: unknown, host: ArgumentsHost) {
     const response = host.switchToHttp().getResponse();
 
-    if (exception instanceof HttpException) {
+    if (isHttpExceptionLike(exception)) {
       this.sendHttpException(response, exception);
       return;
     }
@@ -55,26 +58,15 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     exception: HttpException,
   ): void {
     const status = exception.getStatus();
+    const zodError = getZodErrorFromException(exception);
 
-    if (
-      exception instanceof ZodValidationException ||
-      exception instanceof ZodSerializationException
-    ) {
-      const zodError = exception.getZodError();
-
-      if (zodError instanceof ZodError) {
-        const first = zodError.issues[0];
-        if (first) {
-          this.logger.warn(`${exception.constructor.name}: ${first.message}`);
-        }
+    if (zodError) {
+      const first = zodError.issues[0];
+      if (first) {
+        this.logger.warn(`${exception.constructor.name}: ${first.message}`);
       }
 
-      const body =
-        zodError instanceof ZodError
-          ? fromZodError(zodError)
-          : { message: 'Validation failed' };
-
-      response.status(status).json(body);
+      response.status(status).json(fromZodError(zodError));
       return;
     }
 

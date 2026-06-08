@@ -5,6 +5,11 @@ module.exports = {
   externals: {
     mongoose: 'commonjs mongoose',
     argon2: 'commonjs argon2',
+    // Keep a single @nestjs/common instance so `instanceof HttpException` works.
+    '@nestjs/common': 'commonjs @nestjs/common',
+    '@nestjs/core': 'commonjs @nestjs/core',
+    'nestjs-zod': 'commonjs nestjs-zod',
+    zod: 'commonjs zod',
   },
   output: {
     path: join(__dirname, '../../dist/apps/BE'),

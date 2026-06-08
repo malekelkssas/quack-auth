@@ -8,6 +8,7 @@ import {
   ServiceUnavailableException,
 } from '@nestjs/common';
 import mongoose from 'mongoose';
+import { isHttpExceptionLike } from './error-response.util';
 
 /**
  * Maps Mongoose/MongoDB driver errors to NestJS HTTP exceptions.
@@ -83,7 +84,7 @@ export class MongooseErrorHandler {
     fallbackMessage: string,
     context?: string,
   ): never {
-    if (error instanceof HttpException) {
+    if (isHttpExceptionLike(error)) {
       throw error;
     }
 
