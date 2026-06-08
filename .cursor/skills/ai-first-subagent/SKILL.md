@@ -34,19 +34,19 @@ When the custom subagent is unavailable, use **Task** with this preamble:
 Follow the quack-auth AI-first engineering policy:
 1. Read .cursor/skills/ai-first-engineering/SKILL.md if available.
 2. Verify your work (build, tsc, or curl as appropriate).
-3. Return: Section id (S###-slug), model name, chat-summary note (if context was compacted), what you did, what you verified, what you changed vs default AI suggestions.
+3. Return: Session id (S###-slug), model name, chat-summary note (if context was compacted), what you did, what you verified, what you changed vs default AI suggestions.
 4. Do not commit unless explicitly asked.
-5. If a chat summary occurred, tell the user and log it in AI.md per ai-first-engineering skill.
+5. If a chat summary occurred, tell the Developer and log it in AI.md per ai-first-engineering skill.
 ```
 
 ## When to spawn
 
-| Work | Delegate? |
-|---|---|
-| Multi-file feature / setup | **Always** |
+| Work                                 | Delegate?  |
+| ------------------------------------ | ---------- |
+| Multi-file feature / setup           | **Always** |
 | `pnpm nx build`, docker, curl verify | **Always** |
-| Codebase exploration | **Always** |
-| Single-line typo fix | Parent OK |
+| Codebase exploration                 | **Always** |
+| Single-line typo fix                 | Parent OK  |
 
 ## Parent agent duties
 

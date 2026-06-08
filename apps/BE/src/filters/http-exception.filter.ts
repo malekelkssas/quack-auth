@@ -25,8 +25,7 @@ export class HttpExceptionFilter extends BaseExceptionFilter {
       response.status(HttpStatus.BAD_REQUEST).json({
         statusCode: HttpStatus.BAD_REQUEST,
         message: 'Validation failed',
-        errors:
-          zodError instanceof ZodError ? zodError.issues : undefined,
+        errors: zodError instanceof ZodError ? zodError.issues : undefined,
       });
       return;
     }

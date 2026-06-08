@@ -1,11 +1,20 @@
 import nx from '@nx/eslint-plugin';
+import prettierConfig from 'eslint-config-prettier';
 
 export default [
   ...nx.configs['flat/base'],
   ...nx.configs['flat/typescript'],
   ...nx.configs['flat/javascript'],
+  prettierConfig,
   {
-    ignores: ['**/dist', '**/out-tsc'],
+    ignores: [
+      '**/dist',
+      '**/out-tsc',
+      '**/.docusaurus',
+      '**/.nx',
+      '**/node_modules',
+      '**/coverage',
+    ],
   },
   {
     files: ['**/*.ts', '**/*.tsx', '**/*.js', '**/*.jsx'],

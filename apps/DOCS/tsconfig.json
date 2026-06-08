@@ -5,7 +5,11 @@
     "paths": {
       "@site/*": ["./*"]
     },
-    "types": ["node", "@docusaurus/module-type-aliases", "@docusaurus/theme-classic"]
+    "types": [
+      "node",
+      "@docusaurus/module-type-aliases",
+      "@docusaurus/theme-classic"
+    ]
   },
   "exclude": [".docusaurus", "build", "dist", "node_modules"]
 }

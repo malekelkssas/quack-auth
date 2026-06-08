@@ -30,14 +30,18 @@ pnpm nx build DOCS
 
 ## When to update
 
-| Repo change | Doc file |
-|---|---|
-| Setup / deps / Docker | `docs/setup/NN-*.md` |
-| FE app | `docs/apps/frontend.md` |
-| BE app | `docs/apps/backend.md` |
-| MongoDB / Docker / mongoose | `docs/apps/mongodb.md` |
-| AI policy | `docs/ai/policy.md` + root `AI.md` |
-| New doc section | Add under `docs/` + `_category_.json` if needed |
+| Repo change                 | Doc file                                        |
+| --------------------------- | ----------------------------------------------- |
+| Setup / deps / Docker       | `docs/setup/NN-*.md`                            |
+| FE app                      | `docs/apps/frontend.md`                         |
+| BE app                      | `docs/apps/backend.md`                          |
+| MongoDB / Docker / mongoose | `docs/apps/mongodb.md`                          |
+| AI policy                   | `docs/ai/policy.md` + root `AI.md`              |
+| New doc section             | Add under `docs/` + `_category_.json` if needed |
+
+## README boundary
+
+Root `README.md` stays short: tagline, repo map, prerequisites, `pnpm install`, `.env`, and a pointer here. **All detailed setup and app docs belong in `apps/DOCS`**, not the README.
 
 ## Conventions
 

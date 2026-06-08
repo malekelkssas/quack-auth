@@ -15,6 +15,12 @@
       "options": {
         "port": 4001
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p apps/DOCS/tsconfig.json"
+      }
     }
   },
   "tags": []

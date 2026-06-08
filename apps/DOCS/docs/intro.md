@@ -9,13 +9,13 @@ Nx monorepo for **quack-auth** — React frontend, NestJS backend, shared Zod DT
 
 ## Quick start
 
-| App | Command | URL |
-|---|---|---|
-| Frontend | `pnpm nx serve FE` | http://localhost:4200 |
-| Backend | `pnpm nx serve BE` | http://localhost:3000/api |
-| API docs (Swagger) | — | http://localhost:3000/docs |
-| **This site** | `pnpm nx serve DOCS` | http://localhost:4001 |
-| MongoDB (Docker) | `docker compose up -d mongodb` | `localhost:27017` |
+| App                | Command                        | URL                        |
+| ------------------ | ------------------------------ | -------------------------- |
+| Frontend           | `pnpm nx serve FE`             | http://localhost:4200      |
+| Backend            | `pnpm nx serve BE`             | http://localhost:3000/api  |
+| API docs (Swagger) | —                              | http://localhost:3000/docs |
+| **This site**      | `pnpm nx serve DOCS`           | http://localhost:4001      |
+| MongoDB (Docker)   | `docker compose up -d mongodb` | `localhost:27017`          |
 
 ## Documentation map
 

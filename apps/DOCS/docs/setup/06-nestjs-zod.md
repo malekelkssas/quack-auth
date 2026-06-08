@@ -21,10 +21,7 @@ Register both globally in `apps/BE/src/app/app.module.ts`:
 
 ```ts
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import {
-  ZodSerializerInterceptor,
-  ZodValidationPipe,
-} from 'nestjs-zod';
+import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 
 @Module({
   providers: [

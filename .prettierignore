@@ -1,2 +1,10 @@
 .prettierignore
-.docusaurus/
+.docusaurus
+.cache-loader
+dist
+out-tsc
+coverage
+node_modules
+.pnpm-store
+.nx
+pnpm-lock.yaml

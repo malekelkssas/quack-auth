@@ -14,11 +14,11 @@ Local database layer for **quack-auth** — Docker for dev, root `mongoose/` for
 docker compose up -d mongodb
 ```
 
-| Item | Value |
-|---|---|
-| Container | `quack_auth_mongodb` |
-| Port | `27017` |
-| Default DB | `quack-auth` (`MONGODB_DATABASE`) |
+| Item        | Value                                  |
+| ----------- | -------------------------------------- |
+| Container   | `quack_auth_mongodb`                   |
+| Port        | `27017`                                |
+| Default DB  | `quack-auth` (`MONGODB_DATABASE`)      |
 | Credentials | `mongo` / `mongo` (see `.env.example`) |
 
 ```bash
@@ -51,12 +51,12 @@ import { ENV_KEYS, NODE_ENV } from '@shared/constants';
 
 Use `ENV_KEYS` from `@shared/constants` — never hardcode env var names.
 
-| Key | Purpose |
-|---|---|
-| `MONGODB_URI` | Dev / default connection string |
-| `E2E_MONGODB_URI` | E2E test database |
-| `MONGODB_DATABASE` | Database name passed to `mongoose.connect` |
-| `MONGO_INITDB_ROOT_USERNAME` / `PASSWORD` | Docker init (compose) |
+| Key                                       | Purpose                                    |
+| ----------------------------------------- | ------------------------------------------ |
+| `MONGODB_URI`                             | Dev / default connection string            |
+| `E2E_MONGODB_URI`                         | E2E test database                          |
+| `MONGODB_DATABASE`                        | Database name passed to `mongoose.connect` |
+| `MONGO_INITDB_ROOT_USERNAME` / `PASSWORD` | Docker init (compose)                      |
 
 Copy `.env.example` → `.env` before connecting locally.
 

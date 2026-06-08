@@ -14,6 +14,12 @@
         "tsConfig": "libs/dtos/tsconfig.lib.json",
         "assets": ["libs/dtos/*.md"]
       }
+    },
+    "typecheck": {
+      "executor": "nx:run-commands",
+      "options": {
+        "command": "tsc --noEmit -p libs/dtos/tsconfig.lib.json"
+      }
     }
   }
 }

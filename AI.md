@@ -1,17 +1,17 @@
 # AI.md — quack-auth
 
-Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **section id**, **model**, prompts, fixes, judgement calls, and **chat summaries**.
+Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **session id**, **model**, prompts, fixes, judgement calls, and **chat summaries**.
 
-## Section IDs
+## Session IDs
 
-Track prompts that belong to the same topic arc with a reusable id:
+One id per **chat** — all changes made in the same conversation share the same session id:
 
-| Format | Example |
-|---|---|
+| Format            | Example                                    |
+| ----------------- | ------------------------------------------ |
 | `S###-short-slug` | `S001-initial-scaffold`, `S005-docusaurus` |
 
-- Use the **same section id** for follow-up prompts on the same topic (even across sessions).
-- Start a **new id** when the work topic clearly changes.
+- Use the **same session id** for every entry logged from the **same chat**.
+- Start a **new id** when the Developer opens a **new chat** (even if the topic continues).
 - Reference in prompts: `Continuing S005-docusaurus: …`
 
 ## Chat summaries
@@ -19,17 +19,17 @@ Track prompts that belong to the same topic arc with a reusable id:
 When Cursor **summarizes / compacts** chat context (or you start a new chat with handoff), log it:
 
 1. Note it in the session entry (`**Chat summary** — Yes …`).
-2. Add a `### Chat summary — [date time]` block under the active section with what was carried forward and what may need re-reading.
+2. Add a `### Chat summary — [date time]` block under the active session with what was carried forward and what may need re-reading.
 
 If an agent is working from summarized context, it should say so explicitly at the start of the turn.
 
 ## Cursor AI artifacts
 
-| What | Path | When to use |
-|---|---|---|
-| **Subagent** | `.cursor/agents/ai-first-engineering.md` | **Always** for non-trivial work — `/create-subagent` |
-| **Policy skill** | `.cursor/skills/ai-first-engineering/SKILL.md` | Policy + workflow (`/create-skill`) |
-| **Delegation skill** | `.cursor/skills/ai-first-subagent/SKILL.md` | Task-tool fallback + "always delegate" rules |
+| What                 | Path                                           | When to use                                          |
+| -------------------- | ---------------------------------------------- | ---------------------------------------------------- |
+| **Subagent**         | `.cursor/agents/ai-first-engineering.md`       | **Always** for non-trivial work — `/create-subagent` |
+| **Policy skill**     | `.cursor/skills/ai-first-engineering/SKILL.md` | Policy + workflow (`/create-skill`)                  |
+| **Delegation skill** | `.cursor/skills/ai-first-subagent/SKILL.md`    | Task-tool fallback + "always delegate" rules         |
 
 Invoke subagent: `Use the ai-first-engineering subagent to [task]`
 
@@ -45,15 +45,17 @@ Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `
 
 Nx monorepo (`pnpm` + Nx 22) with:
 
-| Area | What exists |
-|---|---|
-| **FE** | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200) |
-| **BE** | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`) |
-| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`) |
-| **Mongoose** | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts` |
-| **Env** | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS` |
-| **Docker** | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`) |
-| **Docs** | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001) |
+| Area            | What exists                                                               |
+| --------------- | ------------------------------------------------------------------------- |
+| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)         |
+| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)  |
+| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)   |
+| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts` |
+| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`           |
+| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                   |
+| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                  |
+| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`     |
+| **Next**        | CI for multi-agent / multi-branch workflow                                |
 
 ### Completed setup steps
 
@@ -65,20 +67,21 @@ Nx monorepo (`pnpm` + Nx 22) with:
 6. Docker Compose for local MongoDB
 7. AI policy skill + subagent + this log
 8. Docusaurus DOCS app — migrated from root `docs/setup.md`
+9. Husky + lint-staged + Prettier + ESLint/typecheck gates (`pnpm check`)
 
 ### Cursor agents & skills
 
-| Role | Path |
-|---|---|
-| AI-first engineering | `.cursor/agents/ai-first-engineering.md` |
-| Docs maintenance | `.cursor/agents/docs-maintainer.md` |
+| Role                   | Path                                      |
+| ---------------------- | ----------------------------------------- |
+| AI-first engineering   | `.cursor/agents/ai-first-engineering.md`  |
+| Docs maintenance       | `.cursor/agents/docs-maintainer.md`       |
 | Docusaurus conventions | `.cursor/skills/docusaurus-docs/SKILL.md` |
 
 ---
 
 ## 2026-06-08 18:30 — Initial scaffolding & shared libs
 
-**Section** — `S001-initial-scaffold`
+**Session** — `S001-initial-scaffold`
 
 **Model** — not recorded (session predates model logging in AI.md)
 
@@ -96,7 +99,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 - **Jest types** — `@types/jest` in package.json but not installed; resolved via `pnpm install`
 - **FE tsconfig** — extending `tsconfig.base.json` directly dropped `jsx: "react-jsx"`; fixed by extending `./tsconfig.json`
 - **Path aliases** — `baseUrl: "."` + `../../libs/...` duplicated root paths; unified on `baseUrl: "../.."`
-- **Schema naming** — `GreetingQuery` as both const and type broke `createZodDto` inference / `query.name`; user preferred same-name pattern; kept but documented sync needs
+- **Schema naming** — `GreetingQuery` as both const and type broke `createZodDto` inference / `query.name`; Developer preferred same-name pattern; kept but documented sync needs
 - **ZodSerializationException** — default 500 with no `errors` array; customized `http-exception.filter.ts` to match request validation shape (400 + `errors`)
 - **Constants layout** — renamed `qu-constants.ts` → `app.constants.ts`; added `env.constants.ts`, `node-env.constants.ts`
 - **`mongoose/client.ts`** — relative imports to lib files; switched to `@shared/constants`
@@ -105,7 +108,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 **Decisions different from AI**
 
 - **Response validation errors as 400** — nestjs-zod treats serialization failures as 500 (server bug); we map them to the same body as input validation for consistent API DX during development
-- **Same-name Zod schema + type** — user choice over `*Schema` suffix convention
+- **Same-name Zod schema + type** — Developer choice over `*Schema` suffix convention
 - **Filters directory** — `apps/BE/src/filters/` (`http-exception`, `global-exception`) instead of colocating in `app/`
 - **`app.dto.ts` sync warning** in setup — BE needs `createZodDto` wrappers separate from shared Zod schemas in `libs/dtos`
 - **Always-use subagent** — non-trivial work should go through `ai-first-engineering` subagent, not inline parent agent
@@ -122,7 +125,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 ## 2026-06-08 — Docusaurus DOCS app (continued in same chat)
 
-**Section** — `S005-docusaurus`
+**Session** — `S005-docusaurus`
 
 **Model** — Composer
 
@@ -140,11 +143,45 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 ---
 
+## 2026-06-08 — Husky, README, multi-agent prep
+
+**Session** — `S006-quality-gates`
+
+**Model** — Composer
+
+**Chat summary** — Yes — prior thread summarized at handoff; Developer asked to continue Husky + README + CI prep for parallel agent work.
+
+**Developer asked for**
+
+- Set up **Husky** with linting, TypeScript checks, **Prettier**, and auto-fix for fixable linter/Prettier issues on commit
+- Update **root README** with a good summary; keep only prerequisites, `pnpm install`, `.env` locally — point everything else to **DOCS**
+- Update **skills** with README boundary and quality-gate commands
+- **CI next** — Developer explicitly said we will add Husky and CI so multiple agents can work in different chats/branches
+
+**Implemented**
+
+- `husky` + `lint-staged` — pre-commit: format/fix staged files, then `pnpm check`
+- Root scripts: `lint`, `lint:fix`, `typecheck`, `format`, `format:check`, `check`
+- `typecheck` targets on BE, DOCS, dtos, qu-constants (FE already had vite plugin target)
+- ESLint: `eslint-config-prettier`, ignore `.docusaurus` / build dirs
+- Fixed `dtos` package.json missing `zod` dep (dependency-checks lint)
+- Excluded root `quack-auth` Nx project from `run-many` to avoid recursive script loops
+
+**Verified**
+
+- [x] `pnpm check`
+
+**Developer asked for (same session)**
+
+- Rename **section id** → **session id** — one id per chat, not per topic arc; refer to the human as **Developer**
+
+---
+
 ## How to extend this file
 
 After each significant AI-assisted session, append:
 
-- **Section id** (`S###-slug`) — reuse for same topic arc
+- **Session id** (`S###-slug`) — one id per chat; reuse for all entries from the same conversation
 - **Local start time** (`YYYY-MM-DD HH:MM`)
 - **Model**
 - **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted

@@ -1,8 +1,5 @@
 import { createZodDto } from 'nestjs-zod';
-import {
-  GreetingQuery,
-  GreetingResponse,
-} from '@shared/dtos';
+import { GreetingQuery, GreetingResponse } from '@shared/dtos';
 
 export class GreetingQueryDto extends createZodDto(GreetingQuery) {}
 

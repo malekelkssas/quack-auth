@@ -1,9 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
-import {
-  ZodSerializerInterceptor,
-  ZodValidationPipe,
-} from 'nestjs-zod';
+import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { GlobalExceptionFilter } from '../filters/global-exception.filter';
 import { HttpExceptionFilter } from '../filters/http-exception.filter';
 import { AppController } from './app.controller';

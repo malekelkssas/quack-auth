@@ -4,7 +4,17 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "prepare": "husky",
+    "lint": "nx run-many -t lint --all --exclude=quack-auth",
+    "lint:fix": "nx run-many -t lint --all --exclude=quack-auth -- --fix",
+    "typecheck": "nx run-many -t typecheck --all --exclude=quack-auth && tsc --noEmit -p mongoose/tsconfig.json",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check": "pnpm lint && pnpm typecheck && pnpm format:check"
+  },
+  "lint-staged": {
+    "*.{ts,tsx,js,jsx,mjs,cjs,json,md,css,scss,yml,yaml}": "prettier --write",
+    "*.{ts,tsx,js,jsx,mjs,cjs}": "eslint --fix --max-warnings=0"
   },
   "keywords": [],
   "author": "",
@@ -52,12 +62,14 @@
     "clsx": "2.1.1",
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
+    "husky": "^9.1.7",
     "jest": "~30.3.0",
     "jest-environment-node": "~30.3.0",
     "jest-util": "~30.3.0",
     "jiti": "2.4.2",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
+    "lint-staged": "^17.0.7",
     "mongodb-memory-server": "^11.2.0",
     "nx": "22.7.5",
     "postcss": "8.4.38",

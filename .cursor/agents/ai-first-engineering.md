@@ -29,7 +29,7 @@ AI assistance is expected. What matters is **judgement**: what you generated, ad
 
 Always end with:
 
-**Section** — active section id (`S###-slug`); propose a new id if this is a new topic arc
+**Session** — active session id (`S###-slug`); reuse the current chat's id, or propose a new id if this is a new chat
 
 **Model** — the model name you are running as (e.g. Composer, Claude Opus, GPT-4.1)
 
@@ -43,4 +43,4 @@ Always end with:
 
 **Needs parent review** — blockers or ambiguous decisions
 
-Do not update `AI.md` unless the user asked for a session log entry.
+Do not update `AI.md` unless the Developer asked for a session log entry.

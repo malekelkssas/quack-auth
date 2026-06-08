@@ -16,11 +16,11 @@ pnpm nx g @nx/js:lib qu-constants --directory=libs/qu-constants --no-interactive
 
 **File naming:** one concern per file, suffixed with `.constants.ts` under `libs/qu-constants/src/lib/`:
 
-| File | Purpose |
-|---|---|
-| `app.constants.ts` | App-wide values (e.g. `APP_NAME`) |
-| `env.constants.ts` | `.env` variable keys (`ENV_KEYS`) — use these instead of raw strings when reading `process.env` |
-| `node-env.constants.ts` | Allowed `NODE_ENV` values (`NODE_ENV.DEVELOPMENT`, `NODE_ENV.E2E`, etc.) |
+| File                    | Purpose                                                                                         |
+| ----------------------- | ----------------------------------------------------------------------------------------------- |
+| `app.constants.ts`      | App-wide values (e.g. `APP_NAME`)                                                               |
+| `env.constants.ts`      | `.env` variable keys (`ENV_KEYS`) — use these instead of raw strings when reading `process.env` |
+| `node-env.constants.ts` | Allowed `NODE_ENV` values (`NODE_ENV.DEVELOPMENT`, `NODE_ENV.E2E`, etc.)                        |
 
 Re-export everything from `libs/qu-constants/src/index.ts`.
 

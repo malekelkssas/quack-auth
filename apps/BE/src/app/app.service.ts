@@ -5,6 +5,6 @@ import { GreetingResponse, GreetingQuery } from '@shared/dtos';
 @Injectable()
 export class AppService {
   getGreeting(query: GreetingQuery): GreetingResponse {
-    return { name: query.name, appName: APP_NAME};
+    return { name: query.name, appName: APP_NAME };
   }
 }
