@@ -10,7 +10,11 @@
     "moduleResolution": "node",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "dtos": ["../../libs/dtos/src/index.ts"],
+      "qu-constants": ["../../libs/qu-constants/src/index.ts"],
+      "@shared/dtos": ["../../libs/dtos/src/index.ts"],
+      "@shared/constants": ["../../libs/qu-constants/src/index.ts"]
     }
   },
   "include": ["src/**/*.ts"]
