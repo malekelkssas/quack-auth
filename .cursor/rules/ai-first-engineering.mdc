@@ -14,7 +14,7 @@ AI assistance is **expected**. Judgement matters: what you generated, adapted, a
 2. **Generate fast** — scaffolding, Zod DTOs, tsconfig paths, filters, setup docs.
 3. **Verify always** — `pnpm check`, `pnpm nx build <project>`, `curl` endpoints as appropriate.
 4. **Own deviations** — if you reject AI output, say why and implement the better approach.
-5. **Update AI.md** — after meaningful sessions: session id, model, prompts, fixes, decisions (not just "used AI").
+5. **Update AI.md** — after meaningful sessions: session id, model, prompts, fixes, decisions (not just "used AI"). **If the Developer explicitly asks you to log in `AI.md`, do it in the same turn** — never defer.
 6. **Log chat summaries** — when context compacts, append a `### Chat summary` block under the active session id.
 
 ## AI.md timestamps (Developer request)

@@ -485,6 +485,232 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 ---
 
+## 2026-06-08 22:10 — FE Redux store + encrypt-storage (Developer request)
+
+**Session** — `S012-fe-redux-store`
+
+**Local start time** — `2026-06-08 22:10` (continued from earlier turns in same chat)
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- Checkout `quack-02-fe-setup` for deep FE work; install RTK + `react-redux` + `redux-persist` + `@types/react-redux`; add `VITE_REDUX_PERSIST_SECRET_KEY` to `.env.example` and `ENV_KEYS`; scaffold `apps/FE/src/store/`.
+- **Research encrypt integration first** — Developer shared findings: `redux-persist-transform-encrypt` is abandoned; static `VITE_*` keys are bundled and give false security; prefer runtime auth token or `encrypt-storage` as redux-persist storage engine.
+- **Log this in `AI.md`** — Developer flagged that prior FE work skipped `AI.md`; update `AGENTS.md` so agents do not forget the logging rule.
+
+**Implemented**
+
+- Installed `@reduxjs/toolkit`, `react-redux`, `redux-persist`, `encrypt-storage`, `@types/react-redux`.
+- **Skipped** `redux-persist-transform-encrypt` (archived Feb 2024); used **`encrypt-storage`** `AsyncEncryptStorage` as redux-persist `storage` with `stateManagementUse: true`.
+- `apps/FE/src/store/` — `persist-secret.ts` (`getDevPersistSecretKey`, `setRuntimePersistSecretKey` for future JWT/session key), `encrypted-storage.ts`, `persist.config.ts`, `root-reducer.ts`, `store.ts`, `hooks.ts`, `index.ts`.
+- `main.tsx` — `Provider` + `PersistGate` (loading placeholder until ProgressLoader lands in follow-up commit).
+- `.env.example` + `libs/qu-constants/src/lib/env.constants.ts` — `VITE_REDUX_PERSIST_SECRET_KEY` with comment that it is dev obfuscation only.
+
+**Decisions different from Developer’s initial package list**
+
+| Developer listed                  | Chosen                                        | Why                                                                                          |
+| --------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `redux-persist-transform-encrypt` | `encrypt-storage`                             | Original archived; storage-level encryption is the maintained redux-persist integration path |
+| Static `VITE_` key as “security”  | Dev fallback + `setRuntimePersistSecretKey()` | `VITE_*` is in client bundle; real key should be runtime session/JWT when auth exists        |
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+**Developer asked for (same session, next)**
+
+- Commit Redux work; then shadcn scaffold (`apps/FE/src/components/ui`, `@/lib/utils.ts`); `ProgressLoader` on `PersistGate` instead of `null` loading.
+
+**Implemented (continued)**
+
+- Committed `feat(FE): add Redux store with encrypted redux-persist` (`8fcd399`).
+- shadcn scaffold: `apps/FE/components.json` (CLI-ready, `ui` → `@/components/ui`), `src/lib/utils.ts` (`cn`), empty `src/components/ui/`.
+- Deps: `tailwind-merge`, `class-variance-authority`, `lucide-react`, `tailwindcss-animate`; Tailwind theme tokens + `--academic-blue` in `styles.css`.
+- `ProgressLoader` at `src/components/ProgressLoader.tsx`; `PersistGate loading={<ProgressLoader />}`.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck` (shadcn + ProgressLoader)
+
+---
+
+## 2026-06-08 22:20 — FE axios client convention
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:20`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Install **axios**; create FE convention; `apps/FE/src/api/axiosConfig.ts` only — keep it simple (no interceptors, domain modules, or env wiring yet); **log in `AI.md`**.
+
+**Implemented**
+
+- `pnpm add axios`.
+- `apps/FE/src/api/axiosConfig.ts` — default-exported instance, JSON content-type (baseURL initially wrong — see fix below).
+- Convention in `.cursor/rules/project-conventions.mdc` — single shared instance, no stray `axios.create()`, future `*.api.ts` + interceptors rules; one-line pointer in `AGENTS.md`.
+
+**Output that needed fixing**
+
+- **Hard-coded API `baseURL`** — AI set `http://localhost:3000/api` directly in `axiosConfig.ts` instead of `VITE_API_URL` + `ENV_KEYS`. Developer corrected immediately.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+---
+
+## 2026-06-08 22:23 — Fix axios baseURL env (Developer correction)
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:23`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Developer asked for**
+
+- Replace hard-coded `baseURL` with **`VITE_API_URL`**; update `.env.example` and `libs/qu-constants/src/lib/env.constants.ts`; log the mistake.
+
+**Fixed**
+
+- `VITE_API_URL=http://localhost:3000/api` in `.env.example`.
+- `ENV_KEYS.VITE_API_URL` in `env.constants.ts`.
+- `axiosConfig.ts` reads `import.meta.env[ENV_KEYS.VITE_API_URL]` with throw if missing.
+- `project-conventions.mdc` — `baseURL` must come from `VITE_API_URL`, never hard-coded.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+---
+
+## 2026-06-08 22:29 — Vite host env + FE build chunks
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:29`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Developer asked for**
+
+- Commit axios work; add `VITE_ALLOWED_HOSTS` + `VITE_HOST` to `.env.example` and `ENV_KEYS`; update `apps/FE/vite.config.mts` (server/preview host + `allowedHosts`, vendor chunk split) — **no** `@tailwindcss/vite` or `react-grab`.
+
+**Implemented**
+
+- Committed `feat(FE): add axios client with VITE_API_URL env` (`5e637f8`).
+- `.env.example` — `VITE_ALLOWED_HOSTS=localhost`, `VITE_HOST=localhost` (comment notes `0.0.0.0` option).
+- `vite.config.mts` — `process.env.VITE_HOST`, `VITE_ALLOWED_HOSTS` comma-split, `manualChunks` vendor split, `chunkSizeWarningLimit: 1000`.
+
+**Output that needed fixing**
+
+- **`manualChunks` object** — Vite 8 / Rolldown expects a **function**, not `{ vendor: [...] }`; converted to `manualChunks(id)` guard for react/react-dom.
+
+**Verified**
+
+- [x] `pnpm nx run FE:build`
+
+---
+
+## 2026-06-08 22:37 — FE Tailwind v3 → v4 migration
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:37`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5 (Developer switched to **Plan mode** for migration planning; implementation resumed in Agent mode on a **different model/context handoff** from the planning turn)
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- Implement attached **FE Tailwind v4 Migration Plan** after committing pending vite-host work.
+- Developer explicitly flipped assistant to **Plan mode** because migration is annoying/complex; requested **AI.md** note about Plan mode and **model switch**.
+- Note that **Nx template ships Tailwind v3** — FE migrated to latest v4.
+
+**Implemented**
+
+- Committed `feat(FE): add Vite host env and build chunk tuning` (`b883208`) before migration.
+- Deps: `tailwindcss@4.3.0`, `@tailwindcss/vite@4.3.0`, `tw-animate-css`; removed `tailwindcss@3.4.3`, `tailwindcss-animate`, `autoprefixer`.
+- `apps/FE/vite.config.mts` — `@tailwindcss/vite` plugin (host/chunk settings preserved).
+- `apps/FE/src/styles.css` — `@import "tailwindcss"`, `@import "tw-animate-css"`, `@custom-variant dark`, `@theme inline` shadcn tokens, `--academic-blue`, `animate-progress`.
+- Removed `apps/FE/tailwind.config.js` and `apps/FE/postcss.config.js` (v4 CSS-first).
+- `apps/FE/components.json` — `"config": ""` for shadcn v4 CLI.
+- `ProgressLoader` — `var(--academic-blue)` + `animate-progress` token.
+- Docs/conventions: `project-conventions.mdc`, `AGENTS.md`, `apps/DOCS/docs/setup/02-frontend.md`.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+- [x] `pnpm nx run FE:build`
+
+---
+
+## 2026-06-08 22:45 — FE dev tools: React Scan + React Grab
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:45`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Add [React Grab](https://www.react-grab.com/) and [React Scan](https://react-scan.com/) to FE; **dev environment only**; document usefulness in `AI.md` and FE docs.
+
+**Implemented**
+
+- Dev deps: `react-grab`, `react-scan` (no Vite plugin — `react-grab` uses official `index.html` pattern; avoids Vite 8 peer mismatch on `@react-scan/vite-plugin-react-scan`).
+- ~~`apps/FE/index.html` dynamic `await import()`~~ — **wrong** vs upstream docs; fixed below.
+
+**Output that needed fixing (dev tools)**
+
+- **index.html async imports** — not the latest Vite pattern. [React Scan](https://github.com/aidenybai/react-scan/blob/main/docs/installation/vite.md) requires **static** `import { scan } from 'react-scan'` before React. [React Grab](https://github.com/aidenybai/react-grab/blob/main/README.md#vite) belongs at the top of `main.tsx` via `import('react-grab')` when `import.meta.env.DEV`.
+
+**Fixed (2026-06-08)**
+
+- `apps/FE/src/dev-tools.ts` — static `scan` import + `scan({ enabled: true })` + `void import('react-grab')` in dev (per GitHub READMEs).
+- `dev-entry.ts` → `dev-tools.ts` (when `!import.meta.env.PROD`) → `main.tsx` — correct load order; `index.html` no longer uses async imports.
+- `vite.config.mts` — on `vite build`, force `import.meta.env.PROD` / `DEV` when Nx sets `NODE_ENV=development` so dev-tool chunks are not shipped.
+- Docs: `apps/DOCS/docs/apps/frontend.md` — **Dev-only tooling** table with links; `project-conventions.mdc` — **FE dev tooling**.
+
+**Why these tools**
+
+- **React Scan** — zero-config visual highlights for avoidable re-renders during UI work.
+- **React Grab** — copy component/file/HTML context straight into coding agents (⌘C / Ctrl+C on hover).
+
+**Verified**
+
+- [x] `pnpm nx run FE:build` — no `react-scan` / `react-grab` strings in `dist/apps/FE` output
+
+---
+
 ## 2026-06-08 21:50 — BE utils + mongoose path aliases
 
 **Session** — `S012-be-utils-mongoose-alias`
