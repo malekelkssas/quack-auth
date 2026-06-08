@@ -45,17 +45,17 @@ Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `
 
 Nx monorepo (`pnpm` + Nx 22) with:
 
-| Area            | What exists                                                                          |
-| --------------- | ------------------------------------------------------------------------------------ |
-| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                    |
-| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)             |
-| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)              |
-| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`            |
-| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                      |
-| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                              |
-| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                             |
-| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                |
-| **CI**          | `.github/workflows/ci.yml` — `pnpm check` (parity with Husky); BE test + FE E2E TODO |
+| Area            | What exists                                                                                              |
+| --------------- | -------------------------------------------------------------------------------------------------------- |
+| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                        |
+| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                 |
+| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                  |
+| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                |
+| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                          |
+| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                  |
+| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                 |
+| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                    |
+| **CI**          | `.github/workflows/ci.yml` — `pnpm check`; `pr-open-change-summary.yml` — Cursor digest on PR **opened** |
 
 ### Completed setup steps
 
@@ -185,6 +185,9 @@ Nx monorepo (`pnpm` + Nx 22) with:
 - Log **model with exact version** (e.g. Composer 2.5), not shorthand “Composer”
 - Developer hit `EBADDEVENGINES` running `npx nx generate ci-workflow` — repo requires **pnpm**; Developer then ran **`pnpm nx generate ci-workflow --ci=github`** to scaffold `.github/workflows/ci.yml`
 - Align **CI** with Husky — workflow customized so main step is `pnpm check` (not default `nx affected -t lint test build`); commented TODOs for **BE unit tests** and **FE E2E** when ready (E2E only if not too heavy)
+- **PR open change summary** — Developer asked for main-branch email digest pattern adapted to PRs: `.github/workflows/pr-open-change-summary.yml` (renamed from bad “main change summary” naming), same Cursor agent provider, appends digest to **PR description** on `pull_request: opened` only (no Gmail)
+- **CI Node version** — Developer reported CI failure: pnpm 11.5.2 on Node 20 → `ERR_UNKNOWN_BUILTIN_MODULE: node:sqlite`; fixed `ci.yml` to `node-version: 22`
+- Developer added **`CURSOR_API_KEY`** to GitHub Actions repo secrets; documented in README (maintainers) and DOCS PR summary section
 
 ---
 

@@ -79,7 +79,7 @@ If hooks are missing, run `pnpm prepare` manually.
 
 ## CI (GitHub Actions)
 
-Workflow: `.github/workflows/ci.yml` — runs on `push` to `main` and on pull requests.
+Workflow: `.github/workflows/ci.yml` — runs on `push` to `main` and on pull requests (Node **22** in Actions — pnpm 11.5.2 needs **≥ 22.13**).
 
 | Layer                 | Husky (local)                             | CI                                              |
 | --------------------- | ----------------------------------------- | ----------------------------------------------- |
@@ -108,3 +108,31 @@ pnpm nx generate ci-workflow --ci=github
 Nx’s default tip uses `npx nx generate ci-workflow`, which fails here with `EBADDEVENGINES` — `npx` invokes **npm**, but this repo’s `devEngines.packageManager` requires **pnpm** 11.5.2. Always use **`pnpm nx …`** instead.
 
 After generating (or regenerating), keep the main step as **`pnpm check`** to stay aligned with Husky — the stock generator may use `nx affected -t lint test build` instead.
+
+## PR open change summary (Cursor agent)
+
+Workflow: **`.github/workflows/pr-open-change-summary.yml`** (not the old “main change summary (email)” pattern).
+
+| Trigger                          | Output                                                    |
+| -------------------------------- | --------------------------------------------------------- |
+| `pull_request` **`opened`** only | Appends an AI digest to the **PR description** (no email) |
+
+Same **Cursor agent CLI** provider as the Developer’s main-branch digest workflow: lab tarball pin, `agent -p --trust --mode=ask`, read-only role prompt.
+
+| Path                                                  | Purpose                                                  |
+| ----------------------------------------------------- | -------------------------------------------------------- |
+| `.github/ai-prompts/role-prompt-pr-change-summary.md` | PM-oriented digest structure (read-only)                 |
+| `.github/scripts/append-pr-summary-to-body.py`        | Merges summary under `<!-- pr-change-summary:cursor -->` |
+| `pr-open.diff`                                        | `base.sha…head.sha` diff (written in CI)                 |
+
+### Secrets & variables
+
+| Name                           | Required     | Notes                                                                                             |
+| ------------------------------ | ------------ | ------------------------------------------------------------------------------------------------- |
+| `CURSOR_API_KEY`               | Yes (for AI) | Actions secret — **configured** by the Developer in repo secrets; skip notice appended if missing |
+| `CURSOR_SUMMARY_MODEL`         | No           | Repo variable (default `composer-2.5`)                                                            |
+| `CURSOR_REVIEW_MODEL`          | No           | Fallback model variable                                                                           |
+| `CURSOR_AGENT_PACKAGE_VERSION` | No           | Pinned lab build id                                                                               |
+| `CURSOR_AGENT_PACKAGE_SHA256`  | No           | Must match tarball version                                                                        |
+
+Runs **once per PR** when opened — not on every push/sync. Edit the description marker block manually if you need to regenerate.

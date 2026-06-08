@@ -1,0 +1,176 @@
+# When a pull request is **opened**, builds a base…head git diff, runs the Cursor agent
+# (read-only / ask mode), and appends the digest to the **PR description** — no email.
+#
+# GitHub → Settings → Secrets and variables → Actions
+#
+# Required for AI summary:
+#   CURSOR_API_KEY — Cursor API key (CLI auth). If unset, a short skip notice is appended instead.
+#
+# Optional repository variables:
+#   CURSOR_SUMMARY_MODEL          — Model slug (default: composer-2.5); falls back to CURSOR_REVIEW_MODEL if set.
+#   CURSOR_AGENT_PACKAGE_VERSION  — Lab build id (default pinned below).
+#   CURSOR_AGENT_PACKAGE_SHA256   — sha256 of the tarball; must match VERSION.
+
+name: PR open change summary
+
+on:
+  pull_request:
+    types:
+      - opened
+
+concurrency:
+  group: pr-open-change-summary-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  summarize:
+    name: Cursor digest → PR description
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      CURSOR_API_KEY: ${{ secrets.CURSOR_API_KEY }}
+
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+
+      - name: Write PR diff
+        id: diff
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git fetch origin "${BASE_SHA}"
+          git diff "${BASE_SHA}" "${HEAD_SHA}" > pr-open.diff
+          nbytes=$(wc -c < pr-open.diff | tr -d ' ')
+          echo "bytes=${nbytes}" >> "${GITHUB_OUTPUT}"
+          if [ "${nbytes}" -eq 0 ]; then
+            echo "empty=true" >> "${GITHUB_OUTPUT}"
+          else
+            echo "empty=false" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Empty diff — placeholder summary
+        if: steps.diff.outputs.empty == 'true'
+        run: |
+          set -euo pipefail
+          python3 <<'PY'
+          open("summary.md", "w", encoding="utf-8").write(
+              "## Pull request digest\n\n"
+              "No file-level changes in the diff for this PR (empty patch).\n"
+          )
+          PY
+
+      - name: Run AI change summary (Cursor agent)
+        id: agent
+        if: steps.diff.outputs.empty != 'true'
+        continue-on-error: true
+        env:
+          SUMMARY_MODEL: ${{ vars.CURSOR_SUMMARY_MODEL }}
+          REVIEW_MODEL_FALLBACK: ${{ vars.CURSOR_REVIEW_MODEL }}
+          CURSOR_AGENT_PACKAGE_VERSION: ${{ vars.CURSOR_AGENT_PACKAGE_VERSION }}
+          CURSOR_AGENT_PACKAGE_SHA256: ${{ vars.CURSOR_AGENT_PACKAGE_SHA256 }}
+        run: |
+          set -euo pipefail
+          if [ -z "${CURSOR_API_KEY:-}" ]; then
+            python3 -c 'open("summary.md","w",encoding="utf-8").write(
+              "## Pull request digest (skipped)\n\n"
+              + chr(96) + "CURSOR_API_KEY" + chr(96)
+              + " is not set in this repository\u2019s Actions secrets, so no AI summary was generated. "
+              + "Add the secret under **Settings \u2192 Secrets and variables \u2192 Actions** to enable PR digests.\n"
+            )'
+            exit 0
+          fi
+          VERSION="${CURSOR_AGENT_PACKAGE_VERSION:-2026.05.16-0338208}"
+          EXPECTED_SHA="${CURSOR_AGENT_PACKAGE_SHA256:-13661e127c808db1977b59697296676ff34158d3a841846409fba892f910b1a2}"
+          OS=linux
+          ARCH=x64
+          PKG_URL="https://downloads.cursor.com/lab/${VERSION}/${OS}/${ARCH}/agent-cli-package.tar.gz"
+          TGZ="${RUNNER_TEMP}/agent-cli-package.tar.gz"
+          TEMP_EXTRACT_DIR="${RUNNER_TEMP}/cursor-agent-extract-$$"
+          FINAL_DIR="${HOME}/.local/share/cursor-agent/versions/${VERSION}"
+          curl -fSL "${PKG_URL}" -o "${TGZ}"
+          echo "${EXPECTED_SHA}  ${TGZ}" | sha256sum -c -
+          mkdir -p "${TEMP_EXTRACT_DIR}" "${HOME}/.local/bin" "${HOME}/.local/share/cursor-agent/versions"
+          tar --strip-components=1 -xzf "${TGZ}" -C "${TEMP_EXTRACT_DIR}"
+          rm -rf "${FINAL_DIR}"
+          mv "${TEMP_EXTRACT_DIR}" "${FINAL_DIR}"
+          rm -f "${HOME}/.local/bin/agent" "${HOME}/.local/bin/cursor-agent"
+          ln -s "${FINAL_DIR}/cursor-agent" "${HOME}/.local/bin/agent"
+          ln -s "${FINAL_DIR}/cursor-agent" "${HOME}/.local/bin/cursor-agent"
+          echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+          export PATH="${HOME}/.local/bin:${PATH}"
+          agent --version
+          MODEL="${SUMMARY_MODEL:-${REVIEW_MODEL_FALLBACK:-composer-2.5}}"
+          REPO="${{ github.repository }}"
+          PR_NUMBER="${{ github.event.pull_request.number }}"
+          BASE_REF="${{ github.event.pull_request.base.ref }}"
+          HEAD_REF="${{ github.event.pull_request.head.ref }}"
+          PROMPT="Follow the instructions in ./.github/ai-prompts/role-prompt-pr-change-summary.md. The unified diff of this pull request is in ./pr-open.diff. Repository: ${REPO}. PR #${PR_NUMBER}: ${BASE_REF} <- ${HEAD_REF}. Produce only the digest in the structure defined in the role file. Do not modify any repository files. Output normal GitHub markdown only: do not wrap the whole digest in an outer triple-backtick fence."
+          set +e
+          agent -p --trust --mode=ask --model="$MODEL" \
+            --workspace="$GITHUB_WORKSPACE" \
+            --output-format=text \
+            "$PROMPT" > summary.md 2> agent.stderr
+          code=$?
+          set -e
+          if [ "$code" -ne 0 ] && [ -s summary.md ]; then
+            tmp="$(mktemp)"
+            {
+              echo "## Pull request digest (partial — agent exited non-zero)"
+              echo ""
+              echo "_The agent returned exit code ${code}. The output below may be incomplete._"
+              echo ""
+              cat summary.md
+            } >"$tmp"
+            mv "$tmp" summary.md
+          elif [ ! -s summary.md ]; then
+            python3 <<'PY'
+          import os
+          repo = os.environ["GITHUB_REPOSITORY"]
+          run_id = os.environ["GITHUB_RUN_ID"]
+          url = f"https://github.com/{repo}/actions/runs/{run_id}"
+          open("summary.md", "w", encoding="utf-8").write(
+              "## Pull request digest (runner or API error)\n\n"
+              "The Cursor agent did not complete successfully. See the "
+              f"[workflow run logs]({url}) for details.\n"
+          )
+          PY
+          fi
+
+      - name: Upload agent stderr (debug)
+        if: always()
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: cursor-agent-stderr-pr-${{ github.event.pull_request.number }}-${{ github.run_id }}
+          path: agent.stderr
+          retention-days: 7
+          if-no-files-found: ignore
+
+      - name: Append summary to PR description
+        if: always()
+        env:
+          PR_BODY: ${{ github.event.pull_request.body }}
+        run: python3 .github/scripts/append-pr-summary-to-body.py
+
+      - name: Update pull request
+        if: always()
+        uses: actions/github-script@ed597411d8f924073a968b236c67c6b2890384d # v8.0.0
+        with:
+          script: |
+            const fs = require('fs');
+            const body = fs.readFileSync('pr-body.md', 'utf8');
+            await github.rest.pulls.update({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number,
+              body,
+            });

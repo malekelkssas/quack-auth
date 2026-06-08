@@ -16,7 +16,7 @@ For architecture details, setup walkthroughs, path aliases, nestjs-zod wiring, a
 
 ## Prerequisites
 
-- **Node.js** 20+ (LTS recommended)
+- **Node.js** 22.13+ (required by pnpm 11.5.2)
 - **pnpm** 11.5.2 (`packageManager` is pinned in `package.json`)
 - **Docker** (optional, for local MongoDB via `docker compose`)
 
@@ -67,7 +67,17 @@ pnpm format         # Prettier write
 pnpm format:check   # Prettier check
 ```
 
-**CI** (`.github/workflows/ci.yml`) runs the same **`pnpm check`** as Husky on push/PR. BE unit tests and FE E2E are commented in the workflow until they exist and are light enough for every run — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`).
+**CI** (`.github/workflows/ci.yml`) runs the same **`pnpm check`** as Husky on push/PR. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). BE unit tests and FE E2E are commented in `ci.yml` until ready.
+
+### GitHub Actions secrets (maintainers)
+
+The PR digest workflow needs a **Cursor API key** in the repository (not in `.env`):
+
+| Secret           | Purpose                                                                  |
+| ---------------- | ------------------------------------------------------------------------ |
+| `CURSOR_API_KEY` | Cursor agent CLI auth for `.github/workflows/pr-open-change-summary.yml` |
+
+The Developer has added **`CURSOR_API_KEY`** under **Settings → Secrets and variables → Actions**. Clone/local dev does not need this secret unless you run the agent workflow yourself. Optional repo **variables**: `CURSOR_SUMMARY_MODEL`, `CURSOR_AGENT_PACKAGE_VERSION` — see DOCS.
 
 ## Keeping DTOs in sync (`libs/dtos` ↔ `app.dto.ts`)
 

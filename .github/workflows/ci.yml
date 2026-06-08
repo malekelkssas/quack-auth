@@ -28,9 +28,10 @@ jobs:
       # Uncomment to enable Nx Cloud task distribution:
       # - run: pnpm dlx nx start-ci-run --distribute-on="3 linux-medium-js" --stop-agents-after="check"
 
+      # pnpm 11.5.2 requires Node.js >= 22.13 (uses node:sqlite).
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'pnpm'
 
       - run: pnpm install --frozen-lockfile
