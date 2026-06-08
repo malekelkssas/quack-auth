@@ -482,3 +482,33 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - Deleted `user.fields.ts`.
 - Restored inline `email` / `name` validation in `user.model.ts` and `signup.dto.ts` as before the simplify pass.
+
+---
+
+## 2026-06-08 21:52 — Tech decisions TODO + PDF in repo
+
+**Session** — `S012-tech-decisions-todo`
+
+**Local start time** — `2026-06-08 21:52`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-03-tech-decisions-todo` (`./scripts/next-quack-branch.sh tech-decisions-todo`)
+
+**Developer asked**
+
+- Branch for security/convention/feature backlog from `quack-auth-tech-decisions.pdf`.
+- Detailed root `TODO.md` with audit of what is already done.
+- Add PDF to repo; check branches/worktrees first.
+
+**Implemented**
+
+- Added `docs/quack-auth-tech-decisions.pdf` (from `/mnt/smalek/github/quack-auth/quack-auth-tech-decisions.pdf`).
+- Added root `TODO.md` — 11 sections, `[x]`/`[~]`/`[ ]` per PDF area, repo-vs-PDF naming table, phased implementation order, cross-branch notes.
+
+**Audit summary**
+
+- **Done:** Nx scaffold, FE/BE apps, `libs/dtos` + `qu-constants`, nestjs-zod + Swagger + exception filters, Mongoose user schema + paths, Mongo Docker, Husky/CI conventions, DOCS.
+- **Not done:** Auth endpoints, Passport/JWT, bcrypt, Helmet/throttler/CSRF, XSS transforms, pino/Seq, Redux/RTK/Router/auth UI, tests, app Dockerfiles.
