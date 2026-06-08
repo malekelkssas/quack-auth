@@ -50,8 +50,30 @@ mongoose/
 ├── seed.ts         # planned — database seeding
 ├── tsconfig.json   # extends tsconfig.base.json, resolves @shared/constants
 ├── fixtures/       # test/dev fixture data
-└── models/         # Mongoose model definitions
+└── models/         # domain folders (user/, …)
 ```
+
+### 7d — Domain model layout (`mongoose/models/<domain>/`)
+
+Each persisted entity gets a **domain folder** under `models/`. Per domain, always three files:
+
+| File          | Purpose                                                        |
+| ------------- | -------------------------------------------------------------- |
+| `*.schema.ts` | Mongoose schema + `model()` registration                       |
+| `*.model.ts`  | Repository interfaces (`IUser`, `IUserDocument`, …)            |
+| `*.paths.ts`  | Field path constants for queries, projections, and schema keys |
+
+**Why `*.paths.ts`?** Never hard-code field strings in ODM usage — import from `*.paths.ts` so renames touch one file.
+
+Example (`mongoose/models/user/`):
+
+```ts
+import { UserPaths } from 'mongoose/models/user';
+
+UserModel.findOne({ [UserPaths.email]: email });
+```
+
+> Full convention text (imports, workflow): [`.cursor/rules/project-conventions.mdc`](https://github.com/malekelkssas/quack-auth/blob/main/.cursor/rules/project-conventions.mdc) — source of truth for agents; this page is the human-facing setup mirror.
 
 `mongoose/client.ts` connects using `ENV_KEYS` and switches to `E2E_MONGODB_URI` when `NODE_ENV` is `e2e`:
 
@@ -65,7 +87,7 @@ if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.E2E) {
 }
 ```
 
-### 7d — Docker Compose (local MongoDB)
+### 7e — Docker Compose (local MongoDB)
 
 `docker-compose.yml` at the repo root runs MongoDB 8 for local development:
 

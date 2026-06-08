@@ -58,17 +58,24 @@ If an agent is working from summarized context, it should say so explicitly at t
 
 ## Cursor AI artifacts
 
-| What                 | Path                                           | When to use                                          |
-| -------------------- | ---------------------------------------------- | ---------------------------------------------------- |
-| **Subagent**         | `.cursor/agents/ai-first-engineering.md`       | **Always** for non-trivial work — `/create-subagent` |
-| **Policy skill**     | `.cursor/skills/ai-first-engineering/SKILL.md` | Policy + workflow (`/create-skill`)                  |
-| **Delegation skill** | `.cursor/skills/ai-first-subagent/SKILL.md`    | Task-tool fallback + "always delegate" rules         |
+| What                     | Path                                     | When to use                                          |
+| ------------------------ | ---------------------------------------- | ---------------------------------------------------- |
+| **Subagent**             | `.cursor/agents/ai-first-engineering.md` | **Always** for non-trivial work — `/create-subagent` |
+| **AI-first rule**        | `.cursor/rules/ai-first-engineering.mdc` | Policy + workflow — should have been `/create-rule`  |
+| **Delegation rule**      | `.cursor/rules/ai-first-subagent.mdc`    | Task-tool fallback + "always delegate" rules         |
+| **Docusaurus docs rule** | `.cursor/rules/docusaurus-docs.mdc`      | When editing `apps/DOCS/**`                          |
+| **Project conventions**  | `.cursor/rules/project-conventions.mdc`  | DTOs, Mongoose layout, paths                         |
 
 Invoke subagent: `Use the ai-first-engineering subagent to [task]`
 
-### Misunderstanding (skill ≠ subagent)
+### Developer mistake: skills instead of rules
 
-First `/create-subagent` pass only added `.cursor/skills/ai-first-subagent/` — a **skill**, not a Cursor subagent. Subagents must live in **`.cursor/agents/*.md`**. Fixed by adding `.cursor/agents/ai-first-engineering.md` and documenting the distinction above.
+The Developer used **`/create-skill`** for project-wide guidance that belongs in **Cursor rules** (`/create-rule`):
+
+- `ai-first-engineering`, `ai-first-subagent`, `docusaurus-docs` were under `.cursor/skills/*/SKILL.md`
+- Migrated to `.cursor/rules/*.mdc` (this session). Old skill dirs removed.
+
+**Skill ≠ subagent** (earlier fix): first `/create-subagent` pass only added `.cursor/skills/ai-first-subagent/` — a skill, not a subagent. Subagents must live in `.cursor/agents/*.md`. Fixed by adding `.cursor/agents/ai-first-engineering.md`.
 
 Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `apps/DOCS/docs/setup/`.
 
@@ -78,18 +85,19 @@ Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `
 
 Nx monorepo (`pnpm` + Nx 22) with:
 
-| Area            | What exists                                                                                                           |
-| --------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                                     |
-| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                              |
-| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                               |
-| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                             |
-| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                                       |
-| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                               |
-| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                              |
-| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                                 |
-| **CI**          | `.github/workflows/ci.yml` — `pnpm ci` (check + build); `pr-open-change-summary.yml` — Cursor digest on PR **opened** |
-| **AI surface**  | Sessions through `S006` — **Editor**; from here prefer **Agents** window for parallel work                            |
+| Area            | What exists                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                                              |
+| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                                       |
+| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                                        |
+| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                                      |
+| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                                                |
+| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                                        |
+| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                                       |
+| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                                          |
+| **CI**          | `.github/workflows/ci.yml` — `pnpm ci` (check + build); `pr-open-change-summary.yml` — Cursor digest on PR **opened**          |
+| **AI surface**  | Sessions through `S006` — **Editor**; from here prefer **Agents** window for parallel work                                     |
+| **Conventions** | `AGENTS.md` indexes rules; detail in `.cursor/rules/project-conventions.mdc` (DTOs, Mongoose, paths) and sibling `*.mdc` rules |
 
 ### Completed setup steps
 
@@ -104,19 +112,23 @@ Nx monorepo (`pnpm` + Nx 22) with:
 9. Husky + lint-staged + Prettier + ESLint/typecheck gates (`pnpm check`)
 10. Commitlint + `quack-XX-*` branch-per-chat workflow (`scripts/next-quack-branch.sh`)
 
-### Cursor agents & skills
+### Cursor agents & rules
 
-| Role                   | Path                                      |
-| ---------------------- | ----------------------------------------- |
-| AI-first engineering   | `.cursor/agents/ai-first-engineering.md`  |
-| Docs maintenance       | `.cursor/agents/docs-maintainer.md`       |
-| Docusaurus conventions | `.cursor/skills/docusaurus-docs/SKILL.md` |
+| Role                   | Path                                     |
+| ---------------------- | ---------------------------------------- |
+| AI-first engineering   | `.cursor/agents/ai-first-engineering.md` |
+| Docs maintenance       | `.cursor/agents/docs-maintainer.md`      |
+| AI-first policy        | `.cursor/rules/ai-first-engineering.mdc` |
+| Subagent delegation    | `.cursor/rules/ai-first-subagent.mdc`    |
+| Docusaurus conventions | `.cursor/rules/docusaurus-docs.mdc`      |
 
 ---
 
 ## 2026-06-08 18:30 — Initial scaffolding & shared libs
 
 **Session** — `S001-initial-scaffold`
+
+**Local start time** — `2026-06-08 18:30`
 
 **Cursor surface** — Editor
 
@@ -164,6 +176,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 **Session** — `S005-docusaurus`
 
+**Local start time** — not recorded at session start
+
 **Cursor surface** — Editor
 
 **Model** — Composer (exact version not recorded for this session)
@@ -185,6 +199,8 @@ Nx monorepo (`pnpm` + Nx 22) with:
 ## 2026-06-08 — Husky, README, multi-agent prep
 
 **Session** — `S006-quality-gates`
+
+**Local start time** — not recorded at session start
 
 **Cursor surface** — Editor (entire session through CI, PR summary, secrets; Developer next moves to **Agents** for multi-chat/branch work)
 
@@ -235,15 +251,234 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 ---
 
+## Session entry timestamps
+
+**Heading format (required):** `## YYYY-MM-DD HH:MM — Short title` — local **24-hour** time, not date-only.
+
+The Developer flagged that agents **stopped including `HH:MM`** in headings after early sessions (e.g. `S001` at `18:30`). Rule: `.cursor/rules/ai-first-engineering.mdc` — **AI.md timestamps** section.
+
+- New entries: always `HH:MM` in the heading.
+- Backfill: add time only when known; otherwise keep date in heading and set **`Local start time`** — _not recorded at session start_.
+
 ## How to extend this file
 
 After each significant AI-assisted session, append:
 
+- **Heading** — `## YYYY-MM-DD HH:MM — Short title` (see **Session entry timestamps** above)
 - **Session id** (`S###-slug`) — one id per chat; reuse for all entries from the same conversation
 - **Cursor surface** — `Editor` or `Agents`
 - **Branch** — e.g. `quack-07-auth-login` (optional but recommended for Agents chats)
-- **Local start time** (`YYYY-MM-DD HH:MM`)
+- **Local start time** (`YYYY-MM-DD HH:MM`) — repeat in body when useful
 - **Model** — full product name + version (e.g. Composer 2.5, Claude Opus 4.6)
-- **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted
+- **Chat summary** — `No`, or `Yes` + `### Chat summary — YYYY-MM-DD HH:MM` block if context was compacted
 
-Template: `.cursor/skills/ai-first-engineering/SKILL.md`.
+Template: see **How to extend this file** above; policy in `.cursor/rules/ai-first-engineering.mdc`.
+
+---
+
+## 2026-06-08 — AGENTS.md indexes rules (Developer request)
+
+**Session** — `S007-user-model` (conventions doc refactor)
+
+**Local start time** — not recorded at session start
+
+**Developer asked for**
+
+- **`AGENTS.md` = index only** — pointers to `.cursor/rules/*.mdc`, not duplicated convention text.
+- **`.cursor/rules/project-conventions.mdc` = source of truth** for coding/layout conventions; on new convention → update rule first, then one-line pointer in AGENTS.md.
+- Complete **skills → rules** migration (`ai-first-engineering`, `ai-first-subagent`, `docusaurus-docs`); log Developer mistake using `/create-skill` instead of `/create-rule`.
+
+**Implemented**
+
+- Rewrote `AGENTS.md` as layout table + rules index + artifacts table.
+- Expanded `project-conventions.mdc` with full DTO/Mongoose detail moved from AGENTS.md; added source-of-truth header and update workflow.
+- `ai-first-engineering.mdc` step 0: new conventions → project-conventions + AGENTS pointer.
+- Empty `.cursor/skills/*/` dirs removed (SKILL.md files already gone; content lives in `.mdc` rules).
+
+---
+
+## 2026-06-08 — `/simplify` + `/code-review` on `quack-02-user-model`
+
+**Session** — `S008-simplify-review`
+
+**Local start time** — not recorded at session start
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-user-model` (diff vs `main`)
+
+**Developer asked for**
+
+- Run **`/simplify`** and **`/code-review`** on this branch/PR against `main`; log outcome in `AI.md`.
+
+**What the commands do**
+
+- **`/simplify`** — read-only pass for unnecessary complexity (duplication, dead code, weak abstractions), then targeted fixes that preserve behavior.
+- **`/code-review`** — read-only pass for bugs, regressions, security, missing tests; report by severity; fix only clear in-scope issues.
+
+**Key findings**
+
+| Lens        | Finding                                                                      | Action                                                                                                          |
+| ----------- | ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Reuse       | `email` / `name` Zod rules duplicated in `signup.dto.ts` and `user.model.ts` | **Wrong** — AI added `user.fields.ts` (not a Developer convention); **reverted** — see `S011-dto-fields-revert` |
+| Simplify    | Unused `UserPath` type in `user.paths.ts`                                    | **Fixed** — removed                                                                                             |
+| Code review | No NestJS `createZodDto` wrappers for `Signup` / `User` in `app.dto.ts`      | **Skipped** — follow-up when signup endpoint lands                                                              |
+| Code review | Zod `User` omits `_id`, `createdAt`, `updatedAt`                             | **Skipped** — intentional stored-field subset per conventions                                                   |
+| Code review | No unit/integration tests for user model or DTOs                             | **Skipped** — out of PR scope                                                                                   |
+| Code review | Duplicate validation Mongoose vs Zod (`minlength` / `min(3)`)                | **Skipped** — defense in depth at ODM layer                                                                     |
+
+**Verified**
+
+- [x] `pnpm exec tsc --noEmit -p mongoose/tsconfig.json`
+- [x] `pnpm exec tsc --noEmit -p libs/dtos/tsconfig.lib.json`
+- [x] ESLint on changed `libs/dtos/src/lib/user/*.ts` and `mongoose/models/**/*.ts`
+
+**Fixes left uncommitted** — Developer did not request commit.
+
+---
+
+## 2026-06-08 — Babysit PR #3 (`/babysit` first use)
+
+**Session** — `S007-babysit-pr`
+
+**Local start time** — not recorded at session start
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-user-model`
+
+**Model** — Composer 2.5 (babysit subagent via ai-first-engineering delegate)
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- **First use of `/babysit`** — keep [PR #3](https://github.com/malekelkssas/quack-auth/pull/3) merge-ready.
+
+**What babysit does** (for future sessions)
+
+Get a PR to **merge-ready**: check PR status, comments, and CI; resolve merge conflicts with main when behind; triage unresolved review comments (including Bugbot) and fix valid issues; fix CI failures in PR scope (not by weakening workflows); push scoped fixes and re-watch until **mergeable + green**.
+
+**Babysit outcome**
+
+| Check          | Result                                                      |
+| -------------- | ----------------------------------------------------------- |
+| Merge state    | `CLEAN` — mergeable, no conflicts with `main`               |
+| CI             | Green — `main` (pnpm ci) + `Cursor digest → PR description` |
+| Review threads | None (no Bugbot or human review comments)                   |
+| Local branch   | Clean working tree on `quack-02-user-model`                 |
+
+**Actions taken**
+
+- Inspected PR via `gh pr view`, `gh pr checks`, GraphQL review threads — no fixes required.
+- No push (nothing to change).
+
+**PR merge-ready** — Yes.
+
+---
+
+## 2026-06-08 — Parallel workflow delay (convention / AI.md gap)
+
+**Session** — `S009-convention-delay`
+
+**Local start time** — not recorded at session start
+
+**Cursor surface** — Agents
+
+**Branches** — `quack-02-user-model` (PR [#3](https://github.com/malekelkssas/quack-auth/pull/3)); destroyed/abandoned `quack-02-fe-setup`
+
+**Chat summary** — No
+
+**Context**
+
+The Developer was running **multi-chat / parallel agent work** (separate branches per chat) from the **Agents** window. [PR #3](https://github.com/malekelkssas/quack-auth/pull/3) on `quack-02-user-model` landed in that plan alongside other in-flight chats.
+
+**What happened**
+
+After work on `quack-02-user-model`, the Developer noticed the AI had **not** updated `AI.md` for those changes. Related gaps surfaced at the same time: **mongoose/dtos conventions** lived in rules but were **not** reflected in `apps/DOCS` (later mirrored in `S008-convention-docs`), and other convention/doc sync issues disrupted the parallel plan.
+
+**Developer judgement call**
+
+Rather than continue parallel feature work on a shaky foundation, the Developer **destroyed/abandoned** the in-progress PR/branch **`quack-02-fe-setup`** and redirected effort to **conventions and documentation** (see `S007-user-model` — `project-conventions.mdc`, `AGENTS.md` index, skills→rules migration).
+
+**Impact**
+
+A **slight delay** in the Developer’s planned parallel agent workflow — one chat/branch (`quack-02-fe-setup`) was dropped so convention and logging hygiene could catch up before resuming multi-branch feature work.
+
+---
+
+## 2026-06-08 — Mongoose / DTO convention docs gap
+
+**Session** — `S008-convention-docs`
+
+**Local start time** — not recorded at session start
+
+**Cursor surface** — Agents (subagent)
+
+**Model** — Composer 2.5
+
+**Developer flagged**
+
+- Mongoose domain layout (`*.schema.ts`, `*.model.ts`, `*.paths.ts`) and DTO suffix conventions (`.model.ts` vs `.dto.ts`, domain folders) were defined in `.cursor/rules/project-conventions.mdc` and `AGENTS.md` but **not** mirrored in Docusaurus setup docs.
+
+**What was missing**
+
+- `07-mongodb.md` / `apps/mongodb.md` — only top-level `mongoose/` tree; no per-domain three-file pattern or `*.paths.ts` rationale.
+- `05-shared-libraries.md` — flat `greeting.dto.ts` example only; no domain folders or `.model.ts` / `.dto.ts` split.
+- `libs/dtos/README.md` — Nx boilerplate only.
+
+**Docs added**
+
+- `apps/DOCS/docs/setup/07-mongodb.md` — §7d domain model layout + link to `project-conventions.mdc`; Docker renumbered to §7e.
+- `apps/DOCS/docs/apps/mongodb.md` — domain folders summary + cross-link to setup.
+- `apps/DOCS/docs/setup/05-shared-libraries.md` — DTO domain folders, suffix table, NestJS wrapper pointer.
+- `apps/DOCS/docs/ai/maintenance.md` — maintenance table rows for Mongoose/DTO conventions.
+
+**Source of truth** — `.cursor/rules/project-conventions.mdc` (agents); DOCS are the human-facing mirror.
+
+---
+
+## 2026-06-08 21:31 — Restore AI.md session timestamps
+
+**Session** — `S010-ai-md-timestamps`
+
+**Local start time** — `2026-06-08 21:31`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Agents had **stopped logging `HH:MM`** in `AI.md` session headings after early entries (e.g. `S001` at `18:30`); later entries used date-only headings.
+- Document the requirement in **`.cursor/rules/ai-first-engineering.mdc`** and note the Developer flagged it.
+- Backfill times where known; mark _not recorded_ elsewhere.
+
+**Implemented**
+
+- Added **AI.md timestamps** section to `ai-first-engineering.mdc` (heading format `## YYYY-MM-DD HH:MM — …`).
+- Added **Session entry timestamps** section to this file’s template.
+- Backfilled **`Local start time`** on date-only sessions (`S005`–`S009`); `S001` heading already had `18:30`.
+
+---
+
+## 2026-06-08 21:33 — Revert invalid `user.fields.ts` (DTO convention)
+
+**Session** — `S011-dto-fields-revert`
+
+**Local start time** — `2026-06-08 21:33`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Developer steered**
+
+- During `S008-simplify-review`, AI introduced **`libs/dtos/src/lib/user/user.fields.ts`** (`UserEmail`, `UserName`) to dedupe Zod rules between `signup.dto.ts` and `user.model.ts`.
+- The Developer **never defined** a `.fields.ts` suffix. Valid DTO layout is **`.model.ts`** (persisted mirror) and **`.dto.ts`** (flow/API) per domain folder — see `.cursor/rules/project-conventions.mdc`.
+- Shared blocks inside a domain (e.g. `password.schema.ts`) are fine when multiple DTOs need the same rules; a new suffix is not.
+
+**Fixed**
+
+- Deleted `user.fields.ts`.
+- Restored inline `email` / `name` validation in `user.model.ts` and `signup.dto.ts` as before the simplify pass.

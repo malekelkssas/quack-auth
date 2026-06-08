@@ -1,0 +1,65 @@
+---
+description: quack-auth AI-first engineering policy — verify output, log sessions in AI.md, branch-per-chat, quality gates.
+alwaysApply: true
+---
+
+# AI-first engineering
+
+AI assistance is **expected**. Judgement matters: what you generated, adapted, and did differently.
+
+## Workflow
+
+0. **New conventions** — update `.cursor/rules/project-conventions.mdc` first, then a one-line pointer in `AGENTS.md` only (no duplicate detail in AGENTS.md).
+1. **Delegate** non-trivial work to `.cursor/agents/ai-first-engineering.md` — do not implement multi-file/build/exploration inline in the parent session.
+2. **Generate fast** — scaffolding, Zod DTOs, tsconfig paths, filters, setup docs.
+3. **Verify always** — `pnpm check`, `pnpm nx build <project>`, `curl` endpoints as appropriate.
+4. **Own deviations** — if you reject AI output, say why and implement the better approach.
+5. **Update AI.md** — after meaningful sessions: session id, model, prompts, fixes, decisions (not just "used AI").
+6. **Log chat summaries** — when context compacts, append a `### Chat summary` block under the active session id.
+
+## AI.md timestamps (Developer request)
+
+**Every session entry heading** must include local time after the date:
+
+```markdown
+## YYYY-MM-DD HH:MM — Short title
+```
+
+Use **24-hour local time** (`2026-06-08 18:30`, not date-only). Repeat in the body as **`Local start time`** — `YYYY-MM-DD HH:MM` when the heading alone is not enough.
+
+The Developer flagged that agents **stopped logging `HH:MM`** after early entries (e.g. `S001` at `18:30`) — restore this for all new entries. When backfilling old entries, add times only when known; otherwise set **`Local start time`** — *not recorded at session start*.
+
+## Branch per chat
+
+First action in a new chat:
+
+```bash
+git branch -a | grep quack-
+./scripts/next-quack-branch.sh <feature-slug>   # → quack-XX-<slug>
+```
+
+One branch per chat. Log branch in `AI.md` when useful. **Commits:** Conventional Commits (`feat:`, `fix:`, `docs:`, …) — commitlint enforces via Husky.
+
+## Session ID
+
+One id per **chat** — format `S###-short-slug` (e.g. `S005-docusaurus`). Reuse within the same chat; new id for a new chat.
+
+## Quality gates
+
+| Command | Purpose |
+| ------- | ------- |
+| `pnpm check` | lint + typecheck + format:check (Husky pre-commit) |
+| `pnpm ci` | check + build |
+
+When hooks/scripts/CI change, update `apps/DOCS/docs/setup/09-husky-quality-gates.md` via **docs-maintainer**.
+
+## README vs DOCS
+
+Root `README.md` — short summary, prerequisites, `pnpm install`, `.env`, link to DOCS. Detailed setup lives in `apps/DOCS` (`pnpm nx serve DOCS` → :4001).
+
+## Related
+
+- Subagent: `.cursor/agents/ai-first-engineering.md`
+- Delegation rule: `.cursor/rules/ai-first-subagent.mdc`
+- Docs rule: `.cursor/rules/docusaurus-docs.mdc`
+- Full session template: `AI.md`
