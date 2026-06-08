@@ -3,10 +3,15 @@
   "compilerOptions": {
     "baseUrl": "..",
     "paths": {
-      "@shared/constants": ["libs/qu-constants/src/index.ts"],
-      "qu-constants": ["libs/qu-constants/src/index.ts"]
+      "@shared/constants": ["libs/qu-constants/src/index.ts"]
     },
     "outDir": "../dist/out-tsc/mongoose"
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node"
+    }
+  }
 }

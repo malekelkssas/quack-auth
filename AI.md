@@ -849,3 +849,38 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 - Merged `main` (tech-decisions TODO branch); resolved `AI.md` / `TODO.md` conflicts.
 
 **Verified** — `pnpm check`, `pnpm nx build DOCS`.
+
+---
+
+## 2026-06-08 23:45 — DB seed data & fixtures (`quack-05-db-seed-fixtures`)
+
+**Session** — `S016-db-seed-fixtures`
+
+**Local start time** — `2026-06-08 23:45`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-05-db-seed-fixtures` (from `main` via `./scripts/next-quack-branch.sh db-seed-fixtures`; renamed from `quack-04-db-seed-fixtures` because `quack-04-be-tests-setup` already exists — script does not strip worktree `+` prefix when scanning branch numbers)
+
+**Implemented**
+
+- `mongoose/fixtures/user.fixtures.ts` — three dev users (`alice@example.com`, `bob@example.com`, `admin@quack.dev`) with known plaintext passwords (`FIXTURE_USER_PASSWORD` / `AdminPass1!`).
+- `mongoose/fixtures/load.fixtures.ts` — `loadUserFixtures()` / `loadFixtures()` using `UserModel.create()` so Argon2id pre-save hashing runs; supports `{ reset: true }`.
+- `mongoose/fixtures/index.ts` — re-exports.
+- `mongoose/seed.ts` — CLI entry; `--reset` drops users before insert.
+- `mongoose/register-paths.js` + `mongoose/tsconfig.json` `ts-node` commonjs block — path alias resolution for standalone seed script.
+- `package.json` — `pnpm db:seed`, `pnpm db:seed:reset`; added `tsconfig-paths` devDependency.
+
+**Validated (live Docker MongoDB)**
+
+- `docker compose` — `quack_auth_mongodb` healthy on `:27017`.
+- `pnpm db:seed:reset` → `Seeded 3 user(s) (collections reset).`
+- `pnpm db:seed` (idempotent) → re-run skips existing, still reports 3 users.
+- `mongosh` on `quack-auth.users`: 3 documents; emails `alice@example.com`, `bob@example.com`, `admin@quack.dev`; all passwords `$argon2id$…` (no plaintext).
+
+**Judgement calls**
+
+- Fixtures use `UserModel.create()` not `insertMany()` — pre-save middleware must run for hashing.
+- Seed runner uses `ts-node` + `tsconfig-paths` + `node --env-file=.env` instead of adding `dotenv`.

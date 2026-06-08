@@ -12,6 +12,8 @@ Local database layer for **quack-auth** — Docker for dev, root `mongoose/` for
 
 ```bash
 docker compose up -d mongodb
+cp .env.example .env   # if needed
+pnpm db:seed           # load dev user fixtures
 ```
 
 | Item        | Value                                  |
@@ -32,12 +34,22 @@ Not an Nx app — standalone layer at the repo root:
 
 ```
 mongoose/
-├── client.ts       # connects via ENV_KEYS; E2E URI when NODE_ENV=e2e
-├── seed.ts         # planned
+├── client.ts           # connects via ENV_KEYS; E2E URI when NODE_ENV=e2e
+├── seed.ts             # CLI: pnpm db:seed / db:seed:reset
+├── register-paths.js   # ts-node path aliases for seed script
 ├── tsconfig.json
-├── fixtures/
-└── models/         # domain folders (user/, …)
+├── fixtures/           # dev/test fixture data + loaders
+└── models/             # domain folders (user/, …)
 ```
+
+### Seed scripts
+
+| Command              | Behavior                                    |
+| -------------------- | ------------------------------------------- |
+| `pnpm db:seed`       | Upsert fixture users (skip existing emails) |
+| `pnpm db:seed:reset` | Drop all users, then seed                   |
+
+Fixture passwords are Argon2id-hashed via the user schema pre-save hook. Known plaintext values: `FIXTURE_USER_PASSWORD` / `FIXTURE_ADMIN_PASSWORD` in `mongoose/fixtures/user.fixtures.ts`.
 
 ### Domain folders (`models/<domain>/`)
 
