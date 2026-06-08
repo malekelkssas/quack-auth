@@ -29,6 +29,19 @@ pnpm nx serve BE
 
 `apps/BE/src/filters/global-exception.filter.ts` — `HttpException`, Zod, Mongoose, and 500 handling in one filter
 
+## Routes
+
+API path segments live in `libs/qu-constants/src/lib/be-routes.constants.ts` as the `BE_ROUTES` enum, exported via `@shared/constants`.
+
+- **No magic route strings** in controllers or `main.ts` — use `BE_ROUTES` in `@Controller`, HTTP method decorators, and `setGlobalPrefix(BE_ROUTES.BASE)`.
+- FE services import the same enum for client URLs (see [Frontend → HTTP client](./frontend.md#http-client-appsfesrcapi)).
+
+| Constant           | Value    | Usage                    |
+| ------------------ | -------- | ------------------------ |
+| `BE_ROUTES.BASE`   | `api`    | Global prefix            |
+| `BE_ROUTES.USERS`  | `users`  | Users controller segment |
+| `BE_ROUTES.SIGNUP` | `signup` | `POST /api/users/signup` |
+
 ## Database
 
 MongoDB is a separate app entity — see [MongoDB](./mongodb.md). NestJS `@nestjs/mongoose` module wiring is a follow-up step.

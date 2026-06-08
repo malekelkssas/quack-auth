@@ -903,3 +903,27 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 - `handleError.ts`, `utils/constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
 - `services/authService.ts` — `AuthService.signup` → `POST /users/signup`.
 - Updated `.cursor/rules/project-conventions.mdc` (FE HTTP client section).
+
+---
+
+## 2026-06-09 00:20 — Convention must sync Docusaurus docs (Developer catch)
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:20`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer feedback**
+
+- FE API conventions were added to `project-conventions.mdc` but **Docusaurus app docs were not updated** — Developer asked to make doc updates **mandatory** when conventions change.
+
+**Implemented**
+
+- `project-conventions.mdc` — step 3 + **Convention → docs map** (FE → `frontend.md`, BE → `backend.md`, Mongoose, setup, AI).
+- `ai-first-engineering.mdc` step 0 — same requirement; `AGENTS.md` pointer updated.
+- Backfilled docs: `apps/DOCS/docs/apps/frontend.md` (HTTP client), `backend.md` (`BE_ROUTES`), `setup/10-git-branches-commits.md` (worktree list).

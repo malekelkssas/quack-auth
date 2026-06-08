@@ -9,7 +9,7 @@ AI assistance is **expected**. Judgement matters: what you generated, adapted, a
 
 ## Workflow
 
-0. **New conventions** — update `.cursor/rules/project-conventions.mdc` first, then a one-line pointer in `AGENTS.md` only (no duplicate detail in AGENTS.md).
+0. **New conventions** — update `.cursor/rules/project-conventions.mdc` first, then a one-line pointer in `AGENTS.md`, then **required** related Docusaurus docs (`frontend.md`, `backend.md`, setup pages, …) per the convention → docs map in `project-conventions.mdc`; `pnpm nx build DOCS` after doc edits.
 1. **Delegate** non-trivial work to `.cursor/agents/ai-first-engineering.md` — do not implement multi-file/build/exploration inline in the parent session.
 2. **Generate fast** — scaffolding, Zod DTOs, tsconfig paths, filters, setup docs.
 3. **Verify always** — `pnpm check`, `pnpm nx build <project>`, `curl` endpoints as appropriate.

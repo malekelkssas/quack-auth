@@ -7,10 +7,24 @@ alwaysApply: true
 
 **Source of truth** for coding and layout conventions in this repo.
 
-When the Developer states a **new convention**:
+When the Developer states a **new convention** (or you extend an existing section here):
 
 1. Update **this file** with the full convention text.
 2. Add a **one-line pointer** in [`AGENTS.md`](../../AGENTS.md) only — do not duplicate detail there.
+3. **Update related Docusaurus docs in the same branch/PR** — **required**, not optional. See [Convention → docs map](#convention--docs-map) below and [`.cursor/rules/docusaurus-docs.mdc`](./docusaurus-docs.mdc). Run `pnpm nx build DOCS` after doc edits.
+
+### Convention → docs map
+
+| Convention area | Update these docs (minimum) |
+| --------------- | --------------------------- |
+| FE (HTTP client, styling, store, routing, …) | `apps/DOCS/docs/apps/frontend.md` |
+| BE (modules, filters, validation, routes, …) | `apps/DOCS/docs/apps/backend.md` |
+| Mongoose / DB | `apps/DOCS/docs/apps/mongodb.md` |
+| Shared libs (`libs/dtos`, `libs/qu-constants`, `BE_ROUTES`, …) | Relevant `apps/DOCS/docs/apps/*.md` **and** setup page if cross-cutting (e.g. `06-nestjs-zod.md`) |
+| Setup / tooling / git / Husky / env | Matching `apps/DOCS/docs/setup/NN-*.md` |
+| AI policy / agent workflow | `apps/DOCS/docs/ai/policy.md` + root `AI.md` when judgement calls matter |
+
+**Do not** land convention-only rule changes without the matching doc page(s). If a convention spans FE + BE (e.g. `BE_ROUTES`), update **both** app docs.
 
 ## Shared DTOs (`libs/dtos/src/lib/<domain>/`)
 
