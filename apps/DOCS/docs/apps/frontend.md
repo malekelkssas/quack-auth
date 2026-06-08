@@ -2,6 +2,8 @@
 sidebar_position: 1
 ---
 
+import MermaidChart from '@site/src/components/MermaidChart';
+
 # Frontend (FE)
 
 React + Vite + Tailwind at `apps/FE`.
@@ -68,3 +70,80 @@ await api.post(`/${BE_ROUTES.USERS}/${BE_ROUTES.SIGNUP}`, body);
 ```
 
 Shared route segments are defined in `libs/qu-constants/src/lib/be-routes.constants.ts` (see [Backend](./backend.md#routes)).
+
+### Services barrel
+
+```ts
+import { AuthService } from '@/api/services';
+```
+
+Re-exported from `api/services/index.ts`.
+
+## Redux store (`apps/FE/src/store/`)
+
+| Path                   | Purpose                                           |
+| ---------------------- | ------------------------------------------------- |
+| `slices/*.ts`          | RTK slices; thunks call `@/api/services/`         |
+| `root-reducer.ts`      | Register slices via `combineReducers`             |
+| `store.ts`, `hooks.ts` | Store + typed `useAppDispatch` / `useAppSelector` |
+
+### Thunk pattern
+
+Slices import services from the barrel, map errors with `handleError`, and reject with `ErrorResponse`:
+
+```ts
+export const signup = createAsyncThunk<
+  void,
+  Signup,
+  { rejectValue: ErrorResponse }
+>('auth/signup', async (body, { rejectWithValue }) => {
+  try {
+    await AuthService.signup(body);
+  } catch (error) {
+    return rejectWithValue(handleError(error));
+  }
+});
+```
+
+Use **granular loading flags** per operation (`isSigningUp`, `isCreating`, …) rather than one ambiguous `isLoading` when multiple ops can overlap.
+
+Current slices: **`auth`** — `signup` thunk only (login/checkAuth deferred until BE routes exist); state shaped for easy extension.
+
+## Slice hooks (`apps/FE/src/hooks/slices/`)
+
+One hook per slice — e.g. `useAuth.ts` — exposing state, selectors, and dispatch wrappers behind a **unified interface**.
+
+**Developer rationale:** when slice shape or actions change, update a few slice-hook files instead of many consumers across pages and components.
+
+Slice hooks supply **action ops** (`create` / `update` / `delete` / `select` / `clear`) to component logic hooks. They do **not** own `fetch*` orchestration.
+
+## Layered data flow
+
+<MermaidChart chart={`flowchart LR
+API["API service"]
+SLICE["Redux slice"]
+SHOOK["Slice hook"]
+CTX["Page context"]
+LOGIC["Logic hook"]
+UI["UI component"]
+
+API --> SLICE --> SHOOK --> CTX --> LOGIC --> UI`} />
+
+| Layer               | Responsibility                                                                                                                                                                                   |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **API service**     | HTTP via `axiosConfig`; paths from `BE_ROUTES`                                                                                                                                                   |
+| **Redux slice**     | Async thunks, normalized state, granular loading/error flags                                                                                                                                     |
+| **Slice hook**      | Typed facade over slice state + actions                                                                                                                                                          |
+| **Page context**    | **`fetch*` only** — load data in effects; expose `data`, `isLoading`, `error`, pagination; optional `useError` / `useSuccess` toasts; use `useEffectEvent` for effect callbacks (omit from deps) |
+| **Component logic** | `useComponentName.ts` — local state, handlers, non-fetch effects; calls slice-hook mutations                                                                                                     |
+| **UI component**    | `ComponentName.tsx` — presentational                                                                                                                                                             |
+
+### Forms
+
+- react-hook-form + `zodResolver` + shared Zod schemas from `@shared/dtos`
+- `useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>` when defaults/transforms differ
+- Child form components use the same input type as the parent form
+
+### Cleanup
+
+Clear page-owned Redux state on unmount unless persistence is required (`redux-persist` blacklist when appropriate).

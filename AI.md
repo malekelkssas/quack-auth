@@ -927,3 +927,33 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 - `project-conventions.mdc` — step 3 + **Convention → docs map** (FE → `frontend.md`, BE → `backend.md`, Mongoose, setup, AI).
 - `ai-first-engineering.mdc` step 0 — same requirement; `AGENTS.md` pointer updated.
 - Backfilled docs: `apps/DOCS/docs/apps/frontend.md` (HTTP client), `backend.md` (`BE_ROUTES`), `setup/10-git-branches-commits.md` (worktree list).
+
+---
+
+## 2026-06-09 00:45 — FE Redux slices, slice hooks, layered flow
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:45`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer rationale (slice hooks)**
+
+> Unified slice-hook interface so when slice shape changes, you update few interface files instead of many consumers across the app.
+
+**Implemented**
+
+- `store/slices/authSlice.ts` — `signup` async thunk (`AuthService.signup` + `handleError` + `rejectWithValue`); granular `isSigningUp` / `signupError` / `signupSucceeded`; `user` placeholder for future auth endpoints.
+- `hooks/slices/useAuth.ts` — unified auth slice interface (state + `signup` / `clearSignup` / `clearError`).
+- `api/services/index.ts` — barrel export for `AuthService`.
+- `root-reducer.ts` — wired `auth` slice.
+- Conventions: `project-conventions.mdc` (Redux, slice hooks, layered flow); `frontend.md` (full FE flow + mermaid); `README.md` (monorepo + FE layer diagram); `@docusaurus/theme-mermaid` enabled in DOCS.
+
+**Deferred**
+
+- Full auth pages, page contexts, component logic hooks — structure only; login/checkAuth/logout thunks wait for BE routes.
