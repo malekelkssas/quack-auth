@@ -116,6 +116,11 @@ export class MongooseErrorHandler {
         return new BadRequestException(
           'Document failed validation. Please check your input.',
         );
+      case 13:
+      case 18:
+        return new ServiceUnavailableException(
+          'Database authentication failed. Check MONGODB_URI credentials in .env.',
+        );
       default:
         return new InternalServerErrorException(fallbackMessage);
     }

@@ -9,14 +9,14 @@ export class UserService {
   constructor(private readonly userRepository: UserRepository) {}
 
   async signup(input: Signup): Promise<void> {
-    const existing = await this.userRepository.findByEmail(input.email);
-    if (existing) {
-      throw new ConflictException('Email is already registered');
-    }
-
-    const passwordHash = await hashPassword(input.password);
-
     try {
+      const existing = await this.userRepository.findByEmail(input.email);
+      if (existing) {
+        throw new ConflictException('Email is already registered');
+      }
+
+      const passwordHash = await hashPassword(input.password);
+
       await this.userRepository.create({
         email: input.email,
         name: input.name,
