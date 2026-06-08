@@ -1,0 +1,57 @@
+---
+description: Always delegate non-trivial quack-auth work to ai-first-engineering subagent or Task delegates with repo policy.
+alwaysApply: true
+---
+
+# AI-first subagent delegation
+
+For **any non-trivial task** (multi-file edits, builds, exploration, Docker, setup docs):
+
+1. **Prefer** the project subagent: `Use the ai-first-engineering subagent to [task]`
+2. **Or** use the Task tool with the preamble below
+
+Do **not** handle scaffolding, verification, or multi-step implementation inline in the parent agent.
+
+## Subagent vs rule (do not mix up)
+
+| Artifact | Path | Role |
+| -------- | ---- | ---- |
+| **Subagent** | `.cursor/agents/ai-first-engineering.md` | Cursor delegate — `/create-subagent` |
+| **Rule** | `.cursor/rules/ai-first-engineering.mdc` | Policy + workflow for any agent |
+
+A file under `.cursor/skills/` is a skill, not a subagent. Subagents live in `.cursor/agents/*.md`.
+
+## Task tool fallback
+
+When the custom subagent is unavailable:
+
+```
+Follow the quack-auth AI-first engineering policy:
+1. Read .cursor/rules/ai-first-engineering.mdc and .cursor/rules/project-conventions.mdc (AGENTS.md is index only).
+2. Verify your work (build, tsc, or curl as appropriate).
+3. Return: Session id (S###-slug), model name, chat-summary note (if compacted), what you did, what you verified, what you changed vs default AI suggestions.
+4. Do not commit unless explicitly asked.
+5. If a chat summary occurred, tell the Developer and log it in AI.md per ai-first-engineering rule.
+```
+
+## When to delegate
+
+| Work | Delegate? |
+| ---- | --------- |
+| Multi-file feature / setup | **Always** |
+| `pnpm nx build`, docker, curl verify | **Always** |
+| Codebase exploration | **Always** |
+| Single-line typo fix | Parent OK |
+
+## Parent duties after subagent
+
+1. **Synthesize** — confirm risky claims with a quick check.
+2. **Update AI.md** — log model, delegation, outcome, overrides.
+3. **Spawn docs-maintainer** when setup or app behavior changes.
+
+## Anti-patterns
+
+- Creating only a skill when user asked for `/create-subagent`
+- Updating code without syncing `apps/DOCS/docs/`
+- Skipping verification when subagent reports "should work"
+- Letting subagent commit without user request

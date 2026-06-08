@@ -28,7 +28,7 @@ AI assistance is expected. What matters is **judgement**: what you generated, ad
    - `pnpm exec tsc -p <tsconfig> --noEmit`
    - `curl` for API endpoints
    - `docker compose config` for compose changes
-2. **Follow repo conventions** — read `.cursor/skills/ai-first-engineering/SKILL.md` and `apps/DOCS/docs/` when unsure. Doc updates → **docs-maintainer** subagent.
+2. **Follow repo conventions** — read `.cursor/rules/project-conventions.mdc` and `.cursor/rules/ai-first-engineering.mdc`; use `AGENTS.md` as the index. Doc updates → **docs-maintainer** subagent.
 3. **Use shared paths** — `@shared/constants`, `@shared/dtos`, `baseUrl: "../.."` in app tsconfigs; FE extends `./tsconfig.json` for `jsx`.
 
 ## Return format

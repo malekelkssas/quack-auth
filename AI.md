@@ -58,17 +58,24 @@ If an agent is working from summarized context, it should say so explicitly at t
 
 ## Cursor AI artifacts
 
-| What                 | Path                                           | When to use                                          |
-| -------------------- | ---------------------------------------------- | ---------------------------------------------------- |
-| **Subagent**         | `.cursor/agents/ai-first-engineering.md`       | **Always** for non-trivial work — `/create-subagent` |
-| **Policy skill**     | `.cursor/skills/ai-first-engineering/SKILL.md` | Policy + workflow (`/create-skill`)                  |
-| **Delegation skill** | `.cursor/skills/ai-first-subagent/SKILL.md`    | Task-tool fallback + "always delegate" rules         |
+| What                     | Path                                     | When to use                                          |
+| ------------------------ | ---------------------------------------- | ---------------------------------------------------- |
+| **Subagent**             | `.cursor/agents/ai-first-engineering.md` | **Always** for non-trivial work — `/create-subagent` |
+| **AI-first rule**        | `.cursor/rules/ai-first-engineering.mdc` | Policy + workflow — should have been `/create-rule`  |
+| **Delegation rule**      | `.cursor/rules/ai-first-subagent.mdc`    | Task-tool fallback + "always delegate" rules         |
+| **Docusaurus docs rule** | `.cursor/rules/docusaurus-docs.mdc`      | When editing `apps/DOCS/**`                          |
+| **Project conventions**  | `.cursor/rules/project-conventions.mdc`  | DTOs, Mongoose layout, paths                         |
 
 Invoke subagent: `Use the ai-first-engineering subagent to [task]`
 
-### Misunderstanding (skill ≠ subagent)
+### Developer mistake: skills instead of rules
 
-First `/create-subagent` pass only added `.cursor/skills/ai-first-subagent/` — a **skill**, not a Cursor subagent. Subagents must live in **`.cursor/agents/*.md`**. Fixed by adding `.cursor/agents/ai-first-engineering.md` and documenting the distinction above.
+The Developer used **`/create-skill`** for project-wide guidance that belongs in **Cursor rules** (`/create-rule`):
+
+- `ai-first-engineering`, `ai-first-subagent`, `docusaurus-docs` were under `.cursor/skills/*/SKILL.md`
+- Migrated to `.cursor/rules/*.mdc` (this session). Old skill dirs removed.
+
+**Skill ≠ subagent** (earlier fix): first `/create-subagent` pass only added `.cursor/skills/ai-first-subagent/` — a skill, not a subagent. Subagents must live in `.cursor/agents/*.md`. Fixed by adding `.cursor/agents/ai-first-engineering.md`.
 
 Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `apps/DOCS/docs/setup/`.
 
@@ -78,18 +85,19 @@ Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `
 
 Nx monorepo (`pnpm` + Nx 22) with:
 
-| Area            | What exists                                                                                                           |
-| --------------- | --------------------------------------------------------------------------------------------------------------------- |
-| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                                     |
-| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                              |
-| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                               |
-| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                             |
-| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                                       |
-| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                               |
-| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                              |
-| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                                 |
-| **CI**          | `.github/workflows/ci.yml` — `pnpm ci` (check + build); `pr-open-change-summary.yml` — Cursor digest on PR **opened** |
-| **AI surface**  | Sessions through `S006` — **Editor**; from here prefer **Agents** window for parallel work                            |
+| Area            | What exists                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **FE**          | React + Vite + Tailwind at `apps/FE` (`pnpm nx serve FE` → :4200)                                                              |
+| **BE**          | NestJS at `apps/BE` (`pnpm nx serve BE` → :3000/api, Swagger at `/docs`)                                                       |
+| **Shared libs** | `libs/qu-constants` (`@shared/constants`), `libs/dtos` (`@shared/dtos`)                                                        |
+| **Mongoose**    | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts`                                                      |
+| **Env**         | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS`                                                                |
+| **Docker**      | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`)                                                                        |
+| **Docs**        | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001)                                                                       |
+| **Quality**     | Husky pre-commit — lint-staged (Prettier + ESLint fix) + `pnpm check`                                                          |
+| **CI**          | `.github/workflows/ci.yml` — `pnpm ci` (check + build); `pr-open-change-summary.yml` — Cursor digest on PR **opened**          |
+| **AI surface**  | Sessions through `S006` — **Editor**; from here prefer **Agents** window for parallel work                                     |
+| **Conventions** | `AGENTS.md` indexes rules; detail in `.cursor/rules/project-conventions.mdc` (DTOs, Mongoose, paths) and sibling `*.mdc` rules |
 
 ### Completed setup steps
 
@@ -104,13 +112,15 @@ Nx monorepo (`pnpm` + Nx 22) with:
 9. Husky + lint-staged + Prettier + ESLint/typecheck gates (`pnpm check`)
 10. Commitlint + `quack-XX-*` branch-per-chat workflow (`scripts/next-quack-branch.sh`)
 
-### Cursor agents & skills
+### Cursor agents & rules
 
-| Role                   | Path                                      |
-| ---------------------- | ----------------------------------------- |
-| AI-first engineering   | `.cursor/agents/ai-first-engineering.md`  |
-| Docs maintenance       | `.cursor/agents/docs-maintainer.md`       |
-| Docusaurus conventions | `.cursor/skills/docusaurus-docs/SKILL.md` |
+| Role                   | Path                                     |
+| ---------------------- | ---------------------------------------- |
+| AI-first engineering   | `.cursor/agents/ai-first-engineering.md` |
+| Docs maintenance       | `.cursor/agents/docs-maintainer.md`      |
+| AI-first policy        | `.cursor/rules/ai-first-engineering.mdc` |
+| Subagent delegation    | `.cursor/rules/ai-first-subagent.mdc`    |
+| Docusaurus conventions | `.cursor/rules/docusaurus-docs.mdc`      |
 
 ---
 
@@ -246,4 +256,23 @@ After each significant AI-assisted session, append:
 - **Model** — full product name + version (e.g. Composer 2.5, Claude Opus 4.6)
 - **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted
 
-Template: `.cursor/skills/ai-first-engineering/SKILL.md`.
+Template: see **How to extend this file** above; policy in `.cursor/rules/ai-first-engineering.mdc`.
+
+---
+
+## 2026-06-08 — AGENTS.md indexes rules (Developer request)
+
+**Session** — `S007-user-model` (conventions doc refactor)
+
+**Developer asked for**
+
+- **`AGENTS.md` = index only** — pointers to `.cursor/rules/*.mdc`, not duplicated convention text.
+- **`.cursor/rules/project-conventions.mdc` = source of truth** for coding/layout conventions; on new convention → update rule first, then one-line pointer in AGENTS.md.
+- Complete **skills → rules** migration (`ai-first-engineering`, `ai-first-subagent`, `docusaurus-docs`); log Developer mistake using `/create-skill` instead of `/create-rule`.
+
+**Implemented**
+
+- Rewrote `AGENTS.md` as layout table + rules index + artifacts table.
+- Expanded `project-conventions.mdc` with full DTO/Mongoose detail moved from AGENTS.md; added source-of-truth header and update workflow.
+- `ai-first-engineering.mdc` step 0: new conventions → project-conventions + AGENTS pointer.
+- Empty `.cursor/skills/*/` dirs removed (SKILL.md files already gone; content lives in `.mdc` rules).

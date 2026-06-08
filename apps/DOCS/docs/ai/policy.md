@@ -8,12 +8,13 @@ AI assistance is **expected**. Reviewers evaluate judgement: what you generated,
 
 ## Artifacts in this repo
 
-| Artifact                  | Path                                           |
-| ------------------------- | ---------------------------------------------- |
-| Subagent                  | `.cursor/agents/ai-first-engineering.md`       |
-| Policy skill              | `.cursor/skills/ai-first-engineering/SKILL.md` |
-| Subagent delegation skill | `.cursor/skills/ai-first-subagent/SKILL.md`    |
-| Session log               | `AI.md` (repo root)                            |
+| Artifact          | Path                                     |
+| ----------------- | ---------------------------------------- |
+| Subagent          | `.cursor/agents/ai-first-engineering.md` |
+| AI-first policy   | `.cursor/rules/ai-first-engineering.mdc` |
+| Delegation policy | `.cursor/rules/ai-first-subagent.mdc`    |
+| Docusaurus docs   | `.cursor/rules/docusaurus-docs.mdc`      |
+| Session log       | `AI.md` (repo root)                      |
 
 Invoke: `Use the ai-first-engineering subagent to [task]`
 

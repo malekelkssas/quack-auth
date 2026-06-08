@@ -1,0 +1,71 @@
+---
+description: quack-auth project conventions — DTO suffixes, Mongoose model layout, paths, and monorepo locations. Apply when adding models, DTOs, schemas, or domain folders.
+alwaysApply: true
+---
+
+# quack-auth project conventions
+
+**Source of truth** for coding and layout conventions in this repo.
+
+When the Developer states a **new convention**:
+
+1. Update **this file** with the full convention text.
+2. Add a **one-line pointer** in [`AGENTS.md`](../../AGENTS.md) only — do not duplicate detail there.
+
+## Shared DTOs (`libs/dtos/src/lib/<domain>/`)
+
+Organize by **domain folder** (e.g. `user/`, not flat files at `lib/` root unless legacy).
+
+| Suffix | Purpose | Example |
+| ------ | ------- | ------- |
+| **`.model.ts`** | Zod mirror of a **persisted** Mongoose model (stored shape only; no plaintext passwords) | `libs/dtos/src/lib/user/user.model.ts` |
+| **`.dto.ts`** | Flow/API schemas (signup, login, responses, …) | `libs/dtos/src/lib/user/signup.dto.ts` |
+
+- **Model DTO** (`.model.ts`) reflects what is stored in the database — not plaintext passwords or other transient input shapes.
+- **Other DTOs** (`.dto.ts`) hold API/input validation (e.g. signup with plaintext password rules).
+- Reuse shared Zod building blocks inside a domain (e.g. `password.schema.ts`) when multiple DTOs need the same rules.
+- NestJS wraps shared schemas with `createZodDto` in `apps/BE` — keep wrappers in sync when adding schemas (see `apps/DOCS/docs/setup/06-nestjs-zod.md`).
+
+## Mongoose (`mongoose/models/<domain>/`)
+
+Per domain, always three files:
+
+| File | Purpose |
+| ---- | ------- |
+| **`*.schema.ts`** | Mongoose schema + `model()` registration |
+| **`*.model.ts`** | Repository interfaces (`IUser`, `IUserDocument`, …) |
+| **`*.paths.ts`** | Field path constants for queries, projections, and schema keys |
+
+### Why `*.paths.ts`?
+
+**Never hard-code field strings** in queries — import from `*.paths.ts` so renames touch one file.
+
+Example:
+
+```ts
+import { UserPaths } from 'mongoose/models/user';
+
+UserModel.findOne({ [UserPaths.email]: email });
+```
+
+### Mongoose directory (root)
+
+```
+mongoose/
+├── client.ts          # DB connection (ENV_KEYS, E2E URI switch)
+├── models/            # domain folders (user/, …)
+├── fixtures/          # test/dev fixture data
+└── tsconfig.json
+```
+
+## Imports
+
+- `@shared/dtos`, `@shared/constants` from apps and `mongoose/`
+- App-local: `@/*` under `apps/FE` or `apps/BE`
+- App tsconfigs: `baseUrl: "../.."` and extend `./tsconfig.json` (FE must keep `jsx`)
+
+## Workflow
+
+- New chat → `./scripts/next-quack-branch.sh <slug>` → `quack-XX-<slug>`
+- Conventional Commits (`feat:`, `fix:`, `docs:`, …) — enforced by commitlint; do not commit unless asked
+- Verify with `pnpm check` or targeted `tsc` when touching types

@@ -1,0 +1,41 @@
+---
+description: Docusaurus conventions for apps/DOCS — structure, when to update, build verification.
+globs: apps/DOCS/**
+alwaysApply: false
+---
+
+# Docusaurus docs (apps/DOCS)
+
+## Location
+
+- App: `apps/DOCS` (Nx project **DOCS**)
+- Content: `apps/DOCS/docs/` — Docusaurus v3
+- Config: `docusaurus.config.ts`, `sidebars.ts`
+
+## Commands
+
+```bash
+pnpm nx serve DOCS    # :4001 (BE uses :3000)
+pnpm nx build DOCS      # onBrokenLinks: 'throw' — run after link changes
+```
+
+## When to update
+
+| Repo change | Doc file |
+| ----------- | -------- |
+| Setup / deps / Docker | `docs/setup/NN-*.md` |
+| FE / BE / MongoDB | `docs/apps/frontend.md`, `backend.md`, `mongodb.md` |
+| AI policy | `docs/ai/policy.md` + root `AI.md` |
+| Husky / CI | `docs/setup/09-husky-quality-gates.md` + `intro.md` |
+| Git branches / commitlint | `docs/setup/10-git-branches-commits.md` |
+
+## Conventions
+
+- Frontmatter: `sidebar_position`, optional `slug`
+- Categories: `_category_.json` per folder
+- Root `README.md` stays short — detailed setup belongs here, not README
+- Do **not** recreate root `docs/setup.md`
+
+## Delegate
+
+Multi-page doc updates → `Use the docs-maintainer subagent to sync Docusaurus docs for [change]`

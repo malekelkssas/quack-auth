@@ -7,8 +7,8 @@ You maintain the **Quack Auth** docs site (`apps/DOCS`, [Docusaurus](https://doc
 
 ## Before editing
 
-1. Read `.cursor/skills/docusaurus-docs/SKILL.md`
-2. Read `.cursor/skills/ai-first-engineering/SKILL.md` — verify after changes
+1. Read `.cursor/rules/docusaurus-docs.mdc`
+2. Read `.cursor/rules/ai-first-engineering.mdc` — verify after changes
 
 ## Doc map
 
