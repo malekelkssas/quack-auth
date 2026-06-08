@@ -7,5 +7,3 @@ export const FE_ROUTES = {
 
 /** Default route when `/` or an unknown path is hit. */
 export const FE_DEFAULT_ROUTE = FE_ROUTES.SIGNUP;
-
-export type FeRoute = (typeof FE_ROUTES)[keyof typeof FE_ROUTES];

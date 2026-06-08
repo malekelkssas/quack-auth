@@ -1,23 +1,17 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { Signup } from '@shared/dtos';
 import type { z } from 'zod';
 
-import type { DuckMode } from '@/components/duck/DuckCanvas';
 import { useAuth } from '@/hooks/slices/useAuth';
 import { useError } from '@/hooks/use-error';
+import { usePasswordVisibility } from '@/hooks/use-password-visibility';
 import { useSuccess } from '@/hooks/use-success';
 
-/**
- * Signup page logic — RHF + zodResolver(Signup) wired to the useAuth slice hook.
- *
- * The shared `Signup` DTO trims/lowercases email via preprocess, so input and
- * output types differ — hence the explicit `useForm<input, unknown, output>`.
- */
 export function useSignup() {
-  const [mode, setMode] = useState<DuckMode>('both');
-  const [showPassword, setShowPassword] = useState(false);
+  const { showPassword, toggleShowPassword, passwordInputType } =
+    usePasswordVisibility();
 
   const {
     signup,
@@ -37,8 +31,6 @@ export function useSignup() {
     defaultValues: { email: '', name: '', password: '' },
   });
 
-  const toggleShowPassword = () => setShowPassword((value) => !value);
-
   const onSubmit = form.handleSubmit((values) => {
     void signup(values);
   });
@@ -54,7 +46,6 @@ export function useSignup() {
     },
   });
 
-  // Clear signup slice state when leaving the page.
   useEffect(() => {
     return () => {
       clearSignup();
@@ -63,13 +54,10 @@ export function useSignup() {
 
   return {
     form,
-    mode,
-    setMode,
     showPassword,
     toggleShowPassword,
+    passwordInputType,
     onSubmit,
     isSigningUp,
   };
 }
-
-export default useSignup;

@@ -2,29 +2,26 @@ import { useEffect, useRef } from 'react';
 
 export type DuckMode = 'duckling' | 'mallard' | 'both';
 
+type DuckKey = Exclude<DuckMode, 'both'>;
+
+export const DUCK_MODE_LABELS: Record<DuckMode, string> = {
+  duckling: 'Duckling',
+  mallard: 'Mallard',
+  both: 'Both!',
+};
+
 interface SpriteConfig {
   src: string;
-  /** Both sheets are 1236x202 → 6 frames of ~206x202. */
   frames: number;
-  /**
-   * Per-duck size multiplier applied on top of FILL. The actual draw scale is
-   * derived from the source frame height at runtime (see drawScale), so swapping
-   * in differently-sized assets keeps the duck roughly stage-height.
-   */
   sizeFactor: number;
   speed: number;
   fps: number;
   offsetY: number;
 }
 
-/**
- * Fraction of the canvas height the duck should roughly fill. Slightly >1 so the
- * duck reads as standing on the stage floor rather than floating tiny above it.
- */
 const FILL = 1.05;
 
-/** Sprite sheets live in apps/FE/public/sprites (Vite serves at /sprites/...). */
-const SPRITE: Record<Exclude<DuckMode, 'both'>, SpriteConfig> = {
+const SPRITE: Record<DuckKey, SpriteConfig> = {
   duckling: {
     src: '/sprites/duckling.png',
     frames: 6,
@@ -49,25 +46,48 @@ interface DuckPosition {
   frameTimer: number;
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+interface DuckMetrics {
+  fw: number;
+  dw: number;
+  dh: number;
+  dy: number;
+}
+
+const spriteCache = new Map<string, HTMLImageElement>();
+
+function loadSprite(src: string): Promise<HTMLImageElement> {
+  const cached = spriteCache.get(src);
+  if (cached) return Promise.resolve(cached);
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => reject(new Error(`Failed to load ${src}`));
+    img.onload = () => {
+      spriteCache.set(src, img);
+      resolve(img);
+    };
+    img.onerror = () => reject(new Error(`Failed to load sprite: ${src}`));
     img.src = src;
   });
 }
 
+function computeMetrics(
+  img: HTMLImageElement,
+  sp: SpriteConfig,
+  canvasHeight: number,
+): DuckMetrics {
+  const fw = Math.round(img.width / sp.frames);
+  const drawScale = (canvasHeight * FILL * sp.sizeFactor) / img.height;
+  const dw = Math.round(fw * drawScale);
+  const dh = Math.round(img.height * drawScale);
+  const dy = canvasHeight - dh - sp.offsetY;
+  return { fw, dw, dh, dy };
+}
+
 interface DuckCanvasProps {
   mode: DuckMode;
-  /** Stage/canvas height in CSS pixels. */
   height?: number;
 }
 
-/**
- * Animated walking-duck sprite stage. Ducks loop across the canvas on a pixel
- * grid (stepped, no easing) — typed port of tmp/DuckLogin.jsx DuckCanvas.
- */
 export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
@@ -78,11 +98,10 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
 
-    const keys: Array<Exclude<DuckMode, 'both'>> =
-      mode === 'both' ? ['duckling', 'mallard'] : [mode];
-    const images: Partial<Record<Exclude<DuckMode, 'both'>, HTMLImageElement>> =
-      {};
-    const pos: Record<Exclude<DuckMode, 'both'>, DuckPosition> = {
+    const keys: DuckKey[] = mode === 'both' ? ['duckling', 'mallard'] : [mode];
+    const images: Partial<Record<DuckKey, HTMLImageElement>> = {};
+    const metrics: Partial<Record<DuckKey, DuckMetrics>> = {};
+    const pos: Record<DuckKey, DuckPosition> = {
       duckling: { x: -80, frameIdx: 0, frameTimer: 0 },
       mallard: { x: -200, frameIdx: 0, frameTimer: 0 },
     };
@@ -90,49 +109,72 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     let animId = 0;
     let lastTime = performance.now();
     let alive = true;
+    let tabVisible = !document.hidden;
+    let canvasWidth = 0;
+    let canvasHeight = 0;
 
-    function getFrameW(k: Exclude<DuckMode, 'both'>): number {
-      const img = images[k];
-      return img ? Math.round(img.width / SPRITE[k].frames) : 0;
-    }
+    const syncCanvasSize = () => {
+      const nextWidth = canvas.offsetWidth;
+      const nextHeight = canvas.offsetHeight || height;
+      if (nextWidth === canvasWidth && nextHeight === canvasHeight) return;
+
+      canvasWidth = nextWidth;
+      canvasHeight = nextHeight;
+      canvas.width = nextWidth;
+      canvas.height = nextHeight;
+      ctx.imageSmoothingEnabled = false;
+
+      for (const key of keys) {
+        const img = images[key];
+        if (img) metrics[key] = computeMetrics(img, SPRITE[key], canvasHeight);
+      }
+    };
+
+    const resizeObserver = new ResizeObserver(() => syncCanvasSize());
+    resizeObserver.observe(canvas);
+    syncCanvasSize();
+
+    const onVisibilityChange = () => {
+      tabVisible = !document.hidden;
+      if (tabVisible) lastTime = performance.now();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     function loop(ts: number) {
       if (!alive || !canvas || !ctx) return;
+
+      if (!tabVisible) {
+        animId = requestAnimationFrame(loop);
+        return;
+      }
+
       const dt = Math.min((ts - lastTime) / 1000, 0.1);
       lastTime = ts;
 
-      canvas.width = canvas.offsetWidth;
-      ctx.imageSmoothingEnabled = false;
+      syncCanvasSize();
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      keys.forEach((k) => {
-        const sp = SPRITE[k];
-        const p = pos[k];
-        const img = images[k];
-        if (!img) return;
-
-        const fw = getFrameW(k);
-        // Derive the draw scale from the source frame height so the duck is
-        // roughly the stage height regardless of the asset's native resolution.
-        const drawScale = (canvas.height * FILL * sp.sizeFactor) / img.height;
-        const dw = Math.round(fw * drawScale);
-        const dh = Math.round(img.height * drawScale);
-        const dy = canvas.height - dh - sp.offsetY;
+      keys.forEach((key) => {
+        const sp = SPRITE[key];
+        const p = pos[key];
+        const img = images[key];
+        const m = metrics[key];
+        if (!img || !m) return;
 
         ctx.drawImage(
           img,
-          p.frameIdx * fw,
+          p.frameIdx * m.fw,
           0,
-          fw,
+          m.fw,
           img.height,
           Math.round(p.x),
-          dy,
-          dw,
-          dh,
+          m.dy,
+          m.dw,
+          m.dh,
         );
 
         p.x += sp.speed * 60 * dt;
-        if (p.x > canvas.width + 20) p.x = -dw - 20;
+        if (p.x > canvas.width + 20) p.x = -m.dw - 20;
 
         p.frameTimer += dt;
         if (p.frameTimer >= 1 / sp.fps) {
@@ -145,15 +187,21 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     }
 
     async function setup() {
-      await Promise.all(
-        keys.map(async (k) => {
-          try {
-            images[k] = await loadImage(SPRITE[k].src);
-          } catch {
-            /* sprite failed to load — skip drawing it */
-          }
+      const results = await Promise.allSettled(
+        keys.map(async (key) => {
+          images[key] = await loadSprite(SPRITE[key].src);
         }),
       );
+
+      if (import.meta.env.DEV) {
+        for (const result of results) {
+          if (result.status === 'rejected') {
+            console.warn('[DuckCanvas]', result.reason);
+          }
+        }
+      }
+
+      syncCanvasSize();
       if (alive) animId = requestAnimationFrame(loop);
     }
 
@@ -161,9 +209,11 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
 
     return () => {
       alive = false;
+      resizeObserver.disconnect();
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [mode]);
+  }, [mode, height]);
 
   return (
     <canvas
@@ -174,5 +224,3 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     />
   );
 }
-
-export default DuckCanvas;

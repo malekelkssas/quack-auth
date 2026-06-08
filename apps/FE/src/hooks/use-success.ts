@@ -1,7 +1,7 @@
 import { useEffect, useEffectEvent } from 'react';
 
 import { toast } from '@/hooks/use-toast';
-import { TOAST_VARIANTS } from '@/utils/constants';
+import { TOAST_DEFAULT_TITLE, TOAST_VARIANTS } from '@/utils/constants';
 
 interface UseSuccessOptions {
   /** When true, fire the success toast once, then run `onShown` (e.g. cleanup). */
@@ -20,7 +20,7 @@ export function useSuccess({
   succeeded,
   message,
   onShown,
-  title = 'QUACK!',
+  title = TOAST_DEFAULT_TITLE,
 }: UseSuccessOptions) {
   const onSuccess = useEffectEvent(() => {
     toast({ variant: TOAST_VARIANTS.SUCCESS, title, description: message });

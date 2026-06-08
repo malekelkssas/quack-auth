@@ -1,9 +1,10 @@
-import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { Lock, Mail, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { PasswordVisibilityToggle } from '@/components/duck/PasswordVisibilityToggle';
 import { PixelButton } from '@/components/duck/PixelButton';
 import { PixelField } from '@/components/duck/PixelField';
-import AuthLayout from '@/pages/auth/AuthLayout';
+import { AuthLayout } from '@/pages/auth/AuthLayout';
 import { FE_ROUTES } from '@/utils/constants';
 
 import { useSignup } from './useSignup';
@@ -11,10 +12,9 @@ import { useSignup } from './useSignup';
 export function Signup() {
   const {
     form,
-    mode,
-    setMode,
     showPassword,
     toggleShowPassword,
+    passwordInputType,
     onSubmit,
     isSigningUp,
   } = useSignup();
@@ -25,8 +25,7 @@ export function Signup() {
 
   return (
     <AuthLayout
-      mode={mode}
-      onModeChange={setMode}
+      defaultMode="both"
       title="JOIN THE POND"
       subtitle="Hatch a new account ~"
       footer={
@@ -65,24 +64,16 @@ export function Signup() {
         <PixelField
           id="signup-password"
           label="Password"
-          type={showPassword ? 'text' : 'password'}
+          type={passwordInputType}
           autoComplete="new-password"
           placeholder="••••••••"
           icon={<Lock className="h-4 w-4" />}
           error={errors.password?.message}
           trailing={
-            <button
-              type="button"
-              onClick={toggleShowPassword}
-              aria-label={showPassword ? 'Hide password' : 'Show password'}
-              className="p-1 text-muted-foreground hover:text-duck-amber"
-            >
-              {showPassword ? (
-                <EyeOff className="h-4 w-4" />
-              ) : (
-                <Eye className="h-4 w-4" />
-              )}
-            </button>
+            <PasswordVisibilityToggle
+              showPassword={showPassword}
+              onToggle={toggleShowPassword}
+            />
           }
           {...register('password')}
         />

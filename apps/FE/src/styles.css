@@ -82,7 +82,6 @@
   --radius-sm: calc(var(--radius) - 4px);
 
   --animate-progress: progress 2s ease-in-out infinite;
-  --animate-bob: bob 0.4s steps(2) infinite;
 }
 
 @keyframes progress {
@@ -91,16 +90,6 @@
   }
   100% {
     background-position: -200% 0;
-  }
-}
-
-/* Sprite-style vertical bob — stepped, never eased (game-sprite motion). */
-@keyframes bob {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-2px);
   }
 }
 

@@ -1,29 +1,22 @@
-import { type FormEvent, useState } from 'react';
+import { type FormEvent } from 'react';
 
-import type { DuckMode } from '@/components/duck/DuckCanvas';
 import { toast } from '@/hooks/use-toast';
-import { TOAST_VARIANTS } from '@/utils/constants';
+import { usePasswordVisibility } from '@/hooks/use-password-visibility';
+import { TOAST_DEFAULT_TITLE, TOAST_VARIANTS } from '@/utils/constants';
 
-/**
- * Login page logic — UI only (no BE login route yet). Submitting fires a
- * `warning` toast to demonstrate the variant and nudge users to sign up.
- */
+/** Login page logic — UI only until a BE login route exists. */
 export function useLogin() {
-  const [mode, setMode] = useState<DuckMode>('duckling');
-  const [showPassword, setShowPassword] = useState(false);
-
-  const toggleShowPassword = () => setShowPassword((value) => !value);
+  const { showPassword, toggleShowPassword, passwordInputType } =
+    usePasswordVisibility();
 
   const onSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     toast({
       variant: TOAST_VARIANTS.WARNING,
-      title: 'QUACK!',
+      title: TOAST_DEFAULT_TITLE,
       description: "Login isn't open yet — sign up to enter the pond!",
     });
   };
 
-  return { mode, setMode, showPassword, toggleShowPassword, onSubmit };
+  return { showPassword, toggleShowPassword, passwordInputType, onSubmit };
 }
-
-export default useLogin;

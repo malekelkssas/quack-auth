@@ -44,7 +44,7 @@ export const PixelField = forwardRef<HTMLInputElement, PixelFieldProps>(
             aria-describedby={errorId}
             className={cn(
               'w-full rounded-md border-2 border-border bg-input py-2.5 pl-9 pr-3 font-body text-xl text-foreground outline-none transition-colors',
-              'placeholder:text-[#444488] focus:border-duck-amber focus:ring-2 focus:ring-duck-amber/20',
+              'placeholder:text-muted-foreground/60 focus:border-duck-amber focus:ring-2 focus:ring-duck-amber/20',
               trailing && 'pr-10',
               error && 'border-error',
               className,
