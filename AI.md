@@ -597,3 +597,33 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Verified**
 
 - [x] `pnpm nx run FE:typecheck`
+
+---
+
+## 2026-06-08 22:29 — Vite host env + FE build chunks
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:29`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Developer asked for**
+
+- Commit axios work; add `VITE_ALLOWED_HOSTS` + `VITE_HOST` to `.env.example` and `ENV_KEYS`; update `apps/FE/vite.config.mts` (server/preview host + `allowedHosts`, vendor chunk split) — **no** `@tailwindcss/vite` or `react-grab`.
+
+**Implemented**
+
+- Committed `feat(FE): add axios client with VITE_API_URL env` (`5e637f8`).
+- `.env.example` — `VITE_ALLOWED_HOSTS=localhost`, `VITE_HOST=localhost` (comment notes `0.0.0.0` option).
+- `vite.config.mts` — `process.env.VITE_HOST`, `VITE_ALLOWED_HOSTS` comma-split, `manualChunks` vendor split, `chunkSizeWarningLimit: 1000`.
+
+**Output that needed fixing**
+
+- **`manualChunks` object** — Vite 8 / Rolldown expects a **function**, not `{ vendor: [...] }`; converted to `manualChunks(id)` guard for react/react-dom.
+
+**Verified**
+
+- [x] `pnpm nx run FE:build`
