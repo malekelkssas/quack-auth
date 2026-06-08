@@ -334,9 +334,11 @@ cp .env.example .env
 `.gitignore` should include `.env` and `.env.*`, with `!.env.example` so the template stays tracked.
 
 ```env
-# MongoDB
-MONGODB_URI=mongodb://localhost:27017/quack-auth
-E2E_MONGODB_URI=mongodb://localhost:27017/quack-auth-e2e
+# MongoDB (Docker: docker compose up -d mongodb)
+MONGO_INITDB_ROOT_USERNAME=mongo
+MONGO_INITDB_ROOT_PASSWORD=mongo
+MONGODB_URI=mongodb://mongo:mongo@localhost:27017/quack-auth?authSource=admin
+E2E_MONGODB_URI=mongodb://mongo:mongo@localhost:27017/quack-auth-e2e?authSource=admin
 MONGODB_DATABASE=quack-auth
 
 # Node Environment
@@ -369,6 +371,47 @@ if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.E2E) {
 } else {
   mongoUri = process.env[ENV_KEYS.MONGODB_URI];
 }
+```
+
+### 7d — Docker Compose (local MongoDB)
+
+`docker-compose.yml` at the repo root runs MongoDB 8 for local development:
+
+```bash
+docker compose up -d mongodb
+```
+
+```yaml
+services:
+  mongodb:
+    image: mongo:8
+    container_name: quack_auth_mongodb
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME:-mongo}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD:-mongo}
+    ports:
+      - '27017:27017'
+    volumes:
+      - quack_auth_mongodb_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+volumes:
+  quack_auth_mongodb_data:
+```
+
+Copy `.env.example` to `.env` so `MONGODB_URI` includes the same credentials (`mongo:mongo@…?authSource=admin`). Data persists in the `quack_auth_mongodb_data` volume.
+
+```bash
+docker compose ps          # check health
+docker compose logs mongodb
+docker compose down        # stop
+docker compose down -v     # stop and wipe data
 ```
 
 NestJS `@nestjs/mongoose` module wiring in the BE app is a follow-up step.
