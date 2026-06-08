@@ -49,7 +49,19 @@ pnpm add zod nestjs-zod
 - `zod` — schema definitions and inferred TypeScript types (used in FE and BE)
 - `nestjs-zod` — NestJS pipes/guards that validate request bodies against Zod schemas on the BE
 
-Example schemas in `libs/dtos/src/lib/greeting.dto.ts`:
+**Domain folders** — organize under `libs/dtos/src/lib/<domain>/` (e.g. `user/`), not flat files at `lib/` root unless legacy:
+
+| Suffix      | Purpose                                                                                  | Example                                |
+| ----------- | ---------------------------------------------------------------------------------------- | -------------------------------------- |
+| `.model.ts` | Zod mirror of a **persisted** Mongoose model (stored shape only; no plaintext passwords) | `libs/dtos/src/lib/user/user.model.ts` |
+| `.dto.ts`   | Flow/API schemas (signup, login, responses, …)                                           | `libs/dtos/src/lib/user/signup.dto.ts` |
+
+- **Model DTO** (`.model.ts`) reflects what is stored in the database — not plaintext passwords or other transient input shapes.
+- **Flow DTOs** (`.dto.ts`) hold API/input validation (e.g. signup with plaintext password rules).
+- Reuse shared Zod building blocks inside a domain (e.g. `password.schema.ts`) when multiple DTOs need the same rules.
+- NestJS wraps shared schemas with `createZodDto` in `apps/BE` — keep wrappers in sync when adding schemas ([nestjs-zod setup → sync warning](./06-nestjs-zod.md)).
+
+Legacy flat example (`libs/dtos/src/lib/greeting.dto.ts`):
 
 ```ts
 import { z } from 'zod';

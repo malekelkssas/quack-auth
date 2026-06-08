@@ -36,8 +36,20 @@ mongoose/
 ├── seed.ts         # planned
 ├── tsconfig.json
 ├── fixtures/
-└── models/         # Mongoose schemas
+└── models/         # domain folders (user/, …)
 ```
+
+### Domain folders (`models/<domain>/`)
+
+Three files per domain — see [Setup → MongoDB → domain layout](../setup/07-mongodb.md#7d--domain-model-layout-mongoosemodelsdomain):
+
+| File          | Purpose                                                 |
+| ------------- | ------------------------------------------------------- |
+| `*.schema.ts` | Mongoose schema + `model()` registration                |
+| `*.model.ts`  | Repository interfaces                                   |
+| `*.paths.ts`  | Field path constants (no hard-coded strings in queries) |
+
+Reference implementation: `mongoose/models/user/`.
 
 Connection helper:
 

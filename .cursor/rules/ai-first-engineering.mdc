@@ -17,6 +17,18 @@ AI assistance is **expected**. Judgement matters: what you generated, adapted, a
 5. **Update AI.md** — after meaningful sessions: session id, model, prompts, fixes, decisions (not just "used AI").
 6. **Log chat summaries** — when context compacts, append a `### Chat summary` block under the active session id.
 
+## AI.md timestamps (Developer request)
+
+**Every session entry heading** must include local time after the date:
+
+```markdown
+## YYYY-MM-DD HH:MM — Short title
+```
+
+Use **24-hour local time** (`2026-06-08 18:30`, not date-only). Repeat in the body as **`Local start time`** — `YYYY-MM-DD HH:MM` when the heading alone is not enough.
+
+The Developer flagged that agents **stopped logging `HH:MM`** after early entries (e.g. `S001` at `18:30`) — restore this for all new entries. When backfilling old entries, add times only when known; otherwise set **`Local start time`** — *not recorded at session start*.
+
 ## Branch per chat
 
 First action in a new chat:

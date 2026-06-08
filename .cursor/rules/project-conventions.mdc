@@ -23,7 +23,8 @@ Organize by **domain folder** (e.g. `user/`, not flat files at `lib/` root unles
 
 - **Model DTO** (`.model.ts`) reflects what is stored in the database — not plaintext passwords or other transient input shapes.
 - **Other DTOs** (`.dto.ts`) hold API/input validation (e.g. signup with plaintext password rules).
-- Reuse shared Zod building blocks inside a domain (e.g. `password.schema.ts`) when multiple DTOs need the same rules.
+- Reuse shared Zod building blocks inside a domain (e.g. `password.schema.ts`) when multiple DTOs need the same rules — **do not invent new suffixes** (e.g. no `.fields.ts`; Developer reverted `user.fields.ts` from a `/simplify` pass).
+- Some duplication between `.model.ts` and `.dto.ts` is acceptable; do not extract field schemas into unofficial file types.
 - NestJS wraps shared schemas with `createZodDto` in `apps/BE` — keep wrappers in sync when adding schemas (see `apps/DOCS/docs/setup/06-nestjs-zod.md`).
 
 ## Mongoose (`mongoose/models/<domain>/`)
