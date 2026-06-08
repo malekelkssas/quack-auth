@@ -14,7 +14,8 @@
       "qu-constants": ["libs/qu-constants/src/index.ts"],
       "dtos": ["libs/dtos/src/index.ts"],
       "@shared/dtos": ["libs/dtos/src/index.ts"],
-      "@shared/constants": ["libs/qu-constants/src/index.ts"]
+      "@shared/constants": ["libs/qu-constants/src/index.ts"],
+      "@quack/mongoose/*": ["mongoose/*"]
     }
   },
   "include": ["src/**/*.ts"]

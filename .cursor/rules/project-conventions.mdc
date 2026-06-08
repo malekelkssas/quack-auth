@@ -44,7 +44,7 @@ Per domain, always three files:
 Example:
 
 ```ts
-import { UserPaths } from 'mongoose/models/user';
+import { UserPaths } from '@quack/mongoose/models/user';
 
 UserModel.findOne({ [UserPaths.email]: email });
 ```
@@ -80,9 +80,41 @@ mongoose/
 - **Import** — `import axiosConfig from '@/api/axiosConfig'` (or relative path under `api/`).
 - **Future growth** — domain call sites (`user.api.ts`, …) live in `api/` and use the shared instance; interceptors (auth token, errors) stay in `axiosConfig.ts` only.
 
+## Backend routes (`libs/qu-constants/src/lib/be-routes.constants.ts`)
+
+| Artifact | Purpose |
+| -------- | ------- |
+| **`BE_ROUTES` enum** | API path segments shared via `@shared/constants` |
+
+- Define **every** BE endpoint path segment in `be-routes.constants.ts` — global prefix (`BASE`), controller segments (`USERS`, …), and action segments (`SIGNUP`, …).
+- **No magic route strings** in controllers or `main.ts` — use `BE_ROUTES` in `@Controller`, `@Get`/`@Post`/…, and `setGlobalPrefix`.
+- Place in `qu-constants` so the FE can import the same segments for API clients later.
+
+## Backend feature modules (`apps/BE/src/<feature>/`)
+
+| File | Purpose | Example |
+| ---- | ------- | ------- |
+| **`<feature>.controller.ts`** | HTTP routes for the feature | `users/users.controller.ts` |
+| **`<feature>.dto.ts`** | `createZodDto` wrappers for that feature’s Zod schemas | `users/users.dto.ts` → `SignupDto` |
+| **`<feature>.module.ts`** | Nest module wiring | `users/users.module.ts` |
+
+- Colocate **DTO wrappers next to the controller** (`users/users.dto.ts`), not only in `app/app.dto.ts`.
+- Shared Zod schemas stay in `libs/dtos`; BE wrappers import from `@shared/dtos`.
+
+## Backend utilities (`apps/BE/src/utils/`)
+
+| Location | Purpose | Example |
+| -------- | ------- | ------- |
+| **`*.util.ts`** | BE helpers (hashing, error parsing, …) | `password.util.ts`, `mongoose-error.handler.util.ts` |
+| **`libs/<service>/`** | Wrappers for **external services** (S3, logger, email, …) | `utils/libs/s3/` |
+
+- Do not use bare `utils/foo.ts` — use the **`.util.ts`** suffix.
+- External SDK clients belong under `utils/libs/<domain-name-for-service>/`, not at `utils/` root.
+
 ## Imports
 
 - `@shared/dtos`, `@shared/constants` from apps and `mongoose/`
+- **`@quack/mongoose/*`** — repo Mongoose layer (`mongoose/` at repo root). **Do not** use deep relative imports (e.g. `../../../../mongoose/...`) or bare `mongoose/...` paths that collide with the npm `mongoose` package.
 - App-local: `@/*` under `apps/FE` or `apps/BE`
 - App tsconfigs: `baseUrl: "../.."` and extend `./tsconfig.json` (FE must keep `jsx`)
 
