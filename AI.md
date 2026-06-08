@@ -1,6 +1,27 @@
 # AI.md — quack-auth
 
-Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **model**, prompts, fixes, and judgement calls.
+Engineering log for AI-assisted work on this repo. Goes beyond disclosure: **section id**, **model**, prompts, fixes, judgement calls, and **chat summaries**.
+
+## Section IDs
+
+Track prompts that belong to the same topic arc with a reusable id:
+
+| Format | Example |
+|---|---|
+| `S###-short-slug` | `S001-initial-scaffold`, `S005-docusaurus` |
+
+- Use the **same section id** for follow-up prompts on the same topic (even across sessions).
+- Start a **new id** when the work topic clearly changes.
+- Reference in prompts: `Continuing S005-docusaurus: …`
+
+## Chat summaries
+
+When Cursor **summarizes / compacts** chat context (or you start a new chat with handoff), log it:
+
+1. Note it in the session entry (`**Chat summary** — Yes …`).
+2. Add a `### Chat summary — [date time]` block under the active section with what was carried forward and what may need re-reading.
+
+If an agent is working from summarized context, it should say so explicitly at the start of the turn.
 
 ## Cursor AI artifacts
 
@@ -16,7 +37,7 @@ Invoke subagent: `Use the ai-first-engineering subagent to [task]`
 
 First `/create-subagent` pass only added `.cursor/skills/ai-first-subagent/` — a **skill**, not a Cursor subagent. Subagents must live in **`.cursor/agents/*.md`**. Fixed by adding `.cursor/agents/ai-first-engineering.md` and documenting the distinction above.
 
-Reference: [docs/setup.md](docs/setup.md) for reproducible setup steps.
+Reference: `pnpm nx serve DOCS` (http://localhost:4001) — setup docs live in `apps/DOCS/docs/setup/`.
 
 ---
 
@@ -32,6 +53,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 | **Mongoose** | Root `mongoose/` — `client.ts`, `models/`, `fixtures/`, planned `seed.ts` |
 | **Env** | `.env.example` committed; `.env` gitignored; keys in `ENV_KEYS` |
 | **Docker** | `docker-compose.yml` — MongoDB 8 (`quack_auth_mongodb`) |
+| **Docs** | Docusaurus at `apps/DOCS` (`pnpm nx serve DOCS` → :4001) |
 
 ### Completed setup steps
 
@@ -42,12 +64,25 @@ Nx monorepo (`pnpm` + Nx 22) with:
 5. MongoDB deps + env constants + `mongoose/client.ts`
 6. Docker Compose for local MongoDB
 7. AI policy skill + subagent + this log
+8. Docusaurus DOCS app — migrated from root `docs/setup.md`
+
+### Cursor agents & skills
+
+| Role | Path |
+|---|---|
+| AI-first engineering | `.cursor/agents/ai-first-engineering.md` |
+| Docs maintenance | `.cursor/agents/docs-maintainer.md` |
+| Docusaurus conventions | `.cursor/skills/docusaurus-docs/SKILL.md` |
 
 ---
 
 ## 2026-06-08 18:30 — Initial scaffolding & shared libs
 
+**Section** — `S001-initial-scaffold`
+
 **Model** — not recorded (session predates model logging in AI.md)
+
+**Chat summary** — not recorded (early sessions may have had silent compaction)
 
 **Prompts that worked**
 
@@ -85,6 +120,33 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 ---
 
+## 2026-06-08 — Docusaurus DOCS app (continued in same chat)
+
+**Section** — `S005-docusaurus`
+
+**Model** — Composer
+
+**Chat summary** — No (single continuous thread for DOCS migration)
+
+**Prompts that worked**
+
+- `pnpm nx g @nx-extend/docusaurus:app DOCS` + relocate to `apps/DOCS`
+- Split `docs/setup.md` into `apps/DOCS/docs/setup/01-*.md` … `08-docusaurus.md`
+- `docs-maintainer` subagent + `docusaurus-docs` skill
+
+**Verified**
+
+- [x] `pnpm nx build DOCS`
+
+---
+
 ## How to extend this file
 
-After each significant AI-assisted session, append a section with **local start time** (`YYYY-MM-DD HH:MM`) and **Model** (which Cursor model ran the task). Template: `.cursor/skills/ai-first-engineering/SKILL.md`.
+After each significant AI-assisted session, append:
+
+- **Section id** (`S###-slug`) — reuse for same topic arc
+- **Local start time** (`YYYY-MM-DD HH:MM`)
+- **Model**
+- **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted
+
+Template: `.cursor/skills/ai-first-engineering/SKILL.md`.

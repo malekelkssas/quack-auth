@@ -34,8 +34,9 @@ When the custom subagent is unavailable, use **Task** with this preamble:
 Follow the quack-auth AI-first engineering policy:
 1. Read .cursor/skills/ai-first-engineering/SKILL.md if available.
 2. Verify your work (build, tsc, or curl as appropriate).
-3. Return: Model name, what you did, what you verified, what you changed vs default AI suggestions.
+3. Return: Section id (S###-slug), model name, chat-summary note (if context was compacted), what you did, what you verified, what you changed vs default AI suggestions.
 4. Do not commit unless explicitly asked.
+5. If a chat summary occurred, tell the user and log it in AI.md per ai-first-engineering skill.
 ```
 
 ## When to spawn
@@ -55,9 +56,18 @@ After subagent completes:
 2. **Update AI.md** — log **model**, delegation, outcome, overrides.
 3. **Prefer parallel** — independent subagents in one message when possible.
 
+## Docs updates
+
+When setup or app behavior changes, spawn **docs-maintainer**:
+
+```
+Use the docs-maintainer subagent to sync Docusaurus docs for [change]
+```
+
 ## Anti-patterns
 
 - Creating only a skill when user asked for `/create-subagent`
+- Updating code without syncing `apps/DOCS/docs/`
 - Skipping verification when subagent reports "should work"
 - Letting subagent commit without user request
 - Omitting **Model** from AI.md session entries

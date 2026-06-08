@@ -150,3 +150,7 @@ vite.config.*.timestamp*
 
 # tmp dir
 tmp/
+
+# Generated Docusaurus files
+.docusaurus/
+.cache-loader/

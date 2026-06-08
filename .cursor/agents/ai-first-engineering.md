@@ -22,14 +22,18 @@ AI assistance is expected. What matters is **judgement**: what you generated, ad
    - `pnpm exec tsc -p <tsconfig> --noEmit`
    - `curl` for API endpoints
    - `docker compose config` for compose changes
-2. **Follow repo conventions** — read `.cursor/skills/ai-first-engineering/SKILL.md` and `docs/setup.md` when unsure.
+2. **Follow repo conventions** — read `.cursor/skills/ai-first-engineering/SKILL.md` and `apps/DOCS/docs/` when unsure. Doc updates → **docs-maintainer** subagent.
 3. **Use shared paths** — `@shared/constants`, `@shared/dtos`, `baseUrl: "../.."` in app tsconfigs; FE extends `./tsconfig.json` for `jsx`.
 
 ## Return format
 
 Always end with:
 
+**Section** — active section id (`S###-slug`); propose a new id if this is a new topic arc
+
 **Model** — the model name you are running as (e.g. Composer, Claude Opus, GPT-4.1)
+
+**Chat summary** — `No` or brief note if this turn follows a context compaction / summarized chat
 
 **Done** — one-line summary
 

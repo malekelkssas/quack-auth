@@ -3,6 +3,7 @@ allowBuilds:
   '@parcel/watcher': true
   '@scarf/scarf': true
   '@swc/core': true
+  core-js: true
   less: true
   mongodb-memory-server: true
   nx: true
