@@ -23,6 +23,8 @@ Each chat should log one **session id** (`S###-slug` — all entries from the sa
 
 **Setup-first:** early repo work (through `S006-quality-gates` in `AI.md`) ran in the **Editor**; keep `apps/DOCS/docs/setup/` accurate. Parallel feature work should use the **Agents** window with separate chats/branches.
 
+**One branch per chat:** `quack-XX-<feature>` — see [Git branches & commits](../setup/10-git-branches-commits.md). **Conventional Commits** via commitlint (`feat:`, `fix:`, `docs:`, `test:`, …).
+
 If Cursor **summarizes / compacts** chat context, log a **Chat summary** block — note what was carried forward and what may need re-reading.
 
 See `AI.md` at the repo root for the full project log.

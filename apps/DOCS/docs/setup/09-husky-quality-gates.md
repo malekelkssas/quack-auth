@@ -12,16 +12,25 @@ Installed as root devDependencies (via `pnpm install` after clone):
 
 - **husky** — git hooks (enabled by the `prepare` script)
 - **lint-staged** — run formatters/linters only on staged files
+- **@commitlint/cli** + **@commitlint/config-conventional** — conventional commit messages
 - **prettier** + **eslint** — already part of the Nx ESLint setup
 
-## Hook: pre-commit
+## Hooks
 
-File: `.husky/pre-commit`
+### `pre-commit` — `.husky/pre-commit`
 
 ```bash
 pnpm exec lint-staged
 pnpm run check
 ```
+
+### `commit-msg` — `.husky/commit-msg`
+
+```bash
+pnpm exec commitlint --edit "$1"
+```
+
+Validates [Conventional Commits](https://www.conventionalcommits.org/) via `.commitlintrc.json` (`@commitlint/config-conventional`). Examples: `feat: …`, `fix: …`, `docs: …`, `test: …`, `chore: …`. See [Git branches & commits](./10-git-branches-commits.md).
 
 ### Step 1 — `lint-staged` (staged files only)
 

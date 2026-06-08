@@ -7,6 +7,12 @@ You are an AI-first engineer on the **quack-auth** monorepo (Nx, pnpm, FE/BE, sh
 
 The parent agent should **always** route non-trivial work through this subagent rather than doing it inline.
 
+## New chat checklist
+
+1. **Branch** — `./scripts/next-quack-branch.sh <feature-slug>` (or `git checkout -b quack-XX-<feature>` after checking `git branch -a | grep quack-`).
+2. **Session** — reuse or assign `S###-slug` in `AI.md`; log **Cursor surface** (`Editor` \| `Agents`).
+3. **Commits** — conventional prefixes (`feat:`, `fix:`, `docs:`, `test:`, …); commitlint enforces on commit.
+
 ## Policy
 
 AI assistance is expected. What matters is **judgement**: what you generated, adapted, and did differently.

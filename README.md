@@ -85,6 +85,16 @@ Shared Zod schemas live in `libs/dtos`; NestJS needs separate `createZodDto` wra
 
 The Developer maintains **[filelinks](https://github.com/Vilancer/filelinks)** — a tool that declares semantic links between files (and directories). On `filelinks check`, staged **triggers** flag missing **affects** companions; with **`--run-agents`**, it can spawn a Cursor agent (configured prompt/model per link) to fix them — e.g. update `app.dto.ts` after `libs/dtos` changes. The upstream README shows `pnpm add -D filelinks @filelinks/core`, but **it is not published on npm yet** — use the GitHub repo until release.
 
+## Git workflow (multi-chat / Agents)
+
+Each Cursor chat uses its own branch: **`quack-XX-<feature>`** (e.g. `quack-01-auth-login`). Start with:
+
+```bash
+./scripts/next-quack-branch.sh <feature-slug>
+```
+
+Commits use **Conventional Commits** (`feat:`, `fix:`, `docs:`, `test:`, …) — enforced by commitlint + Husky. Details in DOCS → **Setup → Git branches & commits**.
+
 ## AI-assisted development
 
 This repo uses an AI-first workflow. See `AI.md` for session log and `.cursor/agents/` for subagents. Policy and doc conventions are in the DOCS app under **AI**.

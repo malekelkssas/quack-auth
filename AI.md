@@ -19,6 +19,22 @@ All work logged in this file through session **`S006-quality-gates`** was done i
 
 The Developer is moving to the **Agents** window next for **multi-chat / multi-branch** work (parallel agents on separate branches). Editor remains fine for focused setup edits; Agents is the preferred surface for parallel feature work.
 
+## Branch per chat
+
+**Every new chat** must start on a dedicated branch:
+
+| Pattern                   | Example               |
+| ------------------------- | --------------------- |
+| `quack-XX-<feature-slug>` | `quack-01-auth-login` |
+
+1. Inspect: `git branch -a | grep quack-`
+2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>`
+3. Log **branch name** in session entries when useful.
+
+`XX` = next zero-padded number. One branch per chat — do not share across agents.
+
+**Commits:** Conventional Commits enforced by commitlint (`feat:`, `fix:`, `docs:`, `test:`, `chore:`, …). See `apps/DOCS/docs/setup/10-git-branches-commits.md`.
+
 ## Session IDs
 
 One id per **chat** — all changes made in the same conversation share the same session id:
@@ -86,6 +102,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 7. AI policy skill + subagent + this log
 8. Docusaurus DOCS app — migrated from root `docs/setup.md`
 9. Husky + lint-staged + Prettier + ESLint/typecheck gates (`pnpm check`)
+10. Commitlint + `quack-XX-*` branch-per-chat workflow (`scripts/next-quack-branch.sh`)
 
 ### Cursor agents & skills
 
@@ -214,6 +231,7 @@ Nx monorepo (`pnpm` + Nx 22) with:
 - Developer added **`CURSOR_API_KEY`** to GitHub Actions repo secrets; documented in README (maintainers) and DOCS PR summary section
 - Log **Cursor surface** (`Editor` \| `Agents`) per session; note all `AI.md` work through `S006` was **Editor** — setup is highest priority; Developer shifting to **Agents** window for efficient multi-chat / multi-branch work
 - Developer noted CI was missing **build** — added `pnpm build` / `pnpm ci` (`check` + `build`); `ci.yml` now runs `pnpm ci` (Husky still `check` only)
+- Before **Agents** window: **one branch per chat** (`quack-XX-<feature>`); `@commitlint/cli` + `@commitlint/config-conventional` + `.commitlintrc.json` + Husky `commit-msg`; Developer prefers `feat:` / `fix:` / `docs:` / `test:` prefixes
 
 ---
 
@@ -223,6 +241,7 @@ After each significant AI-assisted session, append:
 
 - **Session id** (`S###-slug`) — one id per chat; reuse for all entries from the same conversation
 - **Cursor surface** — `Editor` or `Agents`
+- **Branch** — e.g. `quack-07-auth-login` (optional but recommended for Agents chats)
 - **Local start time** (`YYYY-MM-DD HH:MM`)
 - **Model** — full product name + version (e.g. Composer 2.5, Claude Opus 4.6)
 - **Chat summary** — `No`, or `Yes` + `### Chat summary` block if context was compacted
