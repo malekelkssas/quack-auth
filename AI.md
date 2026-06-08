@@ -665,3 +665,46 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - [x] `pnpm nx run FE:typecheck`
 - [x] `pnpm nx run FE:build`
+
+---
+
+## 2026-06-08 22:45 — FE dev tools: React Scan + React Grab
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:45`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Add [React Grab](https://www.react-grab.com/) and [React Scan](https://react-scan.com/) to FE; **dev environment only**; document usefulness in `AI.md` and FE docs.
+
+**Implemented**
+
+- Dev deps: `react-grab`, `react-scan` (no Vite plugin — `react-grab` uses official `index.html` pattern; avoids Vite 8 peer mismatch on `@react-scan/vite-plugin-react-scan`).
+- ~~`apps/FE/index.html` dynamic `await import()`~~ — **wrong** vs upstream docs; fixed below.
+
+**Output that needed fixing (dev tools)**
+
+- **index.html async imports** — not the latest Vite pattern. [React Scan](https://github.com/aidenybai/react-scan/blob/main/docs/installation/vite.md) requires **static** `import { scan } from 'react-scan'` before React. [React Grab](https://github.com/aidenybai/react-grab/blob/main/README.md#vite) belongs at the top of `main.tsx` via `import('react-grab')` when `import.meta.env.DEV`.
+
+**Fixed (2026-06-08)**
+
+- `apps/FE/src/dev-tools.ts` — static `scan` import + `scan({ enabled: true })` + `void import('react-grab')` in dev (per GitHub READMEs).
+- `dev-entry.ts` → `dev-tools.ts` (when `!import.meta.env.PROD`) → `main.tsx` — correct load order; `index.html` no longer uses async imports.
+- `vite.config.mts` — on `vite build`, force `import.meta.env.PROD` / `DEV` when Nx sets `NODE_ENV=development` so dev-tool chunks are not shipped.
+- Docs: `apps/DOCS/docs/apps/frontend.md` — **Dev-only tooling** table with links; `project-conventions.mdc` — **FE dev tooling**.
+
+**Why these tools**
+
+- **React Scan** — zero-config visual highlights for avoidable re-renders during UI work.
+- **React Grab** — copy component/file/HTML context straight into coding agents (⌘C / Ctrl+C on hover).
+
+**Verified**
+
+- [x] `pnpm nx run FE:build` — no `react-scan` / `react-grab` strings in `dist/apps/FE` output

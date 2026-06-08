@@ -10,10 +10,21 @@ import { defineConfig } from 'vite';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
-export default defineConfig(() => {
+export default defineConfig(({ command }) => {
   const allowedHosts = process.env.VITE_ALLOWED_HOSTS?.split(',') ?? [];
 
+  const isProductionBuild = command === 'build';
+
   return {
+    // Nx/CI may set NODE_ENV=development during `vite build`; force prod env flags
+    // so dev-only dynamic imports (react-scan, react-grab) are tree-shaken.
+    mode: isProductionBuild ? 'production' : undefined,
+    define: isProductionBuild
+      ? {
+          'import.meta.env.DEV': 'false',
+          'import.meta.env.PROD': 'true',
+        }
+      : undefined,
     root: __dirname,
     cacheDir: '../../node_modules/.vite/apps/FE',
     server: {
