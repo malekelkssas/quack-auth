@@ -8,5 +8,11 @@
     },
     "outDir": "../dist/out-tsc/mongoose"
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "commonjs",
+      "moduleResolution": "node"
+    }
+  }
 }
