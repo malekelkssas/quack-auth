@@ -1,7 +1,8 @@
 import type { INestApplication } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { ENV_KEYS } from '@shared/constants';
+import { CSRF_CONSTANTS, ENV_KEYS } from '@shared/constants';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
+import { resolveCsrfCookieName } from './csrf.config';
 
 export const OPENAPI_ACCESS_COOKIE = 'accessCookie';
 export const OPENAPI_CSRF_HEADER = 'csrfHeader';
@@ -9,8 +10,7 @@ export const OPENAPI_CSRF_HEADER = 'csrfHeader';
 export function setupOpenApi(app: INestApplication): void {
   const accessCookieName =
     process.env[ENV_KEYS.AUTH_ACCESS_COOKIE_NAME] ?? 'qa_access_token';
-  const csrfCookieName =
-    process.env[ENV_KEYS.AUTH_CSRF_COOKIE_NAME] ?? 'qa_csrf_token';
+  const csrfCookieName = resolveCsrfCookieName();
 
   const openApiDoc = SwaggerModule.createDocument(
     app,
@@ -33,7 +33,7 @@ export function setupOpenApi(app: INestApplication): void {
         {
           type: 'apiKey',
           in: 'header',
-          name: 'x-csrf-token',
+          name: CSRF_CONSTANTS.HEADER_NAME,
           description: `CSRF double-submit header — pair with ${csrfCookieName} cookie`,
         },
         OPENAPI_CSRF_HEADER,

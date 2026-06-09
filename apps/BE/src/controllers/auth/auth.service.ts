@@ -6,7 +6,6 @@ import type { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { UserRepository } from '../../repositories/user.repository';
 import { resolveAuthSecret } from '../../utils/auth-config.util';
-import { MongooseErrorHandler } from '../../utils/mongoose-error.handler.util';
 import { verifyPassword } from '../../utils/password.util';
 import {
   hashRefreshToken,
@@ -58,30 +57,22 @@ export class AuthService {
   constructor(private readonly userRepository: UserRepository) {}
 
   async register(input: Signup, response: Response): Promise<AuthResponse> {
-    try {
-      const user = await this.userRepository.create({
-        email: input.email,
-        name: input.name,
-        password: input.password,
-      });
-      const sessionTokens = this.createSessionTokens(user);
-      await this.userRepository.setRefreshTokenHash(
-        user._id,
-        sessionTokens.refreshTokenHash,
-      );
-      this.setAuthCookies(
-        response,
-        sessionTokens.accessToken,
-        sessionTokens.refreshToken,
-      );
-      return { user };
-    } catch (error) {
-      MongooseErrorHandler.rethrow(
-        error,
-        'Failed to register user',
-        'AuthService.register',
-      );
-    }
+    const user = await this.userRepository.create({
+      email: input.email,
+      name: input.name,
+      password: input.password,
+    });
+    const sessionTokens = this.createSessionTokens(user);
+    await this.userRepository.setRefreshTokenHash(
+      user._id,
+      sessionTokens.refreshTokenHash,
+    );
+    this.setAuthCookies(
+      response,
+      sessionTokens.accessToken,
+      sessionTokens.refreshToken,
+    );
+    return { user };
   }
 
   async login(input: Login, response: Response): Promise<AuthResponse> {
@@ -95,7 +86,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const authUser = this.userRepository.withoutPassword(user);
+    const authUser = this.userRepository.toPublicUser(user);
     await this.issueSession(response, authUser);
     return { user: authUser };
   }
@@ -122,7 +113,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const authUser = this.userRepository.withoutRefreshHash(user);
+    const authUser = this.userRepository.toPublicUser(user);
     const sessionTokens = this.createSessionTokens(authUser);
     const rotated = await this.userRepository.rotateRefreshTokenHash(
       user._id,

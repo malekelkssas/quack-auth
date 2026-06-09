@@ -15,6 +15,5 @@ import { resolveMongoConnectionOptions } from '@quack/mongoose/connection-option
       },
     }),
   ],
-  exports: [MongooseModule],
 })
 export class DatabaseModule {}

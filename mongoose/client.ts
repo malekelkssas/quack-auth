@@ -10,15 +10,10 @@ export const dbClient = async () => {
     return;
   }
 
-  try {
-    const { uri, dbName } = resolveMongoConnectionOptions();
-    await mongoose.connect(uri, dbName ? { dbName } : undefined);
+  const { uri, dbName } = resolveMongoConnectionOptions();
+  await mongoose.connect(uri, dbName ? { dbName } : undefined);
 
-    if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.DEVELOPMENT) {
-      console.log('Connected to MongoDB');
-    }
-  } catch (error) {
-    console.error(error);
-    throw error;
+  if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.DEVELOPMENT) {
+    console.log('Connected to MongoDB');
   }
 };

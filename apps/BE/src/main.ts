@@ -24,4 +24,11 @@ async function bootstrap() {
   Logger.log(`Swagger docs: http://localhost:${port}/docs`);
 }
 
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  Logger.error(
+    `Bootstrap failed: ${message}`,
+    error instanceof Error ? error.stack : undefined,
+  );
+  process.exit(1);
+});
