@@ -32,7 +32,7 @@ Example — signup (`AuthService.signup`):
 
 ```ts
 // POST {VITE_API_URL}/users/signup  (baseURL already includes /api)
-await api.post(`/${BE_ROUTES.USERS}/${BE_ROUTES.SIGNUP}`, body);
+await api.post(`/${BE_ROUTES.AUTH}/${BE_ROUTES.REGISTER}`, body);
 ```
 
 Shared route segments are defined in `libs/qu-constants/src/lib/be-routes.constants.ts` (see [Backend routes](../be/overview.md#routes)).

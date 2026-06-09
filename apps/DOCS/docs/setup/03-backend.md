@@ -34,6 +34,16 @@ pnpm nx build BE --skip-nx-cache
 pnpm nx serve BE
 ```
 
-Without a fresh build + restart, the browser blocks FE requests with a CORS error — the **OPTIONS** preflight to `/api/users/signup` may return **404** and `Access-Control-Allow-Origin` is missing. The route path itself is correct (`POST /api/users/signup`).
+Without a fresh build + restart, the browser blocks FE requests with a CORS error — the **OPTIONS** preflight may return **404** and `Access-Control-Allow-Origin` is missing.
 
-Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md).
+### Auth routes (current)
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `GET /api/users/me` (protected)
+
+JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). State-changing auth routes require CSRF (`csrf-csrf` double-submit).
+
+Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, production secrets): [Backend security](../apps/be/security.md).

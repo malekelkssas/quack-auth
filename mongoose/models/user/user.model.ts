@@ -4,6 +4,8 @@ export interface IUser {
   email: string;
   name: string;
   password: string;
+  refreshTokenHash?: string;
+  refreshTokenRotatedAt?: Date;
 }
 
 export interface IUserDocument extends IUser, Document {

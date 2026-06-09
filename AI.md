@@ -1090,3 +1090,119 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Developer noticed: “only 4 tests?”** — Nx had **cached** an earlier `BE:test` run from before signup expansion (`Nx read the output from the cache instead of running the command`). Fresh run: `pnpm nx reset && pnpm nx test BE --skip-nx-cache` → **12 passed**. Not a missing-spec bug; stale task cache. After noticing, confirmed all 11 signup + 1 app tests in source.
 
 **Developer workflow (first triple command in one message)** — Ran **`/code-review`**, **`/simplify`**, and **`/babysit`** together in a single chat message (not split across messages/chats). Outcomes: code review flagged docs/CI wiring gap (`pnpm ci` missing `nx test BE` despite README); simplify pass added `api-spec-lifecycle`, `it.each` validation table, slimmer `expectApiError`; babysit targeted merge-ready fixes before PR.
+
+---
+
+## 2026-06-09 00:43 — Login + cookie JWT auth endpoints
+
+**Session** — `S017-login-auth-endpoints`
+
+**Local start time** — `2026-06-09 00:43`
+
+**Cursor surface** — Agents
+
+**Model** — Codex 5.3
+
+**Branch** — `quack-07-login-auth-endpoints`
+
+**Chat summary** — No
+
+**Developer confirmed route decisions**
+
+- Auth endpoints under `/api/auth` (`register`, `login`, `refresh`)
+- `GET /api/users/me` remains under users
+
+**Implemented**
+
+- Added shared route/env constants and DTOs for login + auth response payloads.
+- Added backend `auth` module with register/login/refresh endpoints, cookie issuance, token verification, refresh-token hashing and rotation.
+- Added cookie-based guard for `/api/users/me` returning `401` when unauthorized.
+- Updated user persistence model/repository for `refreshTokenHash` metadata and rotation timestamp.
+- Replaced FE scaffold with `/signin` and protected `/app` flow using `@shared/dtos` `Login` schema and credentialed requests.
+- Synced docs (`apps/DOCS`), `TODO.md`, and `.env.example` with the new auth flow.
+
+**Security defaults implemented**
+
+- Access token TTL: `600` seconds (10 minutes)
+- Refresh token TTL: `86400` seconds (24 hours)
+- HttpOnly cookies for both access and refresh tokens
+- `SameSite=lax` default, `Secure` in production
+- Invalid/expired refresh returns `401` and clears cookies
+
+**Verified**
+
+- [x] `pnpm nx run BE:typecheck`
+- [x] `pnpm nx run FE:typecheck`
+- [x] `pnpm nx build BE`
+- [x] `pnpm nx build FE`
+- [x] `pnpm check` (lint + typecheck + format:check)
+
+**Follow-up — DTO mirror + auth response shape (Developer request)**
+
+- Extended `libs/dtos/src/lib/user/user.model.ts` to mirror persisted user docs: `_id`, `createdAt`, `updatedAt`, plus refresh metadata fields.
+- Removed hand-written `auth-user.dto.ts`; `AuthUser` is now `User.pick({ _id, email, name, createdAt, updatedAt })` in `auth-response.dto.ts`.
+- Updated repository/auth service/FE to use `_id` (not `id`) for API user payloads and JWT `sub`.
+
+**Follow-up — `@CurrentUser()` decorator (Developer request)**
+
+- Replaced manual `request.user?.sub` extraction in `users.controller.ts` with `@CurrentUser()` param decorator.
+- Moved decorator to `apps/BE/src/decorators/current-user.decorator.ts` (shared decorators live under `decorators/`, not feature folders).
+- Documented BE decorators layout in `.cursor/rules/project-conventions.mdc`.
+
+**Verified (follow-up)**
+
+- [x] `pnpm nx run BE:lint --skip-nx-cache`
+- [x] `pnpm nx run BE:typecheck --skip-nx-cache`
+
+**Follow-up — auth API test suite (S017)**
+
+- Added Supertest specs: `auth/register`, `auth/login`, `auth/refresh`, `users/me` (27 tests total).
+- Helpers: `cookies.ts`, `auth.ts`, `auth-user.ts`; extended `API_PATHS` in `request.ts`.
+- Removed legacy `users/signup.api-spec.ts` (superseded by `auth/register.api-spec.ts`).
+- Refresh rotation reuse test waits 1.1s so JWT `iat` differs (same-second refresh can re-issue identical tokens).
+- Expired access token tested via `jwt.sign({ expiresIn: -60 })` — no time mock needed.
+
+**Verified (auth tests)**
+
+- [x] `pnpm nx test BE --skip-nx-cache` (27 passed)
+- [x] `pnpm check`
+
+---
+
+## 2026-06-09 14:30 — S007-login-auth-endpoints (auth security hardening)
+
+**Session id** — `S007-login-auth-endpoints`
+
+**Local start time** — `2026-06-09 14:30`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-07-login-auth-endpoints`
+
+**Chat summary** — No
+
+**Decisions**
+
+- **Refresh storage:** HMAC-SHA256 digest of refresh JWT (`token-hash.util.ts`) keyed by `AUTH_REFRESH_TOKEN_SECRET` — not Argon2 (passwords stay Argon2id).
+- **Rotation:** Compare-and-swap `rotateRefreshTokenHash` — concurrent refresh losers get 401 + cookie clear.
+- **CSRF:** `csrf-csrf` double-submit; cookie `qa_csrf_token`, header `x-csrf-token`; protects auth POSTs only.
+- **Logout:** `POST /api/auth/logout` → 204, `clearRefreshTokenHash` when access valid, always clear cookies.
+- **Production secrets:** `resolveAuthSecret` / `assertProductionSecret` fail-fast on missing or `change-me-*` / `dev-*-secret` placeholders.
+- **Tests:** `SIGNUP_VALIDATION_CASES` fixture for shared `it.each` validation matrix.
+
+**Documentation (sections 7–9)**
+
+- Added `apps/DOCS/docs/apps/be/security.md`; linked from `overview.md`, `03-backend.md`, `testing.md`.
+- Updated `testing.md` — CSRF helpers, logout spec, **41** tests.
+- `TODO.md` — CSRF `[x]`, logout/CAS/secret items, Last audited.
+
+**Known limitation (documented)**
+
+- Access JWT valid until TTL after logout (no revocation list).
+
+**Verified**
+
+- [x] `pnpm nx test BE --skip-nx-cache` (**41** passed)
+- [x] `pnpm nx build DOCS`

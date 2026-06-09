@@ -38,14 +38,35 @@ API path segments live in `libs/qu-constants/src/lib/be-routes.constants.ts` as 
 ```ts
 import { BE_ROUTES } from '@shared/constants';
 
-@Controller(BE_ROUTES.USERS)
-export class UsersController {
-  @Post(BE_ROUTES.SIGNUP)
-  signup() {
+@Controller(BE_ROUTES.AUTH)
+export class AuthController {
+  @Post(BE_ROUTES.REGISTER)
+  register() {
     /* … */
   }
 }
 ```
+
+## Auth endpoints (cookie JWT)
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `POST /api/auth/logout`
+- `GET /api/users/me` (protected; returns `401` when unauthorized)
+
+Tokens are transported via HttpOnly cookies for both access and refresh tokens. Default TTLs:
+
+- Access token: 10 minutes
+- Refresh token: 24 hours
+
+Refresh uses token rotation with compare-and-swap hash updates; invalid or expired refresh tokens return `401` and clear auth cookies. Logout revokes the stored refresh hash and clears cookies (204).
+
+State-changing auth POSTs require CSRF double-submit (`x-csrf-token` header + `qa_csrf_token` cookie). Full detail: [Backend security](./security.md).
+
+## Security
+
+Cookie flags, JWT claims, HMAC refresh storage, production secret fail-fast, CSRF, logout semantics, and the access-token TTL limitation after logout: [Backend security](./security.md).
 
 ## Validation
 

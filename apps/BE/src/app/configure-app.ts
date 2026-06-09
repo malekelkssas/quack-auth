@@ -1,5 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
+import cookieParser = require('cookie-parser');
 import { BE_ROUTES, ENV_KEYS } from '@shared/constants';
+import { configureCsrf } from './csrf.config';
 
 function resolveCorsOrigins(): string | string[] {
   const origins =
@@ -12,6 +14,8 @@ function resolveCorsOrigins(): string | string[] {
 
 /** Shared HTTP config for production and API tests (excludes Swagger and listen). */
 export function configureApp(app: INestApplication): void {
+  app.use(cookieParser());
+  configureCsrf(app);
   app.setGlobalPrefix(BE_ROUTES.BASE);
   app.enableCors({
     origin: resolveCorsOrigins(),

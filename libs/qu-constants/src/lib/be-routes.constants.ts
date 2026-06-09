@@ -1,5 +1,10 @@
 export enum BE_ROUTES {
   BASE = 'api',
+  AUTH = 'auth',
   USERS = 'users',
-  SIGNUP = 'signup',
+  REGISTER = 'register',
+  LOGIN = 'login',
+  REFRESH = 'refresh',
+  LOGOUT = 'logout',
+  ME = 'me',
 }

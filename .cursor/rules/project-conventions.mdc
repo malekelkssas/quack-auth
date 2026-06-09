@@ -194,6 +194,14 @@ API service → Redux slice → Slice hook → Page Context → component logic 
 - Colocate **DTO wrappers next to the controller** (`users/users.dto.ts`), not only in `app/app.dto.ts`.
 - Shared Zod schemas stay in `libs/dtos`; BE wrappers import from `@shared/dtos`.
 
+## Backend decorators (`apps/BE/src/decorators/`)
+
+| File | Purpose | Example |
+| ---- | ------- | ------- |
+| **`*.decorator.ts`** | Nest param/method/class decorators shared across features | `current-user.decorator.ts` → `@CurrentUser()` |
+
+- Colocate reusable Nest decorators under `apps/BE/src/decorators/`, not inside feature folders (`auth/`, `users/`, …).
+
 ## Backend utilities (`apps/BE/src/utils/`)
 
 | Location | Purpose | Example |
