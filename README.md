@@ -91,6 +91,19 @@ pnpm nx serve BE      # http://localhost:3000/api  (Swagger: /docs)
 pnpm nx serve DOCS    # http://localhost:4001
 ```
 
+### Stale BE build (after clone)
+
+Nx may reuse a cached `dist/apps/BE` build that no longer matches `apps/BE/src` — common right after a fresh clone or pulling BE changes. Symptoms: auth/register hangs ~10s, then returns `Database operation failed. Please check your input.` (misleading; it is a Mongoose connection timeout, not bad credentials).
+
+Rebuild without the Nx cache, then restart BE:
+
+```bash
+pnpm nx build BE --skip-nx-cache
+pnpm nx serve BE
+```
+
+`--skip-nx-cache` only skips Nx’s build cache for that one command; it is safe for local dev. On boot you should see `Connected to MongoDB` before Nest logs.
+
 ## Tests
 
 **BE API tests** — Jest + Supertest against the real Nest app (in-memory Mongo, shared fixtures from `mongoose/fixtures/`):
