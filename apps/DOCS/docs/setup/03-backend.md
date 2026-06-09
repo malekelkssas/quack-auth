@@ -47,7 +47,7 @@ Without a fresh build + restart, the browser blocks FE requests with a CORS erro
 
 JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). CSRF (`csrf-csrf` double-submit) applies to **`POST /api/quack`** only — not auth POSTs. Bootstrap the CSRF cookie with any safe `GET` under `/api` (e.g. `GET /api/users/me` returns 401 without auth but still issues the CSRF cookie) before the first quack call.
 
-Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, Helmet, throttling, XSS sanitize, production secrets): [Backend security](../apps/be/security.md).
+Runtime docs: [Backend overview](../apps/be/overview.md) (validation, filters), [Backend architecture](../apps/be/architecture.md) (controller → repository → Mongoose), [Backend security](../apps/be/security.md) (cookies, CSRF, Helmet, throttling).
 
 ### Auth rate limiting (env)
 

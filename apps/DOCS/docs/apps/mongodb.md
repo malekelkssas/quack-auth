@@ -2,16 +2,56 @@
 sidebar_position: 3
 ---
 
+import MermaidChart from '@site/src/components/MermaidChart';
+
 # MongoDB
 
-Local database layer for **quack-auth** — Docker for dev, root `mongoose/` for connection and models, shared env keys via `@shared/constants`.
+Local database layer for **quack-auth** — Docker for dev, root `mongoose/` for connection and models, Nest **`DatabaseModule`** for the API runtime.
 
-> Initially the Apps section only listed FE and BE; MongoDB was documented under Setup but missing as its own app entity. Added here so data layer sits alongside the other runtime apps.
+> MongoDB is a **shared data layer**, not an Nx app. The BE imports `@quack/mongoose/*`; seed scripts and API tests use the same schemas and fixtures.
+
+## Why this layout?
+
+| Choice                             | Rationale                                                                                                                                                            |
+| ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`mongoose/` at repo root**       | One schema definition for BE, seed CLI, and Supertest — avoids duplicating models inside `apps/BE`                                                                   |
+| **`UserPaths` constants**          | Field renames touch one file; repositories never hard-code `"email"` strings                                                                                         |
+| **`DatabaseModule` + `UserModel`** | Nest owns the connection (`forRootAsync`); models stay in `@quack/mongoose` on the **default** connection (no `forFeature` double-registration)                      |
+| **`dbClient()` before Nest boot**  | Webpack-bundled BE must connect before `UserModel` runs queries — see [Backend architecture → Two ways Mongo connects](./be/architecture.md#two-ways-mongo-connects) |
+| **Pre-save password hook**         | Hashing at the schema layer guarantees CLI seed and API signup share the same Argon2id rules                                                                         |
+
+### Layer placement
+
+<MermaidChart chart={`flowchart LR
+subgraph runtime["Runtime entry points"]
+BE["apps/BE UserRepository"]
+Seed["pnpm db:seed"]
+Test["API tests"]
+end
+
+subgraph layer["mongoose/"]
+CO["connection-options"]
+Client["client.ts"]
+User["models/user"]
+Fix["fixtures"]
+end
+
+Mongo[("MongoDB")]
+
+BE --> User
+BE --> CO
+Seed --> Client --> CO
+Test --> Client
+CO --> Mongo
+User --> Mongo
+Fix --> User`} />
+
+**BE request flow** (controller → service → repository → `UserModel`): [Backend architecture](./be/architecture.md).
 
 ## Quick start
 
 ```bash
-docker compose up -d mongodb seq   # seq = optional log UI (dev)
+docker compose up -d mongodb
 cp .env.example .env   # if needed
 pnpm db:seed           # load dev user fixtures
 ```
@@ -30,16 +70,19 @@ docker compose logs mongodb
 
 ## Layout (`mongoose/`)
 
-Not an Nx app — standalone layer at the repo root:
+Standalone layer at the repo root:
 
 ```
 mongoose/
-├── client.ts           # connects via ENV_KEYS; E2E URI when NODE_ENV=e2e
-├── seed.ts             # CLI: pnpm db:seed / db:seed:reset
-├── register-paths.js   # ts-node path aliases for seed script
+├── client.ts              # dbClient() — CLI, main.ts, test bootstrap
+├── connection-options.ts  # resolveMongoConnectionOptions() — shared with DatabaseModule
+├── seed.ts                # CLI: pnpm db:seed / db:seed:reset
+├── register-paths.js      # ts-node path aliases for seed script
 ├── tsconfig.json
-├── fixtures/           # dev/test fixture data + loaders
-└── models/             # domain folders (user/, …)
+├── utils/
+│   └── password.util.ts   # Argon2id hash / verify (used by user schema + BE login)
+├── fixtures/              # dev/test fixture data + loaders
+└── models/                # domain folders (user/, …)
 ```
 
 ### Seed scripts
@@ -58,18 +101,37 @@ Three files per domain — see [Setup → MongoDB → domain layout](../setup/07
 | File          | Purpose                                                 |
 | ------------- | ------------------------------------------------------- |
 | `*.schema.ts` | Mongoose schema + `model()` registration                |
-| `*.model.ts`  | Repository interfaces                                   |
+| `*.model.ts`  | TypeScript interfaces (`IUserDocument`, …)              |
 | `*.paths.ts`  | Field path constants (no hard-coded strings in queries) |
 
 Reference implementation: `mongoose/models/user/`.
 
-Connection helper:
+**User document (persisted fields):**
+
+| Field                     | Notes                                       |
+| ------------------------- | ------------------------------------------- |
+| `email`                   | Unique, lowercased                          |
+| `name`                    | Min length 3                                |
+| `password`                | Argon2id hash, `select: false`              |
+| `refreshTokenHash`        | HMAC digest of refresh JWT, `select: false` |
+| `refreshTokenRotatedAt`   | Rotation audit, `select: false`             |
+| `createdAt` / `updatedAt` | Mongoose timestamps                         |
+
+API responses expose only the `AuthUser` subset — never password or refresh fields. See [Backend security → API response shape](./be/security.md#api-response-shape-no-secrets).
+
+### Password hashing (Argon2id)
+
+Implemented in `mongoose/utils/password.util.ts` and triggered from `user.schema.ts`:
 
 ```ts
-import { ENV_KEYS, NODE_ENV } from '@shared/constants';
-
-// E2E → E2E_MONGODB_URI, otherwise MONGODB_URI
+userSchema.pre('save', async function () {
+  if (!this.isModified(UserPaths.password)) return;
+  if (isArgon2Hash(this[UserPaths.password])) return;
+  this[UserPaths.password] = await hashPassword(this[UserPaths.password]);
+});
 ```
+
+OWASP-minimum **Argon2id** options: 19 MiB memory, 2 iterations, parallelism 1. The project PDF mentions bcrypt; the repo deliberately chose Argon2id — tracked as `[~]` in `TODO.md` §5 until the PDF is updated.
 
 ## Environment
 
@@ -78,7 +140,7 @@ Use `ENV_KEYS` from `@shared/constants` — never hardcode env var names.
 | Key                                       | Purpose                                    |
 | ----------------------------------------- | ------------------------------------------ |
 | `MONGODB_URI`                             | Dev / default connection string            |
-| `E2E_MONGODB_URI`                         | E2E test database                          |
+| `E2E_MONGODB_URI`                         | E2E test database (memory server)          |
 | `MONGODB_DATABASE`                        | Database name passed to `mongoose.connect` |
 | `MONGO_INITDB_ROOT_USERNAME` / `PASSWORD` | Docker init (compose)                      |
 
@@ -86,17 +148,26 @@ Copy `.env.example` → `.env` before connecting locally.
 
 ## NestJS connection (`@nestjs/mongoose`)
 
-The BE wires Mongo via `apps/BE/src/database/database.module.ts`:
+| Component                                     | Role                                                                              |
+| --------------------------------------------- | --------------------------------------------------------------------------------- |
+| `apps/BE/src/database/database.module.ts`     | `MongooseModule.forRootAsync` using `resolveMongoConnectionOptions()`             |
+| `apps/BE/src/main.ts`                         | `await dbClient()` **before** `NestFactory.create` (webpack / default connection) |
+| `apps/BE/src/repositories/user.repository.ts` | Queries via `UserModel` + `UserPaths`                                             |
+| `mongoose/client.ts`                          | Direct connect for seed CLI and test `createTestApp()`                            |
 
-- `MongooseModule.forRootAsync` — same URI resolution as `mongoose/client.ts` (`resolveMongoConnectionOptions()` in `mongoose/connection-options.ts`)
-- CLI scripts (`pnpm db:seed`) still call `dbClient()` directly
-- Repositories import `UserModel` from `@quack/mongoose/models/user` (shared schema registration on the default connection)
+There is no `MongooseModule.forFeature` — `UserModel` registers once in `@quack/mongoose/models/user` and attaches to the default connection opened by `DatabaseModule` / `dbClient()`.
+
+**API tests:** `global-setup.ts` starts `MongoMemoryServer`, sets `NODE_ENV=e2e` and `E2E_MONGODB_URI`. Each spec calls `dbClient()` in `createTestApp()` before loading `AppModule`.
 
 ## Related packages
 
 - **Runtime:** `mongoose`, `@nestjs/mongoose` (BE `DatabaseModule`)
+- **Hashing:** `argon2` (external in BE webpack bundle)
 - **Tests:** `mongodb-memory-server` (devDependency)
 
-## Setup reference
+## Related docs
 
-Full install and Docker Compose steps: [Setup → MongoDB](../setup/07-mongodb.md).
+- [Backend architecture](./be/architecture.md) — full HTTP → repository → `UserModel` flow
+- [Backend security](./be/security.md) — refresh HMAC, cookies, CSRF
+- [Backend API tests](./be/testing.md) — `resetDb()`, fixtures
+- [Setup → MongoDB](../setup/07-mongodb.md) — install and Docker Compose

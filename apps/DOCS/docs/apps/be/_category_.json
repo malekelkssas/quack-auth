@@ -3,6 +3,6 @@
   "position": 2,
   "link": {
     "type": "generated-index",
-    "description": "NestJS API — dev server, validation, filters, and API tests."
+    "description": "NestJS API — architecture, security, validation, filters, and API tests."
   }
 }

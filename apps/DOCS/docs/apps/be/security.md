@@ -2,9 +2,32 @@
 sidebar_position: 3
 ---
 
-# Backend security (auth)
+# Backend security
 
-Cookie-based JWT auth, refresh rotation, CSRF, and production secret requirements. Implementation lives under `apps/BE/src/controllers/auth/` and `apps/BE/src/config/csrf.config.ts`.
+Cookie-based JWT auth, refresh rotation, CSRF, rate limiting, and HTTP hardening. This page is the **canonical security reference** for the BE — it mirrors decisions tracked in root `TODO.md` §5 so you do not need to dig through `AI.md` for implemented behavior.
+
+For where each control sits in the request stack, see [Backend architecture](./architecture.md#security-touchpoints-in-this-stack).
+
+## Status (from project backlog)
+
+| Area                     | `TODO.md`                   | Status              | Implementation                                                                                             |
+| ------------------------ | --------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------- |
+| Passwords                | §5 — PDF said bcrypt        | **Done** (Argon2id) | `mongoose/utils/password.util.ts` + `user.schema.ts` pre-save hook; `AuthService.login` → `verifyPassword` |
+| Auth tokens              | §5 — JWT in HttpOnly cookie | **Done**            | `AuthService` — access + refresh cookies; separate signing secrets                                         |
+| Refresh rotation         | §3 auth tasks               | **Done**            | HMAC storage + `UserRepository.rotateRefreshTokenHash` (compare-and-swap)                                  |
+| CSRF                     | §5 — double-submit          | **Done**            | `config/csrf.config.ts` — `POST /api/quack` only; auth POSTs exempt                                        |
+| XSS / input              | §5 — Zod sanitize           | **Done**            | `libs/dtos/src/lib/sanitize/` — `Signup.name` transform                                                    |
+| Rate limit               | §5 — throttler on `/auth/*` | **Done**            | `ThrottlerGuard` on `AuthController`; `AUTH_THROTTLE_*` env                                                |
+| HTTP headers             | §5 — Helmet                 | **Done**            | `config/helmet.config.ts` via `configure-app.ts`                                                           |
+| Body size                | §3 / hardening              | **Done**            | `config/body-parser.config.ts` — `BE_JSON_BODY_LIMIT`                                                      |
+| No secrets in JSON       | §5 task 8                   | **Done**            | `AuthUser` + `UserRepository.toAuthUser`; `response-secrets.api-spec.ts`                                   |
+| Production secrets       | auth hardening              | **Done**            | `auth-config.util.ts` — fail-fast when weak/missing in production                                          |
+| Passport.js              | §3.10                       | **Won't adopt**     | Custom `JwtCookieAuthGuard` — see [Auth guard](#auth-guard-passportjs-not-used)                            |
+| Access token revocation  | known gap                   | **Open**            | No denylist — stolen access JWT valid until TTL (~10m) after logout                                        |
+| Distributed rate limit   | future                      | **Open**            | In-process `ThrottlerModule` only — no Redis                                                               |
+| Structured logging / Seq | §6                          | **Open**            | Nest built-in `Logger` only (pino + Seq reverted)                                                          |
+
+**PDF vs repo:** the tech-decisions PDF specifies **bcrypt** for passwords; this repo uses **Argon2id** per OWASP minimum parameters — documented below and in [MongoDB → Password hashing](../mongodb.md#password-hashing-argon2id).
 
 ## Cookie auth
 
@@ -153,6 +176,19 @@ JSON and urlencoded bodies are parsed with an env-configurable limit. Wiring: `a
 
 When exceeded → **413** `{ "message": "Request body too large", "code": "PAYLOAD_TOO_LARGE" }` (`GlobalExceptionFilter` maps Express `entity.too.large` and 413 `HttpException`s to `ErrorResponse`).
 
+## Password hashing (Argon2id)
+
+User passwords never persist as plaintext.
+
+| Stage           | Location                              | Behavior                                                                         |
+| --------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| Signup / create | `mongoose/models/user/user.schema.ts` | `pre('save')` hashes when `password` is modified and not already Argon2          |
+| Algorithm       | `mongoose/utils/password.util.ts`     | **Argon2id** — 19 MiB memory, 2 iterations, parallelism 1 (`ARGON2_OPTIONS`)     |
+| Login           | `AuthService.login`                   | `verifyPassword(plain, user.password)` via BE re-export `utils/password.util.ts` |
+| Fixtures / seed | `pnpm db:seed`                        | Plaintext fixture passwords hashed by the same pre-save hook                     |
+
+Refresh tokens use **HMAC-SHA256** digests in MongoDB — not Argon2. See [Refresh storage](#refresh-storage-hmac--cas).
+
 ## Auth guard (Passport.js not used)
 
 **Decision:** Passport.js and `@nestjs/passport` are **not** adopted. The PDF listed a JWT strategy; this repo uses a custom **`JwtCookieAuthGuard`** (`apps/BE/src/decorators/jwt-cookie-auth.guard.ts`) that:
@@ -176,6 +212,9 @@ Password hashing and refresh HMAC storage stay server-side only. Tokens are issu
 
 ## Related
 
+- [Backend architecture](./architecture.md) — controller → repository → `UserModel` flow
 - [Backend overview](./overview.md) — routes and validation
 - [Backend API tests](./testing.md) — CSRF helpers, throttle/sanitize/security-headers/response-secrets specs
+- [MongoDB](../mongodb.md) — schema, seed, connection
 - [Setup → Backend app](../../setup/03-backend.md) — first-time BE setup
+- Root `TODO.md` — §5 Security, §3 Auth module (repo root, not in this docs site)

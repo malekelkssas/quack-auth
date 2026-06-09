@@ -1,5 +1,5 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
 ---
 
 # Backend API tests
@@ -163,7 +163,7 @@ Use Supertest `.expect(status)` for HTTP status; `expectApiError(response, messa
 
 When adding a new endpoint test:
 
-1. Trace the flow: DTO → controller → service → repository → Mongoose.
+1. Trace the flow: DTO → controller → service → repository → Mongoose ([architecture](./architecture.md)).
 2. Read the Zod schema (or `MongooseErrorHandler`) for the exact `message`.
 3. Add a case per distinct error path; prefer `userFixtures` for seeded conflict scenarios.
 
@@ -183,7 +183,7 @@ When adding a new endpoint test:
 | `response-secrets.api-spec.ts` | Auth + `GET /users/me`    | JSON never includes `password`, `refreshTokenHash`, or `refreshTokenRotatedAt`; DB still stores hashes |
 | `security-headers.api-spec.ts` | `GET /api/users/me`       | Helmet `X-Frame-Options`, `X-Content-Type-Options` on responses                                        |
 
-**58** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
+**59** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
 
 Shared signup validation rows live in `test/fixtures/signup-validation.cases.ts` for `it.each` reuse.
 
@@ -201,6 +201,7 @@ pnpm nx reset && pnpm nx test BE --skip-nx-cache
 
 ## Related
 
+- [Backend architecture](./architecture.md) — controller → repository → `UserModel`
 - [Backend overview](./overview.md) — dev server, validation, filters, auth endpoints
 - [Backend security](./security.md) — CSRF, cookies, refresh rotation, logout
 - [MongoDB](../mongodb.md) — fixtures and `loadFixtures()`

@@ -31,15 +31,21 @@ Scaffold and first-time setup: [Setup → Backend app](../../setup/03-backend.md
 
 Details: [Path aliases](../../setup/04-path-aliases.md).
 
+## Architecture
+
+Request and data flow — Controller → Service → Repository → `@quack/mongoose` `UserModel`, plus `DatabaseModule`, `dbClient()`, and webpack bundling: **[Backend architecture](./architecture.md)**.
+
 ## Source layout
 
-| Directory                                               | Purpose                                                               |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| `app/`                                                  | Bootstrap module only (`app.module.ts`)                               |
-| `config/`                                               | HTTP/OpenAPI config (`configure-app.ts`, Helmet, CSRF, Swagger)       |
-| `controllers/<feature>/`                                | Feature controllers, services, DTO wrappers, modules                  |
-| `decorators/`                                           | Shared decorators and guards (`@CurrentUser()`, `JwtCookieAuthGuard`) |
-| `database/`, `filters/`, `middleware/`, `repositories/` | Cross-cutting infra                                                   |
+| Directory                | Purpose                                                               |
+| ------------------------ | --------------------------------------------------------------------- |
+| `app/`                   | Bootstrap module only (`app.module.ts`)                               |
+| `config/`                | HTTP/OpenAPI config (`configure-app.ts`, Helmet, CSRF, Swagger)       |
+| `controllers/<feature>/` | Feature controllers, services, DTO wrappers, modules                  |
+| `decorators/`            | Shared decorators and guards (`@CurrentUser()`, `JwtCookieAuthGuard`) |
+| `repositories/`          | Persistence (`UserRepository` → `UserModel`)                          |
+| `database/`              | `DatabaseModule` — `MongooseModule.forRootAsync`                      |
+| `filters/`               | `GlobalExceptionFilter` + Mongoose/Zod mapping                        |
 
 ## Routes
 
@@ -104,7 +110,7 @@ Duplicate email on signup resolves to **409** with message `Email is already reg
 
 ## Database
 
-MongoDB is documented as its own app — see [MongoDB](../mongodb.md). Nest connects via **`DatabaseModule`** (`MongooseModule.forRootAsync` in `apps/BE/src/database/database.module.ts`); repositories continue to use `UserModel` from `@quack/mongoose/models/user`.
+MongoDB is documented as its own app — see [MongoDB](../mongodb.md). Nest connects via **`DatabaseModule`**; repositories import **`UserModel`** from `@quack/mongoose/models/user` on the default connection. **`main.ts`** calls **`dbClient()`** before boot so webpack-bundled models do not buffer against a dead connection — see [Backend architecture → Two ways Mongo connects](./architecture.md#two-ways-mongo-connects).
 
 ## Logging
 

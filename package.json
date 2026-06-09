@@ -85,6 +85,7 @@
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
     "lint-staged": "^17.0.7",
+    "mermaid": "^11.15.0",
     "mongodb-memory-server": "^11.2.0",
     "nx": "22.7.5",
     "postcss": "8.4.38",
