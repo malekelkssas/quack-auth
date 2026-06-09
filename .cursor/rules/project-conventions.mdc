@@ -193,24 +193,38 @@ Axios interceptor (401 refresh) — shared axios instance, benefits all RTK Quer
 - **No magic route strings** in controllers or `main.ts` — use `BE_ROUTES` in `@Controller`, `@Get`/`@Post`/…, and `setGlobalPrefix`.
 - Place in `qu-constants` so the FE can import the same segments for API clients later.
 
-## Backend feature modules (`apps/BE/src/<feature>/`)
+## Backend layout (`apps/BE/src/`)
+
+| Directory | Purpose | Example |
+| --------- | ------- | ------- |
+| **`app/`** | Bootstrap module wiring only (`app.module.ts`) — **no** feature controllers or config | `app/app.module.ts` |
+| **`config/`** | HTTP/OpenAPI/security config (Helmet, CSRF, body parser, Swagger, `configureApp`) | `config/openapi.config.ts`, `config/configure-app.ts` |
+| **`controllers/<feature>/`** | Feature modules: controller + service + DTO wrappers + module | `controllers/users/users.controller.ts` |
+| **`decorators/`** | Reusable Nest decorators **and guards** shared across features | `current-user.decorator.ts`, `jwt-cookie-auth.guard.ts` |
+| **`utils/libs/<domain>/`** | Wrappers for external services (S3, email, …) | `utils/libs/s3/s3.client.ts` |
+| **`database/`**, **`filters/`**, **`middleware/`**, **`repositories/`** | Cross-cutting infra (unchanged) | `database/database.module.ts` |
+
+## Backend feature modules (`apps/BE/src/controllers/<feature>/`)
 
 | File | Purpose | Example |
 | ---- | ------- | ------- |
-| **`<feature>.controller.ts`** | HTTP routes for the feature | `users/users.controller.ts` |
-| **`<feature>.dto.ts`** | `createZodDto` wrappers for that feature’s Zod schemas | `users/users.dto.ts` → `SignupDto` |
-| **`<feature>.module.ts`** | Nest module wiring | `users/users.module.ts` |
+| **`<feature>.controller.ts`** | HTTP routes for the feature | `controllers/users/users.controller.ts` |
+| **`<feature>.service.ts`** | Feature business logic (colocated with controller) | `controllers/users/user.service.ts` |
+| **`<feature>.dto.ts`** | `createZodDto` wrappers for that feature’s Zod schemas | `controllers/users/users.dto.ts` → `MeResponseDto` |
+| **`<feature>.module.ts`** | Nest module wiring | `controllers/users/users.module.ts` |
 
-- Colocate **DTO wrappers next to the controller** (`users/users.dto.ts`), not only in `app/app.dto.ts`.
+- Colocate **DTO wrappers and services next to the controller** — no top-level `services/` folder for feature code.
 - Shared Zod schemas stay in `libs/dtos`; BE wrappers import from `@shared/dtos`.
+- Do **not** put config under `app/` or feature folders at `src/` root.
 
 ## Backend decorators (`apps/BE/src/decorators/`)
 
 | File | Purpose | Example |
 | ---- | ------- | ------- |
 | **`*.decorator.ts`** | Nest param/method/class decorators shared across features | `current-user.decorator.ts` → `@CurrentUser()` |
+| **`*.guard.ts`** | Reusable auth/route guards | `jwt-cookie-auth.guard.ts` → `@UseGuards(JwtCookieAuthGuard)` |
 
-- Colocate reusable Nest decorators under `apps/BE/src/decorators/`, not inside feature folders (`auth/`, `users/`, …).
+- Colocate reusable Nest decorators and guards under `apps/BE/src/decorators/`, not inside feature folders (`controllers/auth/`, …).
 
 ## Backend utilities (`apps/BE/src/utils/`)
 

@@ -5,7 +5,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import type { Request } from 'express';
-import { AuthService } from './auth.service';
+import { AuthService } from '../controllers/auth/auth.service';
 
 export type AuthenticatedRequest = Request & { user?: { sub: string } };
 

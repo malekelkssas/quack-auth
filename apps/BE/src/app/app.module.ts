@@ -3,19 +3,18 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ENV_KEYS } from '@shared/constants';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
-import { AuthModule } from '../auth/auth.module';
+import { AuthModule } from '../controllers/auth/auth.module';
+import { QuackModule } from '../controllers/quack/quack.module';
+import { UsersModule } from '../controllers/users/users.module';
+import { DatabaseModule } from '../database/database.module';
 import { GlobalExceptionFilter } from '../filters/global-exception.filter';
-import { QuackModule } from '../quack/quack.module';
-import { UsersModule } from '../users/users.module';
 import { resolvePositiveIntEnv } from '../utils/auth-config.util';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-
 const DEFAULT_AUTH_THROTTLE_TTL_MS = 60_000;
 const DEFAULT_AUTH_THROTTLE_LIMIT = 10;
 
 @Module({
   imports: [
+    DatabaseModule,
     ThrottlerModule.forRootAsync({
       useFactory: () => ({
         throttlers: [
@@ -36,9 +35,7 @@ const DEFAULT_AUTH_THROTTLE_LIMIT = 10;
     QuackModule,
     UsersModule,
   ],
-  controllers: [AppController],
   providers: [
-    AppService,
     {
       provide: APP_PIPE,
       useClass: ZodValidationPipe,

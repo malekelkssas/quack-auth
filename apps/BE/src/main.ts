@@ -1,39 +1,34 @@
-/**
- * This is not a production server yet!
- * This is only a minimal backend to get started.
- */
-
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { BE_ROUTES } from '@shared/constants';
-import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from './app/app.module';
-import { configureApp } from './app/configure-app';
+import { configureApp } from './config/configure-app';
+import { setupOpenApi } from './config/openapi.config';
 
 async function bootstrap() {
+  // Match test bootstrap: connect before Nest loads bundled `@quack/mongoose` models.
   await dbClient();
 
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+  const app = await NestFactory.create(AppModule, {
+    bodyParser: false,
+  });
   configureApp(app);
-
-  const openApiDoc = SwaggerModule.createDocument(
-    app,
-    new DocumentBuilder()
-      .setTitle('Quack Auth API')
-      .setDescription('Quack Auth backend API')
-      .setVersion('1.0')
-      .build(),
-  );
-  SwaggerModule.setup('docs', app, cleanupOpenApiDoc(openApiDoc));
+  setupOpenApi(app);
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${BE_ROUTES.BASE}`,
+    `Application is running on: http://localhost:${port}/${BE_ROUTES.BASE}`,
   );
-  Logger.log(`📚 Swagger docs: http://localhost:${port}/docs`);
+  Logger.log(`Swagger docs: http://localhost:${port}/docs`);
 }
 
-bootstrap();
+bootstrap().catch((error: unknown) => {
+  const message = error instanceof Error ? error.message : String(error);
+  Logger.error(
+    `Bootstrap failed: ${message}`,
+    error instanceof Error ? error.stack : undefined,
+  );
+  process.exit(1);
+});

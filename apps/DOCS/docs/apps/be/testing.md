@@ -18,7 +18,6 @@ pnpm nx test BE       # equivalent
 ```
 apps/BE/src/test/
 ├── api/                          # *.api-spec.ts — HTTP integration specs
-│   ├── app.api-spec.ts           # smoke / root routes
 │   ├── auth/
 │   │   ├── register.api-spec.ts       # POST /api/auth/register
 │   │   ├── login.api-spec.ts          # POST /api/auth/login
@@ -46,7 +45,7 @@ apps/BE/src/test/
 └── setup/
     ├── api-spec-lifecycle.ts     # registerApiTestLifecycle() — one app/connection per file
     ├── create-test-app.ts        # Nest TestingModule + configureApp
-    ├── global-setup.ts           # mongodb-memory-server
+    ├── global-setup.ts           # MongoMemoryServer
     └── global-teardown.ts        # disconnect + stop memory server
 ```
 
@@ -64,7 +63,7 @@ apps/BE/src/test/
 
 ## Memory Mongo and fixtures
 
-**`global-setup.ts`** starts `mongodb-memory-server`, sets `NODE_ENV=e2e`, and exports the URI via `E2E_MONGODB_URI`. `mongoose/client.ts` connects to that URI in e2e mode.
+**`global-setup.ts`** starts **`MongoMemoryServer`**, sets `NODE_ENV=e2e`, and exports the URI via `E2E_MONGODB_URI`. `mongoose/client.ts` connects to that URI in e2e mode.
 
 Each spec file:
 
@@ -107,7 +106,7 @@ import { loginFixtureUser } from '../../helpers/auth';
 
 const app = getApiTestApp();
 const { cookies } = await loginFixtureUser(app);
-const csrf = await fetchCsrf(app); // GET /api bootstraps qa_csrf_token cookie
+const csrf = await fetchCsrf(app); // GET /api/users/me (401) bootstraps qa_csrf_token cookie
 
 await withCsrf(api(app).post(API_PATHS.quack), csrf, cookies)
   .send({ name: 'Ducky' })
@@ -182,10 +181,9 @@ When adding a new endpoint test:
 | `body-size.api-spec.ts`        | `POST /api/auth/register` | 413 `Request body too large` + `PAYLOAD_TOO_LARGE` when body exceeds low `BE_JSON_BODY_LIMIT`          |
 | `sanitize.api-spec.ts`         | `POST /api/auth/register` | 201 with HTML stripped from `name` (XSS payload → plain text)                                          |
 | `response-secrets.api-spec.ts` | Auth + `GET /users/me`    | JSON never includes `password`, `refreshTokenHash`, or `refreshTokenRotatedAt`; DB still stores hashes |
-| `security-headers.api-spec.ts` | `GET /api`                | Helmet `X-Frame-Options`, `X-Content-Type-Options` on responses                                        |
-| `app.api-spec.ts`              | `GET /api`                | smoke                                                                                                  |
+| `security-headers.api-spec.ts` | `GET /api/users/me`       | Helmet `X-Frame-Options`, `X-Content-Type-Options` on responses                                        |
 
-**56** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
+**58** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
 
 Shared signup validation rows live in `test/fixtures/signup-validation.cases.ts` for `it.each` reuse.
 

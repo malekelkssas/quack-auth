@@ -1,6 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import type { AuthUser } from '@shared/dtos';
-import { UserRepository } from '../repositories/user.repository';
+import { UserRepository } from '../../repositories/user.repository';
 
 @Injectable()
 export class UserService {

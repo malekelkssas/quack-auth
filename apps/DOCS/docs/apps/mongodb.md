@@ -11,7 +11,7 @@ Local database layer for **quack-auth** — Docker for dev, root `mongoose/` for
 ## Quick start
 
 ```bash
-docker compose up -d mongodb
+docker compose up -d mongodb seq   # seq = optional log UI (dev)
 cp .env.example .env   # if needed
 pnpm db:seed           # load dev user fixtures
 ```
@@ -84,9 +84,17 @@ Use `ENV_KEYS` from `@shared/constants` — never hardcode env var names.
 
 Copy `.env.example` → `.env` before connecting locally.
 
+## NestJS connection (`@nestjs/mongoose`)
+
+The BE wires Mongo via `apps/BE/src/database/database.module.ts`:
+
+- `MongooseModule.forRootAsync` — same URI resolution as `mongoose/client.ts` (`resolveMongoConnectionOptions()` in `mongoose/connection-options.ts`)
+- CLI scripts (`pnpm db:seed`) still call `dbClient()` directly
+- Repositories import `UserModel` from `@quack/mongoose/models/user` (shared schema registration on the default connection)
+
 ## Related packages
 
-- **Runtime:** `mongoose`, `@nestjs/mongoose` (BE integration — follow-up)
+- **Runtime:** `mongoose`, `@nestjs/mongoose` (BE `DatabaseModule`)
 - **Tests:** `mongodb-memory-server` (devDependency)
 
 ## Setup reference

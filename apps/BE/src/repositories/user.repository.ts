@@ -113,11 +113,7 @@ export class UserRepository {
     ).exec();
   }
 
-  withoutPassword(user: UserWithPassword): AuthUser {
-    return this.pickPublicFields(user);
-  }
-
-  withoutRefreshHash(user: UserWithRefreshHash): AuthUser {
+  toPublicUser(user: AuthUser): AuthUser {
     return this.pickPublicFields(user);
   }
 

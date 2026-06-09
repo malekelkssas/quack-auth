@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-09 — merged `main` (`quack-11-endpoint`: `POST /api/quack`, CSRF scope shifted to authenticated mutations only, BE API suite **56** tests — see `apps/DOCS/docs/apps/be/security.md`) into `quack-09-fe-auth-rtk-query` (FE auth RTK Query: `authApi`, 401 refresh interceptor, protected home, login wiring, quack integration).
+**Last audited:** 2026-06-09 — `quack-12-dry-run`: removed `@MongoTransaction` / ALS txn plumbing; E2E harness back to `MongoMemoryServer`; `dbClient()` in `main.ts` retained.
 
 ---
 
@@ -57,18 +57,18 @@ The PDF uses older names; the repo has evolved:
 
 ## 2. Frontend
 
-| #    | Item                                 | Status | Evidence / notes                                                                    |
-| ---- | ------------------------------------ | ------ | ----------------------------------------------------------------------------------- |
-| 2.1  | React + TypeScript                   | [x]    | `apps/FE/src/main.tsx`                                                              |
-| 2.2  | Vite (via Nx)                        | [x]    | `apps/FE/vite.config.mts`                                                           |
-| 2.3  | Tailwind (scaffold)                  | [x]    | `tailwind.config.js`                                                                |
-| 2.4  | Redux Toolkit + RTK Query            | [x]    | `@reduxjs/toolkit@^2.12` bundles RTK Query; `authApi` + `axiosBaseQuery` in FE      |
-| 2.5  | React Router v6                      | [x]    | `react-router-dom`; `/` protected home; `/login`, `/signup`, `/logout`              |
-| 2.6  | Sign Up page + shared Zod validation | [x]    | `pages/auth/Signup` + `useSignup` (RHF + `zodResolver(Signup)` from `@shared/dtos`) |
-| 2.7  | Sign In page                         | [x]    | `pages/auth/Login` wired to `useLoginMutation` + shared `Login` DTO                 |
-| 2.8  | Protected route / auth guard         | [x]    | `ProtectedRoute` + `GuestRoute`; `lazyGetMe` cookie validation                      |
-| 2.9  | Global error boundary                | [ ]    | —                                                                                   |
-| 2.10 | FE imports `@shared/dtos` for forms  | [x]    | `Signup` in `useSignup`; `Login` DTO available for login form                       |
+| #    | Item                                 | Status | Evidence / notes                                                                                     |
+| ---- | ------------------------------------ | ------ | ---------------------------------------------------------------------------------------------------- |
+| 2.1  | React + TypeScript                   | [x]    | `apps/FE/src/main.tsx`                                                                               |
+| 2.2  | Vite (via Nx)                        | [x]    | `apps/FE/vite.config.mts`                                                                            |
+| 2.3  | Tailwind v4                          | [x]    | `@tailwindcss/vite` in `apps/FE/vite.config.mts`; `apps/FE/src/styles.css` — no `tailwind.config.js` |
+| 2.4  | Redux Toolkit + RTK Query            | [x]    | `@reduxjs/toolkit@^2.12` bundles RTK Query; `authApi` + `axiosBaseQuery` in FE                       |
+| 2.5  | React Router v6                      | [x]    | `react-router-dom`; `/` protected home; `/login`, `/signup`, `/logout`                               |
+| 2.6  | Sign Up page + shared Zod validation | [x]    | `pages/auth/Signup` + `useSignup` (RHF + `zodResolver(Signup)` from `@shared/dtos`)                  |
+| 2.7  | Sign In page                         | [x]    | `pages/auth/Login` wired to `useLoginMutation` + shared `Login` DTO                                  |
+| 2.8  | Protected route / auth guard         | [x]    | `ProtectedRoute` + `GuestRoute`; `lazyGetMe` cookie validation                                       |
+| 2.9  | Global error boundary                | [x]    | `apps/FE/src/components/ErrorBoundary.tsx` in `main.tsx`                                             |
+| 2.10 | FE imports `@shared/dtos` for forms  | [x]    | `Signup` in `useSignup`; `Login` DTO available for login form                                        |
 
 ### Frontend tasks
 
@@ -76,41 +76,41 @@ The PDF uses older names; the repo has evolved:
 - [x] Add RTK Query API slice for auth endpoints (`store/api/authApi.ts`)
 - [x] Reuse `SignupSchema` (and future `LoginSchema`) from `@shared/dtos` on the client — `Signup` + `Login` wired into page hooks
 - [x] Auth guard HOC or route wrapper redirecting unauthenticated users (`ProtectedRoute`, `GuestRoute`)
-- [ ] React error boundary at app root
+- [x] React error boundary at app root (`ErrorBoundary` in `main.tsx`)
 
 ---
 
 ## 3. Backend
 
-| #    | Item                                 | Status | Evidence / notes                                                                 |
-| ---- | ------------------------------------ | ------ | -------------------------------------------------------------------------------- |
-| 3.1  | NestJS app                           | [x]    | `apps/BE/`                                                                       |
-| 3.2  | Global Zod validation pipe           | [x]    | `ZodValidationPipe` in `app.module.ts`                                           |
-| 3.3  | Global exception filter              | [x]    | `global-exception.filter.ts` (HttpException + Zod + Mongoose + 500)              |
-| 3.4  | Swagger at `/docs`                   | [x]    | `apps/BE/src/main.ts` + `cleanupOpenApiDoc`                                      |
-| 3.5  | Mongoose user schema                 | [x]    | `mongoose/models/user/user.schema.ts`                                            |
-| 3.6  | `MongooseModule` wired in BE         | [~]    | `dbClient()` in `main.ts`; direct `UserModel` — no `@nestjs/mongoose` module yet |
-| 3.7  | `POST /auth/register` (or `/signup`) | [x]    | `POST /api/auth/register` implemented                                            |
-| 3.13 | Repository + service layers          | [x]    | `repositories/user.repository.ts`, `services/user.service.ts`                    |
-| 3.14 | Global Mongoose error mapping        | [x]    | `mongoose-error.handler.util.ts` + `GlobalExceptionFilter`                       |
-| 3.8  | `POST /auth/login`                   | [x]    | `POST /api/auth/login`                                                           |
-| 3.9  | `GET /auth/me` (protected)           | [x]    | Implemented as `GET /api/users/me` per route decision                            |
-| 3.10 | Passport.js + JWT strategy           | [ ]    | Not in dependencies                                                              |
-| 3.11 | `@nestjs/throttler` on `/auth/*`     | [x]    | `ThrottlerGuard` on `AuthController`; `AUTH_THROTTLE_*` env — `security.md`      |
-| 3.12 | class-validator (secondary)          | [ ]    | Intentionally Zod-only via nestjs-zod                                            |
+| #    | Item                                 | Status | Evidence / notes                                                            |
+| ---- | ------------------------------------ | ------ | --------------------------------------------------------------------------- |
+| 3.1  | NestJS app                           | [x]    | `apps/BE/`                                                                  |
+| 3.2  | Global Zod validation pipe           | [x]    | `ZodValidationPipe` in `app.module.ts`                                      |
+| 3.3  | Global exception filter              | [x]    | `global-exception.filter.ts` (HttpException + Zod + Mongoose + 500)         |
+| 3.4  | Swagger at `/docs`                   | [x]    | `apps/BE/src/main.ts` + `cleanupOpenApiDoc`                                 |
+| 3.5  | Mongoose user schema                 | [x]    | `mongoose/models/user/user.schema.ts`                                       |
+| 3.6  | `MongooseModule` wired in BE         | [x]    | `apps/BE/src/database/database.module.ts`; CLI/seed still use `dbClient()`  |
+| 3.7  | `POST /auth/register` (or `/signup`) | [x]    | `POST /api/auth/register` implemented                                       |
+| 3.13 | Repository + service layers          | [x]    | `repositories/user.repository.ts`, `services/user.service.ts`               |
+| 3.14 | Global Mongoose error mapping        | [x]    | `mongoose-error.handler.util.ts` + `GlobalExceptionFilter`                  |
+| 3.8  | `POST /auth/login`                   | [x]    | `POST /api/auth/login`                                                      |
+| 3.9  | `GET /auth/me` (protected)           | [x]    | Implemented as `GET /api/users/me` per route decision                       |
+| 3.10 | Passport.js + JWT strategy           | [~]    | **Won't adopt** — custom `JwtCookieAuthGuard`; see `security.md`            |
+| 3.11 | `@nestjs/throttler` on `/auth/*`     | [x]    | `ThrottlerGuard` on `AuthController`; `AUTH_THROTTLE_*` env — `security.md` |
+| 3.12 | class-validator (secondary)          | [ ]    | Intentionally Zod-only via nestjs-zod                                       |
 
 ### Backend tasks
 
-- [~] Wire `mongoose/client.ts` in `main.ts` (done); `MongooseModule` in `app.module.ts` still optional
+- [x] Wire `MongooseModule` via `DatabaseModule` (`resolveMongoConnectionOptions` shared with `dbClient()`)
 - [x] Auth module: `register`, `login`, `refresh`, `logout` under `apps/BE/src/auth/`
 - [x] Production auth secret fail-fast (`auth-config.util.ts`)
 - [x] Refresh token HMAC storage + compare-and-swap rotation (`token-hash.util.ts`, `rotateRefreshTokenHash`)
 - [x] **Argon2id** hash on signup + `verifyPassword` on login (`mongoose/utils/password.util.ts`; PDF says bcrypt — repo chose Argon2id per OWASP)
 - [ ] **Unified repository layer interface** — shared contract/base for all repositories (Developer request)
-- [ ] **Atomic transaction setup** — MongoDB session/transaction wrapper for multi-document repository operations (Developer request)
+- [ ] **Atomic transaction setup** — removed on `quack-12-dry-run` (standalone Docker/mongo; sequential writes; no replica set)
 - [x] JWT issued into **HttpOnly** access + refresh cookies (10m/24h defaults + rotation)
 - [x] Auth guard on `GET /users/me`
-- [ ] OpenAPI: `@ApiTags('auth')`, `@ApiBearerAuth` or cookie security scheme
+- [x] OpenAPI: `@ApiTags('auth'|'users'|'quack')`, cookie + CSRF security schemes (`openapi.config.ts`)
 - [x] Align route naming with PDF (`/auth/register` selected) and document in DOCS
 
 ---
@@ -165,19 +165,19 @@ The PDF uses older names; the repo has evolved:
 
 ## 6. Logging & observability
 
-| #   | Item                                          | Status | Evidence / notes                                   |
-| --- | --------------------------------------------- | ------ | -------------------------------------------------- |
-| 6.1 | nestjs-pino structured JSON logs              | [ ]    | BE uses Nest `Logger` in filters only              |
-| 6.2 | Correlation ID middleware (AsyncLocalStorage) | [ ]    | PDF: UUID per request, propagated to all log lines |
-| 6.3 | pino-pretty for local dev                     | [ ]    | `nx serve BE \| pino-pretty`                       |
-| 6.4 | Seq in Docker (optional dev UI)               | [ ]    | Not in `docker-compose.yml`                        |
-| 6.5 | Request journey sample in PDF                 | [ ]    | Target format documented in PDF §6                 |
+| #   | Item                                          | Status | Evidence / notes                                             |
+| --- | --------------------------------------------- | ------ | ------------------------------------------------------------ |
+| 6.1 | nestjs-pino structured JSON logs              | [ ]    | Reverted — Nest built-in `Logger` in `main.ts` / filters     |
+| 6.2 | Correlation ID middleware (AsyncLocalStorage) | [ ]    | Removed with pino revert                                     |
+| 6.3 | pino-pretty for local dev                     | [ ]    | Removed with pino revert                                     |
+| 6.4 | Seq in Docker (optional dev UI)               | [ ]    | Removed from `docker-compose.yml`                            |
+| 6.5 | Request journey sample in PDF                 | [ ]    | `observability.md` removed; overview documents Nest `Logger` |
 
 ### Logging tasks
 
 - [ ] Add `nestjs-pino` + configure JSON output with `level`, `route`, `ms`
-- [ ] Correlation ID middleware; bind `requestId` into pino child logger
-- [ ] Add Seq service to `docker-compose.yml` (port 80, dev-only)
+- [ ] Correlation ID middleware; bind `correlationId` into pino via `customProps`
+- [ ] Add Seq service to `docker-compose.yml` (container port 80 → host 5341, dev-only)
 - [ ] Document log workflow in `apps/DOCS`
 
 ---
@@ -188,7 +188,7 @@ The PDF uses older names; the repo has evolved:
 | --- | ----------------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
 | 7.1 | Jest (BE) — dependency / config           | [x]    | `jest.config.ts`, `*.api-spec.ts` under `apps/BE/src/test/`                                         |
 | 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | API-level only per Developer preference                                                             |
-| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth + security specs (throttle, sanitize, headers, secrets); **48** tests; expand as features land |
+| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth + security specs (throttle, sanitize, headers, secrets); **59** tests; expand as features land |
 | 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config                                                  |
 | 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                                                                   |
 | 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`                                                          |
@@ -198,7 +198,7 @@ The PDF uses older names; the repo has evolved:
 ### Testing tasks
 
 - [ ] BE: colocated unit tests (optional — Developer prefers API-level Supertest)
-- [x] BE: Supertest auth + security API specs (`throttle`, `sanitize`, `security-headers`, `response-secrets` — **48** tests)
+- [x] BE: Supertest auth + security API specs (`throttle`, `sanitize`, `security-headers`, `response-secrets` — **59** tests)
 - [ ] FE: Vitest + React Testing Library for forms and guards
 - [ ] FE: Cypress flows for full auth journey
 - [ ] Uncomment and stabilize CI test jobs
@@ -207,35 +207,35 @@ The PDF uses older names; the repo has evolved:
 
 ## 8. API documentation (Swagger)
 
-| #   | Item                               | Status | Notes                  |
-| --- | ---------------------------------- | ------ | ---------------------- |
-| 8.1 | Swagger UI at `/docs`              | [x]    | Dev only               |
-| 8.2 | Zod → OpenAPI via nestjs-zod       | [x]    | Greeting endpoint only |
-| 8.3 | Auth endpoints documented          | [ ]    | —                      |
-| 8.4 | Security schemes (Bearer / cookie) | [ ]    | —                      |
+| #   | Item                               | Status | Notes                                                               |
+| --- | ---------------------------------- | ------ | ------------------------------------------------------------------- |
+| 8.1 | Swagger UI at `/docs`              | [x]    | Dev only                                                            |
+| 8.2 | Zod → OpenAPI via nestjs-zod       | [x]    | Greeting endpoint only                                              |
+| 8.3 | Auth endpoints documented          | [x]    | `@ApiTags` + operations on auth/users/quack controllers             |
+| 8.4 | Security schemes (Bearer / cookie) | [x]    | Cookie access JWT + CSRF header in `openapi.config.ts` (not Bearer) |
 
 ---
 
 ## 9. Docker & dev environment
 
-| #    | Item                                     | Status | Evidence / notes                 |
-| ---- | ---------------------------------------- | ------ | -------------------------------- |
-| 9.1  | `docker-compose.yml`                     | [x]    | Root compose file                |
-| 9.2  | MongoDB (`mongo:8`, volume, healthcheck) | [x]    | Port 27017                       |
-| 9.3  | `.env.example` for Mongo                 | [x]    | Root                             |
-| 9.4  | Seq (datalust/seq)                       | [ ]    | PDF §6, §9                       |
-| 9.5  | `Dockerfile` for BE (multi-stage)        | [ ]    | —                                |
-| 9.6  | `Dockerfile` for FE (multi-stage)        | [ ]    | —                                |
-| 9.7  | Non-root `USER` in prod images           | [ ]    | PDF §9                           |
-| 9.8  | `HEALTHCHECK` on `/health`               | [ ]    | Only Mongo has healthcheck today |
-| 9.9  | `.dockerignore`                          | [ ]    | —                                |
-| 9.10 | `.env.docker` (gitignored)               | [ ]    | PDF §9                           |
+| #    | Item                                     | Status | Evidence / notes                             |
+| ---- | ---------------------------------------- | ------ | -------------------------------------------- |
+| 9.1  | `docker-compose.yml`                     | [x]    | Root compose file                            |
+| 9.2  | MongoDB (`mongo:8`, volume, healthcheck) | [x]    | Port 27017                                   |
+| 9.3  | `.env.example` for Mongo                 | [x]    | Root                                         |
+| 9.4  | Seq (datalust/seq)                       | [x]    | `docker-compose.yml` — http://localhost:5341 |
+| 9.5  | `Dockerfile` for BE (multi-stage)        | [ ]    | —                                            |
+| 9.6  | `Dockerfile` for FE (multi-stage)        | [ ]    | —                                            |
+| 9.7  | Non-root `USER` in prod images           | [ ]    | PDF §9                                       |
+| 9.8  | `HEALTHCHECK` on `/health`               | [ ]    | Only Mongo has healthcheck today             |
+| 9.9  | `.dockerignore`                          | [ ]    | —                                            |
+| 9.10 | `.env.docker` (gitignored)               | [ ]    | PDF §9                                       |
 
 ### Docker tasks
 
 - [ ] `Dockerfile.backend` — dev (hot reload) + prod (compiled JS, no devDeps)
 - [ ] `Dockerfile.frontend` — Vite build + static serve or nginx
-- [ ] Extend compose: `backend`, `frontend`, `seq` with `depends_on`
+- [~] Extend compose: `backend`, `frontend` with `depends_on` — `seq` + `mongodb` done; app images still open
 - [ ] `GET /health` on BE for container healthchecks
 - [ ] `node:20-alpine` base, multi-stage builds per PDF
 

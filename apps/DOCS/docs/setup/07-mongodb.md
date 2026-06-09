@@ -4,6 +4,16 @@ sidebar_position: 7
 
 # MongoDB (Mongoose)
 
+### 7a0 — Docker Compose (Mongo)
+
+```bash
+docker compose up -d mongodb
+```
+
+| Service   | Container            | Host port | Purpose          |
+| --------- | -------------------- | --------- | ---------------- |
+| `mongodb` | `quack_auth_mongodb` | `27017`   | Primary database |
+
 ### 7a — Dependencies
 
 ```bash

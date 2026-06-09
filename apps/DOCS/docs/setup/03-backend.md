@@ -27,7 +27,7 @@ The FE dev server runs on **http://localhost:4200** and calls the API on **:3000
 CORS_ORIGIN=http://localhost:4200
 ```
 
-CORS is applied in `apps/BE/src/app/configure-app.ts` (shared with API tests). Restart the BE after changing `.env`:
+CORS is applied in `apps/BE/src/config/configure-app.ts` (shared with API tests). Restart the BE after changing `.env`:
 
 ```bash
 pnpm nx build BE --skip-nx-cache
@@ -45,7 +45,7 @@ Without a fresh build + restart, the browser blocks FE requests with a CORS erro
 - `GET /api/users/me` (protected)
 - `POST /api/quack` (protected; optional `{ name }` body → `{ quack: "<name> quack" }`)
 
-JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). CSRF (`csrf-csrf` double-submit) applies to **`POST /api/quack`** only — not auth POSTs. Bootstrap the CSRF cookie with a safe `GET /api` before the first quack call.
+JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). CSRF (`csrf-csrf` double-submit) applies to **`POST /api/quack`** only — not auth POSTs. Bootstrap the CSRF cookie with any safe `GET` under `/api` (e.g. `GET /api/users/me` returns 401 without auth but still issues the CSRF cookie) before the first quack call.
 
 Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, Helmet, throttling, XSS sanitize, production secrets): [Backend security](../apps/be/security.md).
 
