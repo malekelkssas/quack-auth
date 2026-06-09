@@ -58,10 +58,33 @@ pnpm install
 cp .env.example .env
 ```
 
-Start MongoDB (optional for early BE work):
+## Docker Compose (dev services)
+
+Local infrastructure lives in root `docker-compose.yml`. Copy env first (`cp .env.example .env`).
 
 ```bash
+# MongoDB (required for BE auth against a real DB)
 docker compose up -d mongodb
+
+# Optional: Seq log UI for browsing structured BE logs (dev only)
+docker compose up -d seq
+```
+
+| Service | URL / port            | Env / notes                                                                |
+| ------- | --------------------- | -------------------------------------------------------------------------- |
+| MongoDB | `localhost:27017`     | `MONGODB_URI`, `MONGODB_DATABASE` in `.env` (defaults match compose creds) |
+| Seq     | http://localhost:5341 | No BE env required for local pretty logs; Seq is optional log browsing     |
+
+**How apps connect**
+
+- **BE** — reads `MONGODB_URI` + `MONGODB_DATABASE` from `.env`; `DatabaseModule` (`@nestjs/mongoose`) connects on boot. API: http://localhost:3000/api (Swagger: `/docs`).
+- **FE** — `VITE_API_URL=http://localhost:3000/api` (see `.env.example`); browser calls BE with credentials for cookie auth.
+- **Seed data** — `pnpm db:seed` after Mongo is up (fixtures in `mongoose/fixtures/`).
+
+```bash
+docker compose ps
+docker compose logs mongodb
+docker compose down   # stop services (volumes persist)
 ```
 
 Run apps:
@@ -118,11 +141,11 @@ The PR digest workflow needs a **Cursor API key** in the repository (not in `.en
 
 The Developer has added **`CURSOR_API_KEY`** under **Settings → Secrets and variables → Actions**. Clone/local dev does not need this secret unless you run the agent workflow yourself. Optional repo **variables**: `CURSOR_SUMMARY_MODEL`, `CURSOR_AGENT_PACKAGE_VERSION` — see DOCS.
 
-## Keeping DTOs in sync (`libs/dtos` ↔ `app.dto.ts`)
+## Keeping DTOs in sync (`libs/dtos` ↔ feature `*.dto.ts`)
 
-Shared Zod schemas live in `libs/dtos`; NestJS needs separate `createZodDto` wrappers in `apps/BE/src/app/app.dto.ts`. That pairing is easy to forget — see the sync warning in **Setup → nestjs-zod** (`pnpm nx serve DOCS` → http://localhost:4001).
+Shared Zod schemas live in `libs/dtos`; NestJS needs separate `createZodDto` wrappers colocated with controllers (e.g. `apps/BE/src/controllers/users/users.dto.ts`). That pairing is easy to forget — see the sync warning in **Setup → nestjs-zod** (`pnpm nx serve DOCS` → http://localhost:4001).
 
-The Developer maintains **[filelinks](https://github.com/Vilancer/filelinks)** — a tool that declares semantic links between files (and directories). On `filelinks check`, staged **triggers** flag missing **affects** companions; with **`--run-agents`**, it can spawn a Cursor agent (configured prompt/model per link) to fix them — e.g. update `app.dto.ts` after `libs/dtos` changes. The upstream README shows `pnpm add -D filelinks @filelinks/core`, but **it is not published on npm yet** — use the GitHub repo until release.
+The Developer maintains **[filelinks](https://github.com/Vilancer/filelinks)** — a tool that declares semantic links between files (and directories). On `filelinks check`, staged **triggers** flag missing **affects** companions; with **`--run-agents`**, it can spawn a Cursor agent (configured prompt/model per link) to fix them — e.g. update feature `*.dto.ts` after `libs/dtos` changes. The upstream README shows `pnpm add -D filelinks @filelinks/core`, but **it is not published on npm yet** — use the GitHub repo until release.
 
 ## Git workflow (multi-chat / Agents)
 

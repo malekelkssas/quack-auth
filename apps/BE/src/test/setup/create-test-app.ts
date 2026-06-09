@@ -2,8 +2,9 @@ import type { INestApplication } from '@nestjs/common';
 import { Test } from '@nestjs/testing';
 import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from '../../app/app.module';
-import { configureApp } from '../../app/configure-app';
+import { configureApp } from '../../config/configure-app';
 
+/** Ensures `@quack/mongoose` models share a live connection before `MongooseModule` boots. */
 export async function createTestApp(): Promise<INestApplication> {
   await dbClient();
 

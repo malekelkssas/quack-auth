@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { QuackInput, QuackResponse } from '@shared/dtos';
-import { UserService } from '../services/user.service';
+import { UserService } from '../users/user.service';
 
 @Injectable()
 export class QuackService {

@@ -108,17 +108,16 @@ Swagger UI: http://localhost:3000/docs
 Keep Zod schemas in `libs/dtos` (shared with FE). In the BE app, wrap them with `createZodDto`:
 
 ```ts
-// apps/BE/src/app/app.dto.ts
+// apps/BE/src/controllers/users/users.dto.ts
 import { createZodDto } from 'nestjs-zod';
-import { GreetingQuery, GreetingResponse } from '@shared/dtos';
+import { MeResponse } from '@shared/dtos';
 
-export class GreetingQueryDto extends createZodDto(GreetingQuery) {}
-export class GreetingResponseDto extends createZodDto(GreetingResponse) {}
+export class MeResponseDto extends createZodDto(MeResponse) {}
 ```
 
-> **Keep `app.dto.ts` in sync.** Adding a schema to `libs/dtos` is not enough for the backend — each schema used in a controller (`@Query()`, `@Body()`, `@ZodResponse()`, etc.) needs a matching `createZodDto` class in `apps/BE/src/app/app.dto.ts` (or a feature-scoped `*.dto.ts` as the API grows). The FE only imports the Zod schema/type from `@shared/dtos`; NestJS validation and OpenAPI require the wrapper on the BE side.
+> **Keep feature `*.dto.ts` in sync.** Adding a schema to `libs/dtos` is not enough for the backend — each schema used in a controller (`@Query()`, `@Body()`, `@ZodResponse()`, etc.) needs a matching `createZodDto` class in the feature folder (e.g. `controllers/users/users.dto.ts`). The FE only imports the Zod schema/type from `@shared/dtos`; NestJS validation and OpenAPI require the wrapper on the BE side.
 >
-> This split is a recurring pain point for the Developer — shared Zod in `libs/dtos` vs Nest wrappers in `app.dto.ts` (and similar pairs elsewhere) are easy to drift apart.
+> This split is a recurring pain point for the Developer — shared Zod in `libs/dtos` vs Nest wrappers in feature `*.dto.ts` files are easy to drift apart.
 >
 > **[filelinks](https://github.com/Vilancer/filelinks)** is a language-agnostic tool the Developer is building to declare semantic relationships between files (and directories): when a **trigger** path changes, linked **affects** paths are flagged for humans, git hooks, or AI agents. Example direction for this repo:
 >
@@ -131,7 +130,7 @@ export class GreetingResponseDto extends createZodDto(GreetingResponse) {}
 >     trigger: 'libs/dtos/**',
 >     affects: [
 >       {
->         file: 'apps/BE/src/app/app.dto.ts',
+>         file: 'apps/BE/src/controllers/**/**.dto.ts',
 >         reason:
 >           'Add or update createZodDto wrapper for each new shared schema',
 >       },
@@ -157,11 +156,12 @@ export class GreetingResponseDto extends createZodDto(GreetingResponse) {}
 Use in the controller:
 
 ```ts
-@Get()
-@ZodResponse({ type: GreetingResponseDto })
-getGreeting(@Query() query: GreetingQueryDto) {
-  return this.appService.getGreeting(query.name);
+@Get(BE_ROUTES.ME)
+@ZodResponse({ type: MeResponseDto })
+async me(@CurrentUser() userId: string) {
+  const user = await this.userService.getMe(userId);
+  return { user };
 }
 ```
 
-Example request: `GET /api?name=world` → `{ "name": "world", "appName": "quack-auth" }`
+Example request: `GET /api/users/me` (with valid access cookie) → `{ "user": { "id": "…", "email": "…", "name": "…" } }`

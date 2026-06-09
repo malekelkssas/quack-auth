@@ -4,14 +4,15 @@ import { ENV_KEYS, NODE_ENV } from '@shared/constants';
 import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { UserRepository } from '../repositories/user.repository';
-import { resolveAuthSecret } from '../utils/auth-config.util';
-import { MongooseErrorHandler } from '../utils/mongoose-error.handler.util';
-import { verifyPassword } from '../utils/password.util';
+import { MongoTransaction } from '../../decorators/mongo-transaction.decorator';
+import { UserRepository } from '../../repositories/user.repository';
+import { resolveAuthSecret } from '../../utils/auth-config.util';
+import { MongooseErrorHandler } from '../../utils/mongoose-error.handler.util';
+import { verifyPassword } from '../../utils/password.util';
 import {
   hashRefreshToken,
   verifyRefreshTokenHash,
-} from '../utils/token-hash.util';
+} from '../../utils/token-hash.util';
 
 type TokenPayload = {
   sub: string;
@@ -57,6 +58,7 @@ export class AuthService {
 
   constructor(private readonly userRepository: UserRepository) {}
 
+  @MongoTransaction()
   async register(input: Signup, response: Response): Promise<AuthResponse> {
     try {
       const user = await this.userRepository.create({

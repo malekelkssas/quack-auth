@@ -1,7 +1,7 @@
 import type { INestApplication } from '@nestjs/common';
 import { CSRF_CONSTANTS } from '@shared/constants';
 import type { Test } from 'supertest';
-import { resolveCsrfCookieName } from '../../app/csrf.config';
+import { resolveCsrfCookieName } from '../../config/csrf.config';
 import { parseSetCookie, toCookieHeader } from './cookies';
 import { api, API_PATHS } from './request';
 
@@ -12,9 +12,7 @@ export type CsrfBundle = {
 
 /** Bootstrap CSRF double-submit cookie via a safe GET (matches FE first-load flow). */
 export async function fetchCsrf(app: INestApplication): Promise<CsrfBundle> {
-  const response = await api(app)
-    .get(`${API_PATHS.root}?name=csrf-bootstrap`)
-    .expect(200);
+  const response = await api(app).get(API_PATHS.users.me).expect(401);
   const cookies = parseSetCookie(response.headers['set-cookie']);
   const cookieName = resolveCsrfCookieName();
   const token = cookies[cookieName];

@@ -1526,3 +1526,124 @@ Context was compacted earlier this chat. Prior work this chat (before this notic
 **Also in commit** — Responsive Home nav (mobile: initials-only greeting, `[ OUT ]`, tighter padding); `ErrorBoundary`, `SessionDeathRedirect`, `ProtectedRoute` dead-session fix, user-triggered quack form, pond/action-buttons removal, root `min-height` safety.
 
 **Verified** — `pnpm check` before commit.
+
+---
+
+## 2026-06-09 18:35 — S012-todo-audit-fe-be
+
+**Session id** — `S012-todo-audit-fe-be`
+
+**Cursor surface** — Agents
+
+**Local start time** — `2026-06-09 18:35`
+
+**Branch** — `main` (evaluation only; no code changes)
+
+**Model** — Composer 2.5
+
+**Developer request** — Evaluate what is missing in root `TODO.md`, separate gaps by FE vs BE, and log this request in `AI.md`.
+
+**What I did** — Read `TODO.md` end-to-end and cross-checked the repo (`ErrorBoundary`, `JwtCookieAuthGuard`, Vitest/vite config, Dockerfiles, `/health`, Nx tags, BE API spec count). Produced a FE/BE split of open `[ ]` / `[~]` items plus stale or policy-only rows the checklist should update.
+
+**Findings (summary for Developer)** — See chat response: FE gaps are mostly testing (Vitest config, unit tests, Cypress) plus one stale error-boundary row; BE gaps are observability, OpenAPI auth docs, repository/transaction architecture, Docker/ops, and partial Mongoose/Supertest coverage. Cross-cutting: Nx tags, Nx Cloud CI distribution, Argon2 vs bcrypt doc reconciliation.
+
+**Judgement** — `TODO.md` **Last audited** line and §2.9 error-boundary status are behind `main` (ErrorBoundary shipped in S011). Passport.js (§3.10) and class-validator (§3.12) are open in TODO but effectively superseded by custom `JwtCookieAuthGuard` + Zod-only validation — consider marking `[~]` with “won’t adopt” notes rather than leaving as bare `[ ]`.
+
+---
+
+## 2026-06-09 19:15 — S013-be-observability-mongoose
+
+**Session id** — `S013-be-observability-mongoose`
+
+**Cursor surface** — Agents
+
+**Local start time** — `2026-06-09 19:15`
+
+**Branch** — `quack-12-dry-run`
+
+**Model** — Composer 2.5
+
+**Developer request** — Implement backlog: MongooseModule, atomic transactions, OpenAPI auth docs, nestjs-pino + correlation IDs + Seq compose, sync TODO/README/DOCS; defer Passport; evaluate Redis.
+
+**What I did**
+
+- **`DatabaseModule`** — `MongooseModule.forRootAsync` using shared `resolveMongoConnectionOptions()` (`mongoose/connection-options.ts`); removed `dbClient()` from `main.ts` / test bootstrap; seed CLI still uses `dbClient()`.
+- **Transactions** — `withMongoTransaction()` util; optional `ClientSession` on `UserRepository` write methods.
+- **Observability** — `nestjs-pino`, `CorrelationIdModule` (ALS + `x-correlation-id`), `pino-pretty` in development, Seq in `docker-compose.yml` (`:5341`).
+- **OpenAPI** — `@ApiTags` on auth/users/quack; cookie + CSRF security schemes in `openapi.config.ts`.
+- **Passport** — not added; documented custom `JwtCookieAuthGuard` in `security.md`; TODO §3.10 → `[~]` won't adopt.
+- **Redis** — **not added**. Sessions = HttpOnly JWT + Mongo refresh hashes; correlation = per-request ALS; throttler in-process. Documented in `observability.md` + this judgement.
+- **Housekeeping** — TODO §2.3 Tailwind v4 evidence, §2.9 error boundary `[x]`; README Docker Compose section; `observability.md`, mongodb/BE doc updates.
+
+**Verified** — `pnpm check` pass; `pnpm nx build BE` pass; `pnpm nx test BE` **59** tests pass; `pnpm nx build DOCS` pass. Test bootstrap calls `dbClient()` before `AppModule` so `@quack/mongoose` `UserModel` shares a live connection with `MongooseModule`.
+
+**Judgement**
+
+- **Passport skip** — cookie JWT guard is simpler and matches transport; Passport only worth it for multi-strategy OAuth.
+- **Redis skip** — no server-side session store or distributed rate-limit requirement yet; avoids compose/env sprawl.
+- **MongooseModule** — `forRoot` only (no `forFeature`) to avoid double-registering `UserModel` from `@quack/mongoose`.
+
+## 2026-06-09 19:30 — S014-be-structure-refactor
+
+**Session id** — `S014-be-structure-refactor` (continuation of `S013-be-observability-mongoose` on branch `quack-12-dry-run`)
+
+**Cursor surface** — Agents
+
+**Local start time** — `2026-06-09 19:30`
+
+**Branch** — `quack-12-dry-run`
+
+**Model** — Composer 2.5
+
+**Developer command** — (verbatim) Create `apps/BE/src/config/` and move configuration out of `app/`; create `apps/BE/src/controllers/` and move auth/users/quack feature folders; colocate `user.service.ts` under users and remove `services/`; move `logging/` to `utils/libs/logging/`; move `jwt-cookie-auth.guard.ts` to `decorators/`; remove obsolete `app.controller.ts` and related wiring; update conventions, AGENTS.md, Docusaurus docs; verify with `pnpm check`, `pnpm nx build BE`, `pnpm nx test BE`; log in AI.md same turn.
+
+**Violation admission** — Prior agent (`S013`) placed HTTP/OpenAPI config under `app/`, left feature modules at `src/` root (`auth/`, `users/`, `quack/`), split `UserService` into top-level `services/`, put logging at `src/logging/`, left `JwtCookieAuthGuard` in `auth/`, and kept the scaffold `AppController` greeting — all broke the intended BE layout conventions.
+
+**What changed**
+
+- **`config/`** — `configure-app.ts`, `openapi.config.ts`, `helmet.config.ts`, `csrf.config.ts`, `body-parser.config.ts` moved from `app/`.
+- **`controllers/`** — `auth/`, `users/`, `quack/` moved; `user.service.ts` colocated in `controllers/users/`; `services/` removed.
+- **`utils/libs/logging/`** — `pino.config.ts`, `correlation-id.module.ts`, `correlation-id.context.ts` moved from `logging/`.
+- **`decorators/`** — `jwt-cookie-auth.guard.ts` moved from `auth/`; `current-user.decorator.ts` import updated.
+- **Removed** — `app.controller.ts`, `app.service.ts`, `app.dto.ts`, `test/api/app.api-spec.ts`; `app.module.ts` is bootstrap-only.
+- **Tests** — CSRF bootstrap + security-headers now use `GET /api/users/me` (401 without auth; still issues CSRF cookie + Helmet headers).
+- **Conventions/docs** — `project-conventions.mdc` BE layout section; `AGENTS.md` pointer; `overview.md`, `security.md`, `observability.md`, `03-backend.md`, `06-nestjs-zod.md`, root `README.md`.
+
+**Verified** — `pnpm check` pass; `pnpm nx build BE` pass; `pnpm nx test BE` **58** tests pass (13 suites; removed `app.api-spec.ts`); `pnpm nx build DOCS` pass.
+
+**Judgement**
+
+- **No replacement root GET** — removed scaffold greeting; any safe `GET` under `/api` bootstraps CSRF (documented `GET /api/users/me`).
+- **Guard in `decorators/`** — kept `*.guard.ts` suffix (not `*.decorator.ts`) since it is a Nest guard, not a param decorator.
+
+---
+
+## 2026-06-09 19:34 — S014-be-structure-refactor (Mongo transaction decorator)
+
+**Session id** — `S014-be-structure-refactor` (continuation)
+
+**Cursor surface** — Editor
+
+**Local start time** — `2026-06-09 19:34`
+
+**Branch** — `quack-12-dry-run`
+
+**Model** — Composer 2.5
+
+**Developer observation** — `UserRepository.create()` with an optional `session` param is **not** the atomic operation; it is only transaction-aware plumbing. The atomic boundary should live in a **decorator** under `decorators/` so services apply `@MongoTransaction()` and repositories pick up the session without threading `session` through every call (e.g. register: `create` + `setRefreshTokenHash` in one txn).
+
+**Developer command** — Move transaction handling into `decorators/`; services use the decorator; repo layer accesses session easily; log this observation in `AI.md`.
+
+**What changed**
+
+- **`decorators/mongo-transaction.decorator.ts`** — `@MongoTransaction()` method decorator wraps service methods in `runInMongoTransaction()`.
+- **`decorators/mongo-transaction.context.ts`** — AsyncLocalStorage + `getMongoTransactionSession()` for repositories.
+- **`UserRepository`** — write methods call `getMongoTransactionSession()` internally; removed explicit `session?` params.
+- **`AuthService.register`** — `@MongoTransaction()` so user create + refresh hash persist atomically.
+- **Removed** — `utils/mongoose-transaction.util.ts` (replaced by decorator + context).
+- **Tests** — `global-setup.ts` uses `replSet: 'rs0'` so memory-server supports transactions.
+- **Docs/conventions** — `mongodb.md`, `be/overview.md`, `project-conventions.mdc`, `TODO.md`.
+
+**Judgement** — ALS matches correlation-id pattern; only `register` uses the decorator today (multi-write signup). Login/refresh remain single-document writes without the decorator.
+
+**Verified** — `pnpm nx test BE` **58** pass after switching test harness to `MongoMemoryReplSet` (transactions require replica set).

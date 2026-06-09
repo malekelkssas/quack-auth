@@ -3,7 +3,7 @@ import {
   ExecutionContext,
   UnauthorizedException,
 } from '@nestjs/common';
-import type { AuthenticatedRequest } from '../auth/jwt-cookie-auth.guard';
+import type { AuthenticatedRequest } from './jwt-cookie-auth.guard';
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, context: ExecutionContext): string => {

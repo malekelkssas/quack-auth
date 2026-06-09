@@ -4,6 +4,19 @@ sidebar_position: 7
 
 # MongoDB (Mongoose)
 
+### 7a0 — Docker Compose (Mongo + Seq)
+
+```bash
+docker compose up -d mongodb seq
+```
+
+| Service   | Container            | Host port               | Purpose               |
+| --------- | -------------------- | ----------------------- | --------------------- |
+| `mongodb` | `quack_auth_mongodb` | `27017`                 | Primary database      |
+| `seq`     | `quack_auth_seq`     | `5341` → container `80` | Dev log UI (optional) |
+
+Seq is dev-only browsing for structured BE logs — see [Backend observability](../apps/be/observability.md).
+
 ### 7a — Dependencies
 
 ```bash

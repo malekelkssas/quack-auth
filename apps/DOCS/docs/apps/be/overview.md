@@ -31,6 +31,17 @@ Scaffold and first-time setup: [Setup → Backend app](../../setup/03-backend.md
 
 Details: [Path aliases](../../setup/04-path-aliases.md).
 
+## Source layout
+
+| Directory                                               | Purpose                                                               |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| `app/`                                                  | Bootstrap module only (`app.module.ts`)                               |
+| `config/`                                               | HTTP/OpenAPI config (`configure-app.ts`, Helmet, CSRF, Swagger)       |
+| `controllers/<feature>/`                                | Feature controllers, services, DTO wrappers, modules                  |
+| `decorators/`                                           | Shared decorators and guards (`@CurrentUser()`, `JwtCookieAuthGuard`) |
+| `utils/libs/logging/`                                   | `nestjs-pino` + correlation ID wiring                                 |
+| `database/`, `filters/`, `middleware/`, `repositories/` | Cross-cutting infra                                                   |
+
 ## Routes
 
 API path segments live in `libs/qu-constants/src/lib/be-routes.constants.ts` as `BE_ROUTES`. Controllers, `main.ts`, and API tests must use these constants — no magic route strings.
@@ -72,7 +83,7 @@ Cookie flags, JWT claims, HMAC refresh storage, production secret fail-fast, CSR
 ## Validation
 
 - [nestjs-zod](https://github.com/BenLorantfy/nestjs-zod) — global `ZodValidationPipe`, `ZodSerializerInterceptor`, and filters
-- Shared Zod schemas in `libs/dtos`; Nest `createZodDto` wrappers colocated with controllers (e.g. `users/users.dto.ts`)
+- Shared Zod schemas in `libs/dtos`; Nest `createZodDto` wrappers colocated with controllers (e.g. `controllers/users/users.dto.ts`)
 - Setup walkthrough: [nestjs-zod on the backend](../../setup/06-nestjs-zod.md)
 
 ## Exception handling
@@ -94,7 +105,15 @@ Duplicate email on signup resolves to **409** with message `Email is already reg
 
 ## Database
 
-MongoDB is documented as its own app — see [MongoDB](../mongodb.md). `@nestjs/mongoose` module wiring in Nest is a follow-up step; persistence uses the shared `mongoose/` layer.
+MongoDB is documented as its own app — see [MongoDB](../mongodb.md). Nest connects via **`DatabaseModule`** (`MongooseModule.forRootAsync` in `apps/BE/src/database/database.module.ts`); repositories continue to use `UserModel` from `@quack/mongoose/models/user`. Multi-document writes use `@MongoTransaction()` on service methods — see [MongoDB → transactions](../mongodb.md#mongodb-transactions).
+
+## Observability
+
+Structured JSON logs (`nestjs-pino`), correlation IDs, and optional Seq in Docker: [Backend observability](./observability.md).
+
+## OpenAPI (Swagger)
+
+Auth, users, and quack routes are tagged in Swagger (`/docs`). Security schemes document the **access JWT cookie** and **CSRF header** for protected mutations — not Bearer tokens. See `apps/BE/src/config/openapi.config.ts`.
 
 ## API tests
 

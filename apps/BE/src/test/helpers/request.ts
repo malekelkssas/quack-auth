@@ -10,7 +10,6 @@ export function apiPath(...segments: string[]): string {
 
 /** Common route paths — mirror production `@Controller` / `@Get` / `@Post` segments. */
 export const API_PATHS = {
-  root: apiPath(),
   auth: {
     register: apiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER),
     login: apiPath(BE_ROUTES.AUTH, BE_ROUTES.LOGIN),

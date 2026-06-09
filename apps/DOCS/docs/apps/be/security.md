@@ -4,7 +4,7 @@ sidebar_position: 3
 
 # Backend security (auth)
 
-Cookie-based JWT auth, refresh rotation, CSRF, and production secret requirements. Implementation lives under `apps/BE/src/auth/` and `apps/BE/src/app/csrf.config.ts`.
+Cookie-based JWT auth, refresh rotation, CSRF, and production secret requirements. Implementation lives under `apps/BE/src/controllers/auth/` and `apps/BE/src/config/csrf.config.ts`.
 
 ## Cookie auth
 
@@ -80,7 +80,7 @@ Set strong, unique values in production `.env` — see root `.env.example`.
 
 Package: [`csrf-csrf`](https://www.npmjs.com/package/csrf-csrf) (not deprecated `csurf`).
 
-Wiring: `apps/BE/src/app/csrf.config.ts`, registered from `configure-app.ts` after `cookie-parser`.
+Wiring: `apps/BE/src/config/csrf.config.ts`, registered from `config/configure-app.ts` after `cookie-parser`.
 
 | Artifact | Value (default)    | Notes                                       |
 | -------- | ------------------ | ------------------------------------------- |
@@ -113,7 +113,7 @@ After logout, refresh with old cookies fails with **401** (`Invalid refresh toke
 
 ## HTTP security headers (Helmet)
 
-Package: [`helmet`](https://www.npmjs.com/package/helmet). Wiring: `apps/BE/src/app/helmet.config.ts`, registered from `configure-app.ts` before CSRF.
+Package: [`helmet`](https://www.npmjs.com/package/helmet). Wiring: `apps/BE/src/config/helmet.config.ts`, registered from `config/configure-app.ts` before CSRF.
 
 | Environment                            | Behavior                                                                                                                                                                                                                          |
 | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -124,7 +124,7 @@ Restart the BE after changing `NODE_ENV` to pick up the production header set.
 
 ## Auth rate limiting (Throttler)
 
-Package: [`@nestjs/throttler`](https://www.npmjs.com/package/@nestjs/throttler`). Global config in `apps/BE/src/app/app.module.ts`; **`@UseGuards(ThrottlerGuard)`** on `AuthController` only — limits apply to all `POST /api/auth/*` routes (register, login, refresh, logout).
+Package: [`@nestjs/throttler`](https://www.npmjs.com/package/@nestjs/throttler`). Global config in `apps/BE/src/app/app.module.ts`; **`@UseGuards(ThrottlerGuard)`** on `controllers/auth/auth.controller.ts` only — limits apply to all `POST /api/auth/*` routes (register, login, refresh, logout).
 
 | Env var                | Default | Meaning                                  |
 | ---------------------- | ------- | ---------------------------------------- |
@@ -145,13 +145,23 @@ Extend the same helper to other user-facing string fields when new DTOs need it;
 
 ## Request body size limit
 
-JSON and urlencoded bodies are parsed with an env-configurable limit. Wiring: `apps/BE/src/app/body-parser.config.ts`, registered first in `configure-app.ts`. Nest apps are created with `{ bodyParser: false }` so the custom limit applies (`main.ts`, API test bootstrap).
+JSON and urlencoded bodies are parsed with an env-configurable limit. Wiring: `apps/BE/src/config/body-parser.config.ts`, registered first in `config/configure-app.ts`. Nest apps are created with `{ bodyParser: false }` so the custom limit applies (`main.ts`, API test bootstrap).
 
 | Env var              | Default | Meaning                                        |
 | -------------------- | ------- | ---------------------------------------------- |
 | `BE_JSON_BODY_LIMIT` | `100kb` | Express `limit` for JSON and urlencoded bodies |
 
 When exceeded → **413** `{ "message": "Request body too large", "code": "PAYLOAD_TOO_LARGE" }` (`GlobalExceptionFilter` maps Express `entity.too.large` and 413 `HttpException`s to `ErrorResponse`).
+
+## Auth guard (Passport.js not used)
+
+**Decision:** Passport.js and `@nestjs/passport` are **not** adopted. The PDF listed a JWT strategy; this repo uses a custom **`JwtCookieAuthGuard`** (`apps/BE/src/decorators/jwt-cookie-auth.guard.ts`) that:
+
+1. Reads the access token from the **HttpOnly cookie** (not `Authorization: Bearer`).
+2. Verifies the JWT via `AuthService.verifyAccessToken`.
+3. Attaches `{ sub: userId }` to the request for `@CurrentUser()`.
+
+This matches cookie-first auth and avoids Passport boilerplate for a single strategy. Revisit only if you add OAuth/OIDC providers that Passport plugins simplify.
 
 ## API response shape (no secrets)
 
@@ -166,6 +176,7 @@ Password hashing and refresh HMAC storage stay server-side only. Tokens are issu
 
 ## Related
 
+- [Backend observability](./observability.md) — structured logs, correlation IDs, Seq
 - [Backend overview](./overview.md) — routes and validation
 - [Backend API tests](./testing.md) — CSRF helpers, throttle/sanitize/security-headers/response-secrets specs
 - [Setup → Backend app](../../setup/03-backend.md) — first-time BE setup
