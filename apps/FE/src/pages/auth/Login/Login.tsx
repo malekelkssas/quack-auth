@@ -10,8 +10,18 @@ import { FE_ROUTES } from '@/utils/constants';
 import { useLogin } from './useLogin';
 
 export function Login() {
-  const { showPassword, toggleShowPassword, passwordInputType, onSubmit } =
-    useLogin();
+  const {
+    form,
+    showPassword,
+    toggleShowPassword,
+    passwordInputType,
+    onSubmit,
+    isLoggingIn,
+  } = useLogin();
+  const {
+    register,
+    formState: { errors },
+  } = form;
 
   return (
     <AuthLayout
@@ -38,6 +48,8 @@ export function Login() {
           autoComplete="email"
           placeholder="duck@pond.io"
           icon={<Mail className="h-4 w-4" />}
+          error={errors.email?.message}
+          {...register('email')}
         />
         <PixelField
           id="login-password"
@@ -46,14 +58,18 @@ export function Login() {
           autoComplete="current-password"
           placeholder="••••••••"
           icon={<Lock className="h-4 w-4" />}
+          error={errors.password?.message}
           trailing={
             <PasswordVisibilityToggle
               showPassword={showPassword}
               onToggle={toggleShowPassword}
             />
           }
+          {...register('password')}
         />
-        <PixelButton type="submit">[ ENTER THE POND ]</PixelButton>
+        <PixelButton type="submit" disabled={isLoggingIn}>
+          {isLoggingIn ? 'QUACKING IN...' : '[ ENTER THE POND ]'}
+        </PixelButton>
       </form>
     </AuthLayout>
   );

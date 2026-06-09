@@ -10,21 +10,36 @@ import {
   persistStore,
 } from 'redux-persist';
 
-import { persistConfig } from './persist.config';
-import { rootReducer } from './root-reducer';
+import { setupAxiosInterceptors } from '@/api/setupAxiosInterceptors';
 
-const persistedReducer = persistReducer(persistConfig, rootReducer);
+import { authApi } from './api/authApi';
+import { quackApi } from './api/quackApi';
+import { persistConfig } from './persist.config';
+import { appReducer } from './root-reducer';
+import { RESET_APP } from './reset';
+
+const persistedReducer = persistReducer(persistConfig, appReducer);
 
 export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
+        ignoredActions: [
+          FLUSH,
+          REHYDRATE,
+          PAUSE,
+          PERSIST,
+          PURGE,
+          REGISTER,
+          RESET_APP,
+        ],
       },
-    }),
+    }).concat(authApi.middleware, quackApi.middleware),
 });
 
 export const persistor = persistStore(store);
+
+setupAxiosInterceptors(store, persistor);
 
 export type AppDispatch = typeof store.dispatch;

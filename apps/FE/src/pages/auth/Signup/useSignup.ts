@@ -1,26 +1,26 @@
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useEffect } from 'react';
 import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
 import { Signup } from '@shared/dtos';
 import type { z } from 'zod';
 
-import { useAuth } from '@/hooks/slices/useAuth';
+import { useRegisterMutation } from '@/hooks/slices/useAuth';
 import { useError } from '@/hooks/use-error';
 import { usePasswordVisibility } from '@/hooks/use-password-visibility';
-import { useSuccess } from '@/hooks/use-success';
+import { toast } from '@/hooks/use-toast';
+import {
+  FE_ROUTES,
+  TOAST_DEFAULT_TITLE,
+  TOAST_VARIANTS,
+} from '@/utils/constants';
+import { toErrorResponse } from '@/utils/rtk-error.util';
 
 export function useSignup() {
+  const navigate = useNavigate();
   const { showPassword, toggleShowPassword, passwordInputType } =
     usePasswordVisibility();
 
-  const {
-    signup,
-    isSigningUp,
-    signupError,
-    signupSucceeded,
-    clearSignup,
-    clearError,
-  } = useAuth();
+  const [register, { isLoading, error, reset }] = useRegisterMutation();
 
   const form = useForm<
     z.input<typeof Signup>,
@@ -31,26 +31,22 @@ export function useSignup() {
     defaultValues: { email: '', name: '', password: '' },
   });
 
-  const onSubmit = form.handleSubmit((values) => {
-    void signup(values);
-  });
-
-  useError({ error: signupError, clearError });
-
-  useSuccess({
-    succeeded: signupSucceeded,
-    message: 'Welcome to the pond!',
-    onShown: () => {
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      await register(values).unwrap();
+      toast({
+        variant: TOAST_VARIANTS.SUCCESS,
+        title: TOAST_DEFAULT_TITLE,
+        description: 'Welcome to the pond!',
+      });
       form.reset();
-      clearSignup();
-    },
+      navigate(FE_ROUTES.HOME);
+    } catch {
+      // surfaced via useError
+    }
   });
 
-  useEffect(() => {
-    return () => {
-      clearSignup();
-    };
-  }, [clearSignup]);
+  useError({ error: toErrorResponse(error), clearError: reset });
 
   return {
     form,
@@ -58,6 +54,6 @@ export function useSignup() {
     toggleShowPassword,
     passwordInputType,
     onSubmit,
-    isSigningUp,
+    isSigningUp: isLoading,
   };
 }
