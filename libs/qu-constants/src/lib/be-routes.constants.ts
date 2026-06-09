@@ -5,5 +5,6 @@ export enum BE_ROUTES {
   REGISTER = 'register',
   LOGIN = 'login',
   REFRESH = 'refresh',
+  LOGOUT = 'logout',
   ME = 'me',
 }

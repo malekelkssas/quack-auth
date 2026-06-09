@@ -118,6 +118,7 @@
     "axios": "^1.17.0",
     "class-variance-authority": "^0.7.1",
     "cookie-parser": "^1.4.7",
+    "csrf-csrf": "^4.0.3",
     "encrypt-storage": "^2.14.7",
     "express": "^5.2.1",
     "jsonwebtoken": "^9.0.3",

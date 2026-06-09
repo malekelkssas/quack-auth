@@ -4,8 +4,9 @@ import type { IUserDocument } from '@quack/mongoose/models/user';
 import { UserModel, UserPaths } from '@quack/mongoose/models/user';
 
 export type CreateUserData = Pick<IUserDocument, 'email' | 'name' | 'password'>;
-export type UserWithSecrets = AuthUser &
-  Pick<IUserDocument, 'password' | 'refreshTokenHash'>;
+export type UserWithPassword = AuthUser & Pick<IUserDocument, 'password'>;
+export type UserWithRefreshHash = AuthUser &
+  Pick<IUserDocument, 'refreshTokenHash'>;
 
 @Injectable()
 export class UserRepository {
@@ -19,9 +20,11 @@ export class UserRepository {
     return this.toAuthUser(created);
   }
 
-  async findByEmailWithSecrets(email: string): Promise<UserWithSecrets | null> {
+  async findByEmailWithSecrets(
+    email: string,
+  ): Promise<UserWithPassword | null> {
     const user = await UserModel.findOne({ [UserPaths.email]: email })
-      .select(`+${UserPaths.password} +${UserPaths.refreshTokenHash}`)
+      .select(`+${UserPaths.password}`)
       .exec();
 
     if (!user) {
@@ -31,7 +34,6 @@ export class UserRepository {
     return {
       ...this.toAuthUser(user),
       password: user[UserPaths.password],
-      refreshTokenHash: user[UserPaths.refreshTokenHash],
     };
   }
 
@@ -44,9 +46,11 @@ export class UserRepository {
     return this.toAuthUser(user);
   }
 
-  async findByIdWithRefreshToken(id: string): Promise<UserWithSecrets | null> {
+  async findByIdWithRefreshToken(
+    id: string,
+  ): Promise<UserWithRefreshHash | null> {
     const user = await UserModel.findById(id)
-      .select(`+${UserPaths.password} +${UserPaths.refreshTokenHash}`)
+      .select(`+${UserPaths.refreshTokenHash}`)
       .exec();
 
     if (!user) {
@@ -55,12 +59,11 @@ export class UserRepository {
 
     return {
       ...this.toAuthUser(user),
-      password: user[UserPaths.password],
       refreshTokenHash: user[UserPaths.refreshTokenHash],
     };
   }
 
-  async updateRefreshTokenHash(
+  async setRefreshTokenHash(
     userId: string,
     refreshTokenHash: string,
   ): Promise<void> {
@@ -73,6 +76,27 @@ export class UserRepository {
         },
       },
     ).exec();
+  }
+
+  async rotateRefreshTokenHash(
+    userId: string,
+    expectedHash: string,
+    newHash: string,
+  ): Promise<boolean> {
+    const result = await UserModel.updateOne(
+      {
+        _id: userId,
+        [UserPaths.refreshTokenHash]: expectedHash,
+      },
+      {
+        $set: {
+          [UserPaths.refreshTokenHash]: newHash,
+          [UserPaths.refreshTokenRotatedAt]: new Date(),
+        },
+      },
+    ).exec();
+
+    return result.modifiedCount === 1;
   }
 
   async clearRefreshTokenHash(userId: string): Promise<void> {
@@ -89,11 +113,29 @@ export class UserRepository {
     ).exec();
   }
 
+  withoutPassword(user: UserWithPassword): AuthUser {
+    return this.pickPublicFields(user);
+  }
+
+  withoutRefreshHash(user: UserWithRefreshHash): AuthUser {
+    return this.pickPublicFields(user);
+  }
+
   private toAuthUser(user: IUserDocument): AuthUser {
-    return {
+    return this.pickPublicFields({
       _id: user._id.toString(),
       email: user[UserPaths.email],
       name: user[UserPaths.name],
+      createdAt: user.createdAt,
+      updatedAt: user.updatedAt,
+    });
+  }
+
+  private pickPublicFields(user: AuthUser): AuthUser {
+    return {
+      _id: user._id,
+      email: user.email,
+      name: user.name,
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };

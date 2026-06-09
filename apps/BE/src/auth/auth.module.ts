@@ -7,6 +7,6 @@ import { JwtCookieAuthGuard } from './jwt-cookie-auth.guard';
 @Module({
   controllers: [AuthController],
   providers: [AuthService, UserRepository, JwtCookieAuthGuard],
-  exports: [AuthService, JwtCookieAuthGuard],
+  exports: [AuthService, JwtCookieAuthGuard, UserRepository],
 })
 export class AuthModule {}

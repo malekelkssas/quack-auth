@@ -1,7 +1,33 @@
 import type { INestApplication } from '@nestjs/common';
+import type { AuthUser, Signup } from '@shared/dtos';
 import { FIXTURE_USER_PASSWORD, userFixtures } from '@quack/mongoose/fixtures';
+import { fetchCsrf, withCsrf } from './csrf';
 import { api, API_PATHS } from './request';
 import { parseCookiesFromResponse } from './cookies';
+
+type AuthSession = {
+  response: { body: { user: AuthUser }; headers: Record<string, unknown> };
+  cookies: Record<string, string>;
+  user: AuthUser;
+};
+
+async function createAuthSession(
+  app: INestApplication,
+  path: string,
+  body: Record<string, unknown>,
+  expectedStatus: number,
+): Promise<AuthSession> {
+  const csrf = await fetchCsrf(app);
+  const response = await withCsrf(api(app).post(path), csrf)
+    .send(body)
+    .expect(expectedStatus);
+
+  return {
+    response,
+    cookies: parseCookiesFromResponse(response),
+    user: response.body.user as AuthUser,
+  };
+}
 
 type LoginOptions = {
   email?: string;
@@ -11,34 +37,21 @@ type LoginOptions = {
 export async function loginFixtureUser(
   app: INestApplication,
   options: LoginOptions = {},
-) {
-  const email = options.email ?? userFixtures[0].email;
-  const password = options.password ?? FIXTURE_USER_PASSWORD;
-
-  const response = await api(app)
-    .post(API_PATHS.auth.login)
-    .send({ email, password })
-    .expect(200);
-
-  return {
-    response,
-    cookies: parseCookiesFromResponse(response),
-    user: response.body.user as Record<string, unknown>,
-  };
+): Promise<AuthSession> {
+  return createAuthSession(
+    app,
+    API_PATHS.auth.login,
+    {
+      email: options.email ?? userFixtures[0].email,
+      password: options.password ?? FIXTURE_USER_PASSWORD,
+    },
+    200,
+  );
 }
 
 export async function registerUser(
   app: INestApplication,
-  body: Record<string, unknown>,
-) {
-  const response = await api(app)
-    .post(API_PATHS.auth.register)
-    .send(body)
-    .expect(201);
-
-  return {
-    response,
-    cookies: parseCookiesFromResponse(response),
-    user: response.body.user as Record<string, unknown>,
-  };
+  body: Signup,
+): Promise<AuthSession> {
+  return createAuthSession(app, API_PATHS.auth.register, body, 201);
 }

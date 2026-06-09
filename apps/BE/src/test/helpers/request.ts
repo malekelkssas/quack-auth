@@ -15,6 +15,7 @@ export const API_PATHS = {
     register: apiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER),
     login: apiPath(BE_ROUTES.AUTH, BE_ROUTES.LOGIN),
     refresh: apiPath(BE_ROUTES.AUTH, BE_ROUTES.REFRESH),
+    logout: apiPath(BE_ROUTES.AUTH, BE_ROUTES.LOGOUT),
   },
   users: {
     me: apiPath(BE_ROUTES.USERS, BE_ROUTES.ME),

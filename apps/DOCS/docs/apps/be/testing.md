@@ -22,13 +22,15 @@ apps/BE/src/test/
 │   ├── auth/
 │   │   ├── register.api-spec.ts  # POST /api/auth/register
 │   │   ├── login.api-spec.ts     # POST /api/auth/login
-│   │   └── refresh.api-spec.ts   # POST /api/auth/refresh
+│   │   ├── refresh.api-spec.ts   # POST /api/auth/refresh
+│   │   └── logout.api-spec.ts    # POST /api/auth/logout
 │   └── users/
 │       └── me.api-spec.ts        # GET /api/users/me (cookie JWT guard)
 ├── helpers/
 │   ├── auth.ts                   # loginFixtureUser, registerUser session helpers
 │   ├── auth-user.ts              # expectAuthUserShape — safe user payload
 │   ├── cookies.ts                # parse Set-Cookie, build Cookie header
+│   ├── csrf.ts                   # fetchCsrf, withCsrf — double-submit for POST auth
 │   ├── db.ts                     # resetDb() → loadFixtures({ reset: true })
 │   ├── expect-error.ts           # expectApiError() — exact message assertions
 │   └── request.ts                # api(), apiPath(), API_PATHS, fullApiPath()
@@ -86,15 +88,37 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
 | `API_PATHS`     | Named routes used in `.post()` / `.get()`      |
 | `fullApiPath()` | Include `BE_ROUTES.BASE` for `describe` titles |
 
+### CSRF helpers
+
+State-changing auth POSTs require the `csrf-csrf` double-submit cookie and `x-csrf-token` header. Use `helpers/csrf.ts`:
+
+```ts
+import { fetchCsrf, withCsrf } from '../../helpers/csrf';
+
+const csrf = await fetchCsrf(app); // GET /api bootstraps qa_csrf_token cookie
+
+await withCsrf(api(app).post(API_PATHS.auth.register), csrf)
+  .send(payload)
+  .expect(201);
+```
+
+| Helper      | Purpose                                                                    |
+| ----------- | -------------------------------------------------------------------------- |
+| `fetchCsrf` | Safe `GET` to obtain CSRF cookie + token (mirrors FE first-load flow)      |
+| `withCsrf`  | Sets header + CSRF cookie; merges optional auth cookies for logout/refresh |
+
+`loginFixtureUser` and other auth helpers already attach CSRF internally. Negative case: POST without CSRF → **403** `invalid csrf token` (see `register.api-spec.ts`).
+
 ### Cookie auth helpers
 
 Auth endpoints set HttpOnly access + refresh cookies. Use `helpers/cookies.ts` to parse `Set-Cookie` from a login/register response and pass them to protected routes:
 
 ```ts
 import { collectAuthCookies, cookieHeader } from '../../helpers/cookies';
+import { fetchCsrf, withCsrf } from '../../helpers/csrf';
 
-const loginRes = await api(app)
-  .post(API_PATHS.auth.login)
+const csrf = await fetchCsrf(app);
+const loginRes = await withCsrf(api(app).post(API_PATHS.auth.login), csrf)
   .send(credentials)
   .expect(200);
 const cookies = collectAuthCookies(loginRes);
@@ -132,15 +156,18 @@ When adding a new endpoint test:
 
 ## Auth test coverage (current)
 
-| Spec                   | Route                     | Cases                                                            |
-| ---------------------- | ------------------------- | ---------------------------------------------------------------- |
-| `register.api-spec.ts` | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, validation matrix |
-| `login.api-spec.ts`    | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation    |
-| `refresh.api-spec.ts`  | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear          |
-| `me.api-spec.ts`       | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token     |
-| `app.api-spec.ts`      | `GET /api`                | smoke                                                            |
+| Spec                   | Route                     | Cases                                                                                                  |
+| ---------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `register.api-spec.ts` | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, CSRF 403, validation matrix (`SIGNUP_VALIDATION_CASES`) |
+| `login.api-spec.ts`    | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation                                          |
+| `refresh.api-spec.ts`  | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear                                                |
+| `logout.api-spec.ts`   | `POST /api/auth/logout`   | 204 + cookie clear + DB hash revoked, idempotent without cookies, re-login                             |
+| `me.api-spec.ts`       | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token                                           |
+| `app.api-spec.ts`      | `GET /api`                | smoke                                                                                                  |
 
-**27** tests total. Refresh rotation specs include a short delay because JWT `iat` is second-granular — identical tokens can be issued within the same second without a `jti` claim.
+**41** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays.
+
+Shared signup validation rows live in `test/fixtures/signup-validation.cases.ts` for `it.each` reuse.
 
 ## CI
 
@@ -157,5 +184,6 @@ pnpm nx reset && pnpm nx test BE --skip-nx-cache
 ## Related
 
 - [Backend overview](./overview.md) — dev server, validation, filters, auth endpoints
+- [Backend security](./security.md) — CSRF, cookies, refresh rotation, logout
 - [MongoDB](../mongodb.md) — fixtures and `loadFixtures()`
 - [nestjs-zod setup](../../setup/06-nestjs-zod.md)

@@ -1,9 +1,10 @@
+import { ENV_KEYS } from '@shared/constants';
 import type { Response } from 'supertest';
 
 /** Cookie names — match `.env.example` / AuthService fallbacks. */
 export const AUTH_COOKIE_NAMES = {
-  access: process.env.AUTH_ACCESS_COOKIE_NAME ?? 'qa_access_token',
-  refresh: process.env.AUTH_REFRESH_COOKIE_NAME ?? 'qa_refresh_token',
+  access: process.env[ENV_KEYS.AUTH_ACCESS_COOKIE_NAME] ?? 'qa_access_token',
+  refresh: process.env[ENV_KEYS.AUTH_REFRESH_COOKIE_NAME] ?? 'qa_refresh_token',
 } as const;
 
 /** Build a `Cookie` request header from name/value pairs. */

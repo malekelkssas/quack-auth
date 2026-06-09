@@ -13,7 +13,10 @@ export default {
   },
   moduleFileExtensions: ['ts', 'js'],
   coverageDirectory: '../../coverage/apps/BE',
-  testMatch: ['<rootDir>/src/test/**/*.api-spec.ts'],
+  testMatch: [
+    '<rootDir>/src/test/**/*.api-spec.ts',
+    '<rootDir>/src/test/**/*.util.spec.ts',
+  ],
   globalSetup: '<rootDir>/src/test/setup/global-setup.ts',
   globalTeardown: '<rootDir>/src/test/setup/global-teardown.ts',
   maxWorkers: 1,

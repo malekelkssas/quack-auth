@@ -1166,3 +1166,43 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - [x] `pnpm nx test BE --skip-nx-cache` (27 passed)
 - [x] `pnpm check`
+
+---
+
+## 2026-06-09 14:30 — S007-login-auth-endpoints (auth security hardening)
+
+**Session id** — `S007-login-auth-endpoints`
+
+**Local start time** — `2026-06-09 14:30`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-07-login-auth-endpoints`
+
+**Chat summary** — No
+
+**Decisions**
+
+- **Refresh storage:** HMAC-SHA256 digest of refresh JWT (`token-hash.util.ts`) keyed by `AUTH_REFRESH_TOKEN_SECRET` — not Argon2 (passwords stay Argon2id).
+- **Rotation:** Compare-and-swap `rotateRefreshTokenHash` — concurrent refresh losers get 401 + cookie clear.
+- **CSRF:** `csrf-csrf` double-submit; cookie `qa_csrf_token`, header `x-csrf-token`; protects auth POSTs only.
+- **Logout:** `POST /api/auth/logout` → 204, `clearRefreshTokenHash` when access valid, always clear cookies.
+- **Production secrets:** `resolveAuthSecret` / `assertProductionSecret` fail-fast on missing or `change-me-*` / `dev-*-secret` placeholders.
+- **Tests:** `SIGNUP_VALIDATION_CASES` fixture for shared `it.each` validation matrix.
+
+**Documentation (sections 7–9)**
+
+- Added `apps/DOCS/docs/apps/be/security.md`; linked from `overview.md`, `03-backend.md`, `testing.md`.
+- Updated `testing.md` — CSRF helpers, logout spec, **41** tests.
+- `TODO.md` — CSRF `[x]`, logout/CAS/secret items, Last audited.
+
+**Known limitation (documented)**
+
+- Access JWT valid until TTL after logout (no revocation list).
+
+**Verified**
+
+- [x] `pnpm nx test BE --skip-nx-cache` (**41** passed)
+- [x] `pnpm nx build DOCS`

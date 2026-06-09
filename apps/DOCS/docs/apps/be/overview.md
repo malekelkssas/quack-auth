@@ -52,6 +52,7 @@ export class AuthController {
 - `POST /api/auth/register`
 - `POST /api/auth/login`
 - `POST /api/auth/refresh`
+- `POST /api/auth/logout`
 - `GET /api/users/me` (protected; returns `401` when unauthorized)
 
 Tokens are transported via HttpOnly cookies for both access and refresh tokens. Default TTLs:
@@ -59,7 +60,13 @@ Tokens are transported via HttpOnly cookies for both access and refresh tokens. 
 - Access token: 10 minutes
 - Refresh token: 24 hours
 
-Refresh uses token rotation; invalid or expired refresh tokens return `401` and clear auth cookies.
+Refresh uses token rotation with compare-and-swap hash updates; invalid or expired refresh tokens return `401` and clear auth cookies. Logout revokes the stored refresh hash and clears cookies (204).
+
+State-changing auth POSTs require CSRF double-submit (`x-csrf-token` header + `qa_csrf_token` cookie). Full detail: [Backend security](./security.md).
+
+## Security
+
+Cookie flags, JWT claims, HMAC refresh storage, production secret fail-fast, CSRF, logout semantics, and the access-token TTL limitation after logout: [Backend security](./security.md).
 
 ## Validation
 

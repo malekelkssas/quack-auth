@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` (auth API Supertest suite: register/login/refresh/me, 27 tests).
+**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` (auth security hardening: logout, CSRF, HMAC refresh + CAS rotation, production secret fail-fast; BE API suite **41** tests — see `apps/DOCS/docs/apps/be/security.md`).
 
 ---
 
@@ -102,7 +102,9 @@ The PDF uses older names; the repo has evolved:
 ### Backend tasks
 
 - [~] Wire `mongoose/client.ts` in `main.ts` (done); `MongooseModule` in `app.module.ts` still optional
-- [x] Auth module: `register`, `login`, `refresh` under `apps/BE/src/auth/`
+- [x] Auth module: `register`, `login`, `refresh`, `logout` under `apps/BE/src/auth/`
+- [x] Production auth secret fail-fast (`auth-config.util.ts`)
+- [x] Refresh token HMAC storage + compare-and-swap rotation (`token-hash.util.ts`, `rotateRefreshTokenHash`)
 - [x] **Argon2id** hash on signup + `verifyPassword` on login (`mongoose/utils/password.util.ts`; PDF says bcrypt — repo chose Argon2id per OWASP)
 - [ ] **Unified repository layer interface** — shared contract/base for all repositories (Developer request)
 - [ ] **Atomic transaction setup** — MongoDB session/transaction wrapper for multi-document repository operations (Developer request)
@@ -139,14 +141,14 @@ The PDF uses older names; the repo has evolved:
 
 ## 5. Security
 
-| Area        | PDF decision                           | Status | Notes                                                                         |
-| ----------- | -------------------------------------- | ------ | ----------------------------------------------------------------------------- |
-| Passwords   | bcrypt, salt rounds 12 (PDF)           | [~]    | **Argon2id** (OWASP min) on signup; PDF still says bcrypt — reconcile in DOCS |
-| Auth tokens | JWT in HttpOnly cookie                 | [x]    | Access + refresh cookies with rotation                                        |
-| CSRF        | Double-submit cookie (`csurf`)         | [ ]    | Required once cookie auth exists                                              |
-| XSS         | Zod `.transform()` sanitize            | [ ]    | See §4.6                                                                      |
-| Rate limit  | `@nestjs/throttler` on `/auth/*`       | [ ]    | —                                                                             |
-| Headers     | Helmet.js (CSP, HSTS, X-Frame-Options) | [ ]    | Not in `main.ts`                                                              |
+| Area        | PDF decision                           | Status | Notes                                                                                 |
+| ----------- | -------------------------------------- | ------ | ------------------------------------------------------------------------------------- |
+| Passwords   | bcrypt, salt rounds 12 (PDF)           | [~]    | **Argon2id** (OWASP min) on signup; PDF still says bcrypt — reconcile in DOCS         |
+| Auth tokens | JWT in HttpOnly cookie                 | [x]    | Access + refresh cookies with rotation                                                |
+| CSRF        | Double-submit cookie (`csrf-csrf`)     | [x]    | `csrf.config.ts`, FE axios header; [security doc](apps/DOCS/docs/apps/be/security.md) |
+| XSS         | Zod `.transform()` sanitize            | [ ]    | See §4.6                                                                              |
+| Rate limit  | `@nestjs/throttler` on `/auth/*`       | [ ]    | —                                                                                     |
+| Headers     | Helmet.js (CSP, HSTS, X-Frame-Options) | [ ]    | Not in `main.ts`                                                                      |
 
 ### Security tasks (ordered)
 
@@ -154,7 +156,7 @@ The PDF uses older names; the repo has evolved:
 2. [x] JWT + HttpOnly cookie + refresh strategy
 3. [ ] Helmet in `apps/BE/src/main.ts`
 4. [ ] ThrottlerModule — per-IP limits on auth routes; env-configurable TTL/limit
-5. [ ] CSRF middleware for state-changing routes when using cookies
+5. [x] CSRF middleware for state-changing routes when using cookies (`csrf-csrf`, auth POSTs)
 6. [ ] XSS sanitization at schema level (§4.6)
 7. [x] Review cookie flags: `Secure`, `SameSite`, `HttpOnly`
 8. [ ] Never return password hash in API responses (enforce via `user.model.ts` + serializers)
@@ -182,21 +184,21 @@ The PDF uses older names; the repo has evolved:
 
 ## 7. Testing
 
-| #   | Item                                      | Status | Evidence / notes                                                                       |
-| --- | ----------------------------------------- | ------ | -------------------------------------------------------------------------------------- |
-| 7.1 | Jest (BE) — dependency / config           | [x]    | `jest.config.ts`, `*.api-spec.ts` under `apps/BE/src/test/`                            |
-| 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | API-level only per Developer preference                                                |
-| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth endpoints covered (`register`, `login`, `refresh`, `me`); expand as features land |
-| 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config                                     |
-| 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                                                      |
-| 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`                                             |
-| 7.7 | `mongodb-memory-server` usage             | [x]    | `global-setup.ts` for BE API tests                                                     |
-| 7.8 | CI test step                              | [x]    | `pnpm ci` includes `pnpm nx test BE`                                                   |
+| #   | Item                                      | Status | Evidence / notes                                                                                               |
+| --- | ----------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
+| 7.1 | Jest (BE) — dependency / config           | [x]    | `jest.config.ts`, `*.api-spec.ts` under `apps/BE/src/test/`                                                    |
+| 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | API-level only per Developer preference                                                                        |
+| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth endpoints covered (`register`, `login`, `refresh`, `logout`, `me`); **41** tests; expand as features land |
+| 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config                                                             |
+| 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                                                                              |
+| 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`                                                                     |
+| 7.7 | `mongodb-memory-server` usage             | [x]    | `global-setup.ts` for BE API tests                                                                             |
+| 7.8 | CI test step                              | [x]    | `pnpm ci` includes `pnpm nx test BE`                                                                           |
 
 ### Testing tasks
 
 - [ ] BE: colocated unit tests (optional — Developer prefers API-level Supertest)
-- [x] BE: Supertest auth API specs (`apps/BE/src/test/api/auth/`, `users/me.api-spec.ts`)
+- [x] BE: Supertest auth API specs (`apps/BE/src/test/api/auth/`, `users/me.api-spec.ts`, CSRF helper, logout spec — 41 tests)
 - [ ] FE: Vitest + React Testing Library for forms and guards
 - [ ] FE: Cypress flows for full auth journey
 - [ ] Uncomment and stabilize CI test jobs

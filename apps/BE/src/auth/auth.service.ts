@@ -1,29 +1,42 @@
-import {
-  BadRequestException,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import type { AuthResponse, AuthUser, Login, Signup } from '@shared/dtos';
 import { ENV_KEYS, NODE_ENV } from '@shared/constants';
+import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { UserRepository } from '../repositories/user.repository';
+import { resolveAuthSecret } from '../utils/auth-config.util';
 import { MongooseErrorHandler } from '../utils/mongoose-error.handler.util';
-import { hashPassword, verifyPassword } from '../utils/password.util';
+import { verifyPassword } from '../utils/password.util';
+import {
+  hashRefreshToken,
+  verifyRefreshTokenHash,
+} from '../utils/token-hash.util';
 
 type TokenPayload = {
   sub: string;
   email: string;
+  jti: string;
 };
 
 type VerifiedPayload = TokenPayload & jwt.JwtPayload;
 
+type SessionTokens = {
+  accessToken: string;
+  refreshToken: string;
+  refreshTokenHash: string;
+};
+
 @Injectable()
 export class AuthService {
-  private readonly accessTokenSecret =
-    process.env[ENV_KEYS.AUTH_ACCESS_TOKEN_SECRET] ?? 'dev-access-secret';
-  private readonly refreshTokenSecret =
-    process.env[ENV_KEYS.AUTH_REFRESH_TOKEN_SECRET] ?? 'dev-refresh-secret';
+  private readonly accessTokenSecret = resolveAuthSecret(
+    ENV_KEYS.AUTH_ACCESS_TOKEN_SECRET,
+    'dev-access-secret',
+  );
+  private readonly refreshTokenSecret = resolveAuthSecret(
+    ENV_KEYS.AUTH_REFRESH_TOKEN_SECRET,
+    'dev-refresh-secret',
+  );
   private readonly accessTokenTtlSeconds = this.parseTtlSeconds(
     process.env[ENV_KEYS.AUTH_ACCESS_TOKEN_TTL_SECONDS],
     10 * 60,
@@ -45,10 +58,6 @@ export class AuthService {
   constructor(private readonly userRepository: UserRepository) {}
 
   async register(input: Signup, response: Response): Promise<AuthResponse> {
-    if (!input.email) {
-      throw new BadRequestException('A valid email is required');
-    }
-
     try {
       const user = await this.userRepository.create({
         email: input.email,
@@ -67,10 +76,6 @@ export class AuthService {
   }
 
   async login(input: Login, response: Response): Promise<AuthResponse> {
-    if (!input.email) {
-      throw new BadRequestException('A valid email is required');
-    }
-
     const user = await this.userRepository.findByEmailWithSecrets(input.email);
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
@@ -81,13 +86,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const authUser: AuthUser = {
-      _id: user._id,
-      email: user.email,
-      name: user.name,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
+    const authUser = this.userRepository.withoutPassword(user);
     await this.issueSession(response, authUser);
     return { user: authUser };
   }
@@ -105,20 +104,49 @@ export class AuthService {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const matches = await verifyPassword(refreshToken, user.refreshTokenHash);
+    const matches = verifyRefreshTokenHash(
+      refreshToken,
+      user.refreshTokenHash,
+      this.refreshTokenSecret,
+    );
     if (!matches) {
       throw new UnauthorizedException('Invalid refresh token');
     }
 
-    const authUser: AuthUser = {
-      _id: user._id,
-      email: user.email,
-      name: user.name,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-    };
-    await this.issueSession(response, authUser);
+    const authUser = this.userRepository.withoutRefreshHash(user);
+    const sessionTokens = this.createSessionTokens(authUser);
+    const rotated = await this.userRepository.rotateRefreshTokenHash(
+      user._id,
+      user.refreshTokenHash,
+      sessionTokens.refreshTokenHash,
+    );
+
+    if (!rotated) {
+      this.clearAuthCookies(response);
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+
+    this.setAuthCookies(
+      response,
+      sessionTokens.accessToken,
+      sessionTokens.refreshToken,
+    );
     return { user: authUser };
+  }
+
+  async logout(request: Request, response: Response): Promise<void> {
+    const accessToken = this.getAccessTokenFromRequest(request);
+
+    if (accessToken) {
+      try {
+        const payload = this.verifyAccessToken(accessToken);
+        await this.userRepository.clearRefreshTokenHash(payload.sub);
+      } catch {
+        // Invalid or expired access token — still clear cookies below.
+      }
+    }
+
+    this.clearAuthCookies(response);
   }
 
   clearAuthCookies(response: Response): void {
@@ -127,11 +155,13 @@ export class AuthService {
   }
 
   getAccessTokenFromRequest(request: Request): string | undefined {
-    return request.cookies?.[this.accessCookieName] as string | undefined;
+    const value = request.cookies?.[this.accessCookieName];
+    return typeof value === 'string' ? value : undefined;
   }
 
   getRefreshTokenFromRequest(request: Request): string | undefined {
-    return request.cookies?.[this.refreshCookieName] as string | undefined;
+    const value = request.cookies?.[this.refreshCookieName];
+    return typeof value === 'string' ? value : undefined;
   }
 
   verifyAccessToken(token: string): VerifiedPayload {
@@ -142,6 +172,21 @@ export class AuthService {
     response: Response,
     user: AuthUser,
   ): Promise<void> {
+    const sessionTokens = this.createSessionTokens(user);
+
+    await this.userRepository.setRefreshTokenHash(
+      user._id,
+      sessionTokens.refreshTokenHash,
+    );
+
+    this.setAuthCookies(
+      response,
+      sessionTokens.accessToken,
+      sessionTokens.refreshToken,
+    );
+  }
+
+  private createSessionTokens(user: AuthUser): SessionTokens {
     const accessToken = this.signToken(
       user,
       this.accessTokenSecret,
@@ -152,13 +197,19 @@ export class AuthService {
       this.refreshTokenSecret,
       this.refreshTokenTtlSeconds,
     );
-    const refreshTokenHash = await hashPassword(refreshToken);
-
-    await this.userRepository.updateRefreshTokenHash(
-      user._id,
-      refreshTokenHash,
+    const refreshTokenHash = hashRefreshToken(
+      refreshToken,
+      this.refreshTokenSecret,
     );
 
+    return { accessToken, refreshToken, refreshTokenHash };
+  }
+
+  private setAuthCookies(
+    response: Response,
+    accessToken: string,
+    refreshToken: string,
+  ): void {
     response.cookie(this.accessCookieName, accessToken, {
       ...this.cookieBaseOptions,
       maxAge: this.accessTokenTtlSeconds * 1000,
@@ -178,6 +229,7 @@ export class AuthService {
       {
         sub: user._id,
         email: user.email,
+        jti: randomUUID(),
       } satisfies TokenPayload,
       secret,
       { expiresIn: expiresInSeconds },

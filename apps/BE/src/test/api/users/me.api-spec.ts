@@ -1,6 +1,7 @@
-import { BE_ROUTES, ENV_KEYS } from '@shared/constants';
+import { BE_ROUTES } from '@shared/constants';
 import { FIXTURE_USER_PASSWORD } from '@quack/mongoose/fixtures';
 import * as jwt from 'jsonwebtoken';
+import { TEST_AUTH_ACCESS_SECRET } from '../../helpers/auth-secrets';
 import {
   getApiTestApp,
   registerApiTestLifecycle,
@@ -11,9 +12,6 @@ import { AUTH_COOKIE_NAMES, toCookieHeader } from '../../helpers/cookies';
 import { expectApiError } from '../../helpers/expect-error';
 import { resetDb } from '../../helpers/db';
 import { api, API_PATHS, fullApiPath } from '../../helpers/request';
-
-const accessTokenSecret =
-  process.env[ENV_KEYS.AUTH_ACCESS_TOKEN_SECRET] ?? 'dev-access-secret';
 
 describe(`GET ${fullApiPath(BE_ROUTES.USERS, BE_ROUTES.ME)}`, () => {
   registerApiTestLifecycle();
@@ -80,8 +78,8 @@ describe(`GET ${fullApiPath(BE_ROUTES.USERS, BE_ROUTES.ME)}`, () => {
       const app = getApiTestApp();
       const { user } = await loginFixtureUser(app);
       const expiredAccessToken = jwt.sign(
-        { sub: user._id as string, email: user.email as string },
-        accessTokenSecret,
+        { sub: user._id, email: user.email },
+        TEST_AUTH_ACCESS_SECRET,
         { expiresIn: -60 },
       );
 
