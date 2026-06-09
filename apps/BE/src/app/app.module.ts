@@ -7,6 +7,7 @@ import { AuthModule } from '../auth/auth.module';
 import { GlobalExceptionFilter } from '../filters/global-exception.filter';
 import { QuackModule } from '../quack/quack.module';
 import { UsersModule } from '../users/users.module';
+import { resolvePositiveIntEnv } from '../utils/auth-config.util';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 
@@ -19,13 +20,13 @@ const DEFAULT_AUTH_THROTTLE_LIMIT = 10;
       useFactory: () => ({
         throttlers: [
           {
-            ttl: Number(
-              process.env[ENV_KEYS.AUTH_THROTTLE_TTL_MS] ??
-                DEFAULT_AUTH_THROTTLE_TTL_MS,
+            ttl: resolvePositiveIntEnv(
+              ENV_KEYS.AUTH_THROTTLE_TTL_MS,
+              DEFAULT_AUTH_THROTTLE_TTL_MS,
             ),
-            limit: Number(
-              process.env[ENV_KEYS.AUTH_THROTTLE_LIMIT] ??
-                DEFAULT_AUTH_THROTTLE_LIMIT,
+            limit: resolvePositiveIntEnv(
+              ENV_KEYS.AUTH_THROTTLE_LIMIT,
+              DEFAULT_AUTH_THROTTLE_LIMIT,
             ),
           },
         ],

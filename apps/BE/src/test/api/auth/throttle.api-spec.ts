@@ -10,8 +10,10 @@ const LOW_AUTH_THROTTLE_LIMIT = 2;
 
 describe(`Auth rate limit ${fullApiPath(BE_ROUTES.AUTH, '*')}`, () => {
   let testApp: INestApplication;
+  let previousThrottleLimit: string | undefined;
 
   beforeAll(async () => {
+    previousThrottleLimit = process.env[ENV_KEYS.AUTH_THROTTLE_LIMIT];
     process.env[ENV_KEYS.AUTH_THROTTLE_LIMIT] = String(LOW_AUTH_THROTTLE_LIMIT);
     testApp = await createTestApp();
   });
@@ -20,6 +22,11 @@ describe(`Auth rate limit ${fullApiPath(BE_ROUTES.AUTH, '*')}`, () => {
     await testApp.close();
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
+    }
+    if (previousThrottleLimit === undefined) {
+      delete process.env[ENV_KEYS.AUTH_THROTTLE_LIMIT];
+    } else {
+      process.env[ENV_KEYS.AUTH_THROTTLE_LIMIT] = previousThrottleLimit;
     }
   });
 

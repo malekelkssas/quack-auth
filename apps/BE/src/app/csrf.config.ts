@@ -8,6 +8,7 @@ import {
 } from '@shared/constants';
 import { doubleCsrf } from 'csrf-csrf';
 import { resolveAuthSecret } from '../utils/auth-config.util';
+import { toErrorResponse } from '../utils/error-response.util';
 
 type CsrfRequest = {
   path?: string;
@@ -86,10 +87,14 @@ export function configureCsrf(app: INestApplication): void {
 
   app.use((error: unknown, _req, res, next): void => {
     if (error === invalidCsrfTokenError) {
-      res.status(403).json({
-        message: 'invalid csrf token',
-        code: API_ERROR_CODES.INVALID_CSRF_TOKEN,
-      });
+      res
+        .status(403)
+        .json(
+          toErrorResponse(
+            'invalid csrf token',
+            API_ERROR_CODES.INVALID_CSRF_TOKEN,
+          ),
+        );
       return;
     }
 

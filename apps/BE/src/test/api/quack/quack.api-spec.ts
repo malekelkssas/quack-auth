@@ -93,10 +93,10 @@ describe(`POST ${fullApiPath(BE_ROUTES.QUACK)}`, () => {
         csrf,
         cookies,
       )
-        .send({ name: 'x<script>a</script>b' })
+        .send({ name: 'xy<script>a</script>b' })
         .expect(200);
 
-      expect(response.body).toEqual({ quack: 'xb quack' });
+      expect(response.body).toEqual({ quack: 'xyb quack' });
     });
   });
 });

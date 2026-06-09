@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { sanitizePlainText } from '../sanitize';
+import { PlainTextName } from './name.schema';
 import { Password } from './password.schema';
 
 /** Signup input — plaintext password; hashing happens in the Mongoose layer. */
@@ -8,10 +8,7 @@ export const Signup = z.object({
     (value) => (typeof value === 'string' ? value.trim().toLowerCase() : value),
     z.email('A valid email is required'),
   ),
-  name: z
-    .string('Name is required')
-    .min(3, 'Name must be at least 3 characters')
-    .transform(sanitizePlainText),
+  name: PlainTextName,
   password: Password,
 });
 

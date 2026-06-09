@@ -1337,3 +1337,11 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Changed vs default AI**
 
 - 401 quack spec bootstraps CSRF without auth cookies — global CSRF middleware runs before `JwtCookieAuthGuard`, so bare POST without token returns **403**, not **401**.
+
+### Developer override — no sanitize on quack name fallback (2026-06-09 16:03)
+
+**Developer asked:** why does `QuackService` call `sanitizePlainText(user.name)` when falling back to the stored name?
+
+**Judgement:** **Not needed.** Names are already sanitized at **signup** (`Signup.name` → `PlainTextName` / `sanitizePlainText` transform). Re-sanitizing on read in quack was defensive over-engineering from `/code-review` / `/simplify` — rejected.
+
+**Reverted:** `quack.service.ts` uses `user.name` as stored; optional request `name` still goes through `QuackInput` / `OptionalPlainTextName` (sanitize + length on input only).

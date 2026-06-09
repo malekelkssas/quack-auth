@@ -24,6 +24,12 @@ describe('sanitizePlainText', () => {
 
   it('strips entity-encoded markup', () => {
     expect(sanitizePlainText('&lt;script&gt;alert(1)&lt;/script&gt;')).toBe('');
+    expect(sanitizePlainText('&#60;script&#62;alert(1)&#60;/script&#62;')).toBe(
+      '',
+    );
+    expect(sanitizePlainText('&#x3c;img onerror=alert(1) src=x&#x3e;')).toBe(
+      '',
+    );
   });
 
   it('leaves plain text unchanged', () => {

@@ -1,13 +1,9 @@
 import { z } from 'zod';
-import { sanitizePlainText } from '../sanitize';
+import { OptionalPlainTextName } from '../user/name.schema';
 
 /** Optional display name for `POST /api/quack`; falls back to stored user name. */
 export const QuackInput = z.object({
-  name: z
-    .string()
-    .min(3, 'Name must be at least 3 characters')
-    .transform(sanitizePlainText)
-    .optional(),
+  name: OptionalPlainTextName,
 });
 
 export type QuackInput = z.infer<typeof QuackInput>;

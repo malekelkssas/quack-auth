@@ -7,6 +7,12 @@ const STRIP_HTML_OPTIONS: sanitizeHtml.IOptions = {
 
 function decodeHtmlEntities(text: string): string {
   return text
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) =>
+      String.fromCodePoint(parseInt(hex, 16)),
+    )
+    .replace(/&#(\d+);/g, (_, dec: string) =>
+      String.fromCodePoint(parseInt(dec, 10)),
+    )
     .replace(/&amp;/g, '&')
     .replace(/&lt;/g, '<')
     .replace(/&gt;/g, '>')

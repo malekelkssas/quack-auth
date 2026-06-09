@@ -19,7 +19,7 @@ export function bootstrapCsrf(): Promise<void> {
   return bootstrapPromise;
 }
 
-/** Load CSRF cookie once on app mount so the first auth POST has a token. */
+/** Load CSRF cookie once on app mount for authenticated mutations (e.g. POST /api/quack). */
 export function useCsrfBootstrap(): void {
   useEffect(() => {
     void bootstrapCsrf();

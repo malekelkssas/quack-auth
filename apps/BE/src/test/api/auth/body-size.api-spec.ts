@@ -10,8 +10,10 @@ const LOW_JSON_BODY_LIMIT = '50b';
 
 describe(`JSON body size limit ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
   let testApp: INestApplication;
+  let previousBodyLimit: string | undefined;
 
   beforeAll(async () => {
+    previousBodyLimit = process.env[ENV_KEYS.BE_JSON_BODY_LIMIT];
     process.env[ENV_KEYS.BE_JSON_BODY_LIMIT] = LOW_JSON_BODY_LIMIT;
     testApp = await createTestApp();
   });
@@ -20,6 +22,11 @@ describe(`JSON body size limit ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)
     await testApp.close();
     if (mongoose.connection.readyState !== 0) {
       await mongoose.disconnect();
+    }
+    if (previousBodyLimit === undefined) {
+      delete process.env[ENV_KEYS.BE_JSON_BODY_LIMIT];
+    } else {
+      process.env[ENV_KEYS.BE_JSON_BODY_LIMIT] = previousBodyLimit;
     }
   });
 

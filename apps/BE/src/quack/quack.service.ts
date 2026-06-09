@@ -7,8 +7,11 @@ export class QuackService {
   constructor(private readonly userService: UserService) {}
 
   async quack(userId: string, input: QuackInput): Promise<QuackResponse> {
+    if (input.name !== undefined) {
+      return { quack: `${input.name} quack` };
+    }
+
     const user = await this.userService.getMe(userId);
-    const name = input.name ?? user.name;
-    return { quack: `${name} quack` };
+    return { quack: `${user.name} quack` };
   }
 }

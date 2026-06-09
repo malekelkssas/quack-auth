@@ -44,6 +44,15 @@ export const SIGNUP_VALIDATION_CASES = [
     'Name must be at least 3 characters',
   ],
   [
+    'name shorter than 3 characters after HTML is stripped',
+    {
+      email: 'new@example.com',
+      name: 'ab<script>x</script>',
+      password: FIXTURE_USER_PASSWORD,
+    },
+    'Name must be at least 3 characters',
+  ],
+  [
     'password shorter than 8 characters',
     { email: 'new@example.com', name: 'New User', password: 'Pass1!' },
     'Password must be at least 8 characters',
