@@ -117,21 +117,22 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     let canvasWidth = 0;
     let canvasHeight = 0;
 
-    // Spread ducks across the canvas on first paint so they are visible
-    // immediately instead of slowly walking in from off-screen.
+    // Line ducks up just off the left edge (staggered) so they walk in from
+    // the left almost immediately, instead of teleporting in mid-canvas or
+    // waiting on a long off-screen approach.
+    const ENTRY_GAP = 28;
     const placeDucks = () => {
       if (positioned || canvasWidth === 0) return;
       let allReady = true;
-      keys.forEach((key, index) => {
+      let offset = 0;
+      keys.forEach((key) => {
         const m = metrics[key];
         if (!m) {
           allReady = false;
           return;
         }
-        pos[key].x =
-          keys.length > 1
-            ? canvasWidth * (0.12 + index * 0.42)
-            : canvasWidth * 0.28;
+        pos[key].x = -m.dw - offset;
+        offset += m.dw + ENTRY_GAP;
       });
       if (allReady) positioned = true;
     };
