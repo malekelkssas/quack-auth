@@ -1,11 +1,14 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { Toaster } from '@/components/ui/toaster';
+import { useCsrfBootstrap } from '@/hooks/use-csrf-bootstrap';
 import Login from '@/pages/auth/Login/Login';
 import Signup from '@/pages/auth/Signup/Signup';
 import { FE_DEFAULT_ROUTE, FE_ROUTES } from '@/utils/constants';
 
 export function App() {
+  useCsrfBootstrap();
+
   return (
     <>
       <Routes>

@@ -6,11 +6,14 @@ import {
   HttpStatus,
   Logger,
 } from '@nestjs/common';
+import { API_ERROR_CODES } from '@shared/constants';
 import {
   fromHttpException,
   fromZodError,
   getZodErrorFromException,
   isHttpExceptionLike,
+  isPayloadTooLargeError,
+  toErrorResponse,
 } from '../utils/error-response.util';
 import { MongooseErrorHandler } from '../utils/mongoose-error.handler.util';
 
@@ -23,6 +26,18 @@ export class GlobalExceptionFilter implements ExceptionFilter {
 
     if (isHttpExceptionLike(exception)) {
       this.sendHttpException(response, exception);
+      return;
+    }
+
+    if (isPayloadTooLargeError(exception)) {
+      response
+        .status(HttpStatus.PAYLOAD_TOO_LARGE)
+        .json(
+          toErrorResponse(
+            'Request body too large',
+            API_ERROR_CODES.PAYLOAD_TOO_LARGE,
+          ),
+        );
       return;
     }
 

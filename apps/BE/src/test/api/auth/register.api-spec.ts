@@ -6,7 +6,6 @@ import {
 } from '../../setup/api-spec-lifecycle';
 import { expectAuthUserShape } from '../../helpers/auth-user';
 import { expectAuthCookiesSet } from '../../helpers/cookies';
-import { fetchCsrf, withCsrf } from '../../helpers/csrf';
 import { expectApiError } from '../../helpers/expect-error';
 import { resetDb } from '../../helpers/db';
 import { SIGNUP_VALIDATION_CASES } from '../../fixtures/signup-validation.cases';
@@ -30,11 +29,8 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
     it('creates a new user with AuthUser shape and auth cookies (201)', async () => {
       const app = getApiTestApp();
       const payload = validSignup();
-      const csrf = await fetchCsrf(app);
-      const response = await withCsrf(
-        api(app).post(API_PATHS.auth.register),
-        csrf,
-      )
+      const response = await api(app)
+        .post(API_PATHS.auth.register)
         .send(payload)
         .expect(201);
 
@@ -47,24 +43,12 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
 
     it('returns 409 when email is already seeded', async () => {
       const app = getApiTestApp();
-      const csrf = await fetchCsrf(app);
-      const response = await withCsrf(
-        api(app).post(API_PATHS.auth.register),
-        csrf,
-      )
+      const response = await api(app)
+        .post(API_PATHS.auth.register)
         .send(userFixtures[0])
         .expect(409);
 
       expectApiError(response, 'Email is already registered');
-    });
-
-    it('returns 403 when CSRF token is missing', async () => {
-      const response = await api(getApiTestApp())
-        .post(API_PATHS.auth.register)
-        .send(validSignup())
-        .expect(403);
-
-      expectApiError(response, 'invalid csrf token');
     });
   });
 
@@ -73,11 +57,8 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
       'rejects %s',
       async (_label, body, message) => {
         const app = getApiTestApp();
-        const csrf = await fetchCsrf(app);
-        const response = await withCsrf(
-          api(app).post(API_PATHS.auth.register),
-          csrf,
-        )
+        const response = await api(app)
+          .post(API_PATHS.auth.register)
           .send(body)
           .expect(400);
 

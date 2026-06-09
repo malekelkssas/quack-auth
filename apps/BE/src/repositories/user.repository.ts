@@ -126,8 +126,8 @@ export class UserRepository {
       _id: user._id.toString(),
       email: user[UserPaths.email],
       name: user[UserPaths.name],
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
+      createdAt: user.createdAt.toISOString(),
+      updatedAt: user.updatedAt.toISOString(),
     });
   }
 

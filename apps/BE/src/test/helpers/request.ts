@@ -20,6 +20,7 @@ export const API_PATHS = {
   users: {
     me: apiPath(BE_ROUTES.USERS, BE_ROUTES.ME),
   },
+  quack: apiPath(BE_ROUTES.QUACK),
 } as const;
 
 /** Full path including global prefix (for `describe` titles and logging). */

@@ -1,5 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import {
+  API_ERROR_CODES,
   BE_ROUTES,
   CSRF_CONSTANTS,
   ENV_KEYS,
@@ -16,16 +17,7 @@ type CsrfRequest = {
   ip?: string;
 };
 
-function authPostPath(segment: string): string {
-  return `/${BE_ROUTES.BASE}/${BE_ROUTES.AUTH}/${segment}`;
-}
-
-const CSRF_PROTECTED_PATHS = new Set([
-  authPostPath(BE_ROUTES.REGISTER),
-  authPostPath(BE_ROUTES.LOGIN),
-  authPostPath(BE_ROUTES.REFRESH),
-  authPostPath(BE_ROUTES.LOGOUT),
-]);
+const CSRF_PROTECTED_PATHS = new Set([`/${BE_ROUTES.BASE}/${BE_ROUTES.QUACK}`]);
 
 export function resolveCsrfCookieName(): string {
   return (
@@ -54,7 +46,7 @@ function parseSameSite(
   return 'lax';
 }
 
-/** Wire double-submit CSRF for state-changing auth routes. Requires cookie-parser first. */
+/** Wire double-submit CSRF for authenticated mutations (not public auth POSTs). Requires cookie-parser first. */
 export function configureCsrf(app: INestApplication): void {
   const csrfSecret = resolveAuthSecret(
     ENV_KEYS.AUTH_CSRF_SECRET,
@@ -94,7 +86,10 @@ export function configureCsrf(app: INestApplication): void {
 
   app.use((error: unknown, _req, res, next): void => {
     if (error === invalidCsrfTokenError) {
-      res.status(403).json({ message: 'invalid csrf token' });
+      res.status(403).json({
+        message: 'invalid csrf token',
+        code: API_ERROR_CODES.INVALID_CSRF_TOKEN,
+      });
       return;
     }
 

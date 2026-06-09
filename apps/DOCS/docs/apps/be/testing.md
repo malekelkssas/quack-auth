@@ -20,20 +20,29 @@ apps/BE/src/test/
 ├── api/                          # *.api-spec.ts — HTTP integration specs
 │   ├── app.api-spec.ts           # smoke / root routes
 │   ├── auth/
-│   │   ├── register.api-spec.ts  # POST /api/auth/register
-│   │   ├── login.api-spec.ts     # POST /api/auth/login
-│   │   ├── refresh.api-spec.ts   # POST /api/auth/refresh
-│   │   └── logout.api-spec.ts    # POST /api/auth/logout
+│   │   ├── register.api-spec.ts       # POST /api/auth/register
+│   │   ├── login.api-spec.ts          # POST /api/auth/login
+│   │   ├── refresh.api-spec.ts        # POST /api/auth/refresh
+│   │   ├── logout.api-spec.ts         # POST /api/auth/logout
+│   │   ├── throttle.api-spec.ts       # 429 ErrorResponse when AUTH_THROTTLE_LIMIT exceeded
+│   │   ├── body-size.api-spec.ts      # 413 ErrorResponse when BE_JSON_BODY_LIMIT exceeded
+│   │   ├── sanitize.api-spec.ts       # XSS strip on signup name
+│   │   └── response-secrets.api-spec.ts # AuthUser only — no password/hash in JSON
+│   ├── quack/
+│   │   └── quack.api-spec.ts          # POST /api/quack — JWT + CSRF, name fallback/sanitize
+│   ├── security-headers.api-spec.ts   # Helmet X-Frame-Options, X-Content-Type-Options
 │   └── users/
-│       └── me.api-spec.ts        # GET /api/users/me (cookie JWT guard)
+│       └── me.api-spec.ts             # GET /api/users/me (cookie JWT guard)
 ├── helpers/
 │   ├── auth.ts                   # loginFixtureUser, registerUser session helpers
 │   ├── auth-user.ts              # expectAuthUserShape — safe user payload
 │   ├── cookies.ts                # parse Set-Cookie, build Cookie header
-│   ├── csrf.ts                   # fetchCsrf, withCsrf — double-submit for POST auth
+│   ├── csrf.ts                   # fetchCsrf, withCsrf — double-submit for POST /api/quack
 │   ├── db.ts                     # resetDb() → loadFixtures({ reset: true })
 │   ├── expect-error.ts           # expectApiError() — exact message assertions
 │   └── request.ts                # api(), apiPath(), API_PATHS, fullApiPath()
+├── utils/
+│   └── error-response.util.spec.ts # fromHttpException 429/413 mapping
 └── setup/
     ├── api-spec-lifecycle.ts     # registerApiTestLifecycle() — one app/connection per file
     ├── create-test-app.ts        # Nest TestingModule + configureApp
@@ -41,11 +50,11 @@ apps/BE/src/test/
     └── global-teardown.ts        # disconnect + stop memory server
 ```
 
-| Artifact                 | Role                                                                             |
-| ------------------------ | -------------------------------------------------------------------------------- |
-| `jest.config.ts`         | `testMatch: **/*.api-spec.ts`, `globalSetup` / `globalTeardown`, `maxWorkers: 1` |
-| `tsconfig.spec.json`     | TypeScript for test sources                                                      |
-| `configure-app.ts` (app) | Shared HTTP config for production **and** tests (prefix, CORS, `cookie-parser`)  |
+| Artifact                 | Role                                                                                          |
+| ------------------------ | --------------------------------------------------------------------------------------------- |
+| `jest.config.ts`         | `testMatch: **/*.api-spec.ts`, `globalSetup` / `globalTeardown`, `maxWorkers: 1`              |
+| `tsconfig.spec.json`     | TypeScript for test sources                                                                   |
+| `configure-app.ts` (app) | Shared HTTP config for production **and** tests (prefix, CORS, `cookie-parser`, Helmet, CSRF) |
 
 ## Naming convention
 
@@ -90,42 +99,47 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
 
 ### CSRF helpers
 
-State-changing auth POSTs require the `csrf-csrf` double-submit cookie and `x-csrf-token` header. Use `helpers/csrf.ts`:
+`POST /api/quack` requires the `csrf-csrf` double-submit cookie and `x-csrf-token` header. Auth POSTs do **not**. Use `helpers/csrf.ts`:
 
 ```ts
 import { fetchCsrf, withCsrf } from '../../helpers/csrf';
+import { loginFixtureUser } from '../../helpers/auth';
 
+const app = getApiTestApp();
+const { cookies } = await loginFixtureUser(app);
 const csrf = await fetchCsrf(app); // GET /api bootstraps qa_csrf_token cookie
 
-await withCsrf(api(app).post(API_PATHS.auth.register), csrf)
-  .send(payload)
-  .expect(201);
+await withCsrf(api(app).post(API_PATHS.quack), csrf, cookies)
+  .send({ name: 'Ducky' })
+  .expect(200);
 ```
 
 | Helper      | Purpose                                                                    |
 | ----------- | -------------------------------------------------------------------------- |
 | `fetchCsrf` | Safe `GET` to obtain CSRF cookie + token (mirrors FE first-load flow)      |
-| `withCsrf`  | Sets header + CSRF cookie; merges optional auth cookies for logout/refresh |
+| `withCsrf`  | Sets header + CSRF cookie; merges optional auth cookies for protected POST |
 
-`loginFixtureUser` and other auth helpers already attach CSRF internally. Negative case: POST without CSRF → **403** `invalid csrf token` (see `register.api-spec.ts`).
+`loginFixtureUser` / `registerUser` post **without** CSRF. Negative case: `POST /api/quack` without CSRF when logged in → **403** `invalid csrf token` + `INVALID_CSRF_TOKEN` (see `quack.api-spec.ts`).
 
 ### Cookie auth helpers
 
 Auth endpoints set HttpOnly access + refresh cookies. Use `helpers/cookies.ts` to parse `Set-Cookie` from a login/register response and pass them to protected routes:
 
 ```ts
-import { collectAuthCookies, cookieHeader } from '../../helpers/cookies';
-import { fetchCsrf, withCsrf } from '../../helpers/csrf';
+import {
+  parseCookiesFromResponse,
+  toCookieHeader,
+} from '../../helpers/cookies';
 
-const csrf = await fetchCsrf(app);
-const loginRes = await withCsrf(api(app).post(API_PATHS.auth.login), csrf)
+const loginRes = await api(app)
+  .post(API_PATHS.auth.login)
   .send(credentials)
   .expect(200);
-const cookies = collectAuthCookies(loginRes);
+const cookies = parseCookiesFromResponse(loginRes);
 
 await api(app)
   .get(API_PATHS.users.me)
-  .set('Cookie', cookieHeader(cookies))
+  .set('Cookie', toCookieHeader(cookies))
   .expect(200);
 ```
 
@@ -146,7 +160,7 @@ const response = await api(app)
 expectApiError(response, 'A valid email is required');
 ```
 
-Use Supertest `.expect(status)` for HTTP status; `expectApiError` asserts only `response.body.message`. Message strings must match the shared Zod schemas in `libs/dtos` (e.g. `signup.dto.ts`, `login.dto.ts`, `password.schema.ts`) or service-layer exceptions (e.g. duplicate email → `Email is already registered`).
+Use Supertest `.expect(status)` for HTTP status; `expectApiError(response, message, code?)` asserts `response.body.message` and optional `code`. Message strings must match the shared Zod schemas in `libs/dtos` (e.g. `signup.dto.ts`, `login.dto.ts`, `password.schema.ts`) or service-layer exceptions (e.g. duplicate email → `Email is already registered`). Rate limit → `Too many requests` + `TOO_MANY_REQUESTS`; oversized body → `Request body too large` + `PAYLOAD_TOO_LARGE`.
 
 When adding a new endpoint test:
 
@@ -156,16 +170,22 @@ When adding a new endpoint test:
 
 ## Auth test coverage (current)
 
-| Spec                   | Route                     | Cases                                                                                                  |
-| ---------------------- | ------------------------- | ------------------------------------------------------------------------------------------------------ |
-| `register.api-spec.ts` | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, CSRF 403, validation matrix (`SIGNUP_VALIDATION_CASES`) |
-| `login.api-spec.ts`    | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation                                          |
-| `refresh.api-spec.ts`  | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear                                                |
-| `logout.api-spec.ts`   | `POST /api/auth/logout`   | 204 + cookie clear + DB hash revoked, idempotent without cookies, re-login                             |
-| `me.api-spec.ts`       | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token                                           |
-| `app.api-spec.ts`      | `GET /api`                | smoke                                                                                                  |
+| Spec                           | Route                     | Cases                                                                                                  |
+| ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `register.api-spec.ts`         | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, validation matrix (`SIGNUP_VALIDATION_CASES`)           |
+| `quack.api-spec.ts`            | `POST /api/quack`         | 401 with CSRF but no auth cookies, 403 missing CSRF when logged in, 200 name fallback/custom/sanitize  |
+| `login.api-spec.ts`            | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation                                          |
+| `refresh.api-spec.ts`          | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear                                                |
+| `logout.api-spec.ts`           | `POST /api/auth/logout`   | 204 + cookie clear + DB hash revoked, idempotent without cookies, re-login                             |
+| `me.api-spec.ts`               | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token                                           |
+| `throttle.api-spec.ts`         | `POST /api/auth/*`        | 429 `Too many requests` + `TOO_MANY_REQUESTS` after burst (isolated app instance)                      |
+| `body-size.api-spec.ts`        | `POST /api/auth/register` | 413 `Request body too large` + `PAYLOAD_TOO_LARGE` when body exceeds low `BE_JSON_BODY_LIMIT`          |
+| `sanitize.api-spec.ts`         | `POST /api/auth/register` | 201 with HTML stripped from `name` (XSS payload → plain text)                                          |
+| `response-secrets.api-spec.ts` | Auth + `GET /users/me`    | JSON never includes `password`, `refreshTokenHash`, or `refreshTokenRotatedAt`; DB still stores hashes |
+| `security-headers.api-spec.ts` | `GET /api`                | Helmet `X-Frame-Options`, `X-Content-Type-Options` on responses                                        |
+| `app.api-spec.ts`              | `GET /api`                | smoke                                                                                                  |
 
-**41** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays.
+**56** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
 
 Shared signup validation rows live in `test/fixtures/signup-validation.cases.ts` for `it.each` reuse.
 

@@ -43,7 +43,29 @@ Without a fresh build + restart, the browser blocks FE requests with a CORS erro
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 - `GET /api/users/me` (protected)
+- `POST /api/quack` (protected; optional `{ name }` body → `{ quack: "<name> quack" }`)
 
-JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). State-changing auth routes require CSRF (`csrf-csrf` double-submit).
+JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). CSRF (`csrf-csrf` double-submit) applies to **`POST /api/quack`** only — not auth POSTs. Bootstrap the CSRF cookie with a safe `GET /api` before the first quack call.
 
-Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, production secrets): [Backend security](../apps/be/security.md).
+Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, Helmet, throttling, XSS sanitize, production secrets): [Backend security](../apps/be/security.md).
+
+### Auth rate limiting (env)
+
+Throttling applies to **`POST /api/auth/*`** only. Set in the repo root `.env` (see `.env.example`):
+
+```bash
+AUTH_THROTTLE_TTL_MS=60000   # window per IP (ms)
+AUTH_THROTTLE_LIMIT=10       # max auth POSTs per window
+```
+
+Restart the BE after changing these values. API tests override the limit to `1000` in `global-setup.ts`; production and local dev use your `.env` defaults unless you tune them.
+
+### JSON body size limit (env)
+
+Set the max request body size for JSON and urlencoded payloads (see `.env.example`):
+
+```bash
+BE_JSON_BODY_LIMIT=100kb   # Express limit string (e.g. 100kb, 1mb)
+```
+
+Restart the BE after changing this value. Oversized bodies return **413** with `{ "message": "Request body too large", "code": "PAYLOAD_TOO_LARGE" }`. Details: [Backend security](../apps/be/security.md).
