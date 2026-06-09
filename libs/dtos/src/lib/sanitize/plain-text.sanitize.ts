@@ -1,9 +1,22 @@
-import sanitizeHtml from 'sanitize-html';
+/**
+ * Isomorphic plain-text sanitizer — no Node-only dependencies so the shared
+ * DTOs that use it (e.g. `Signup.name`) can be bundled by the browser (FE
+ * forms) and run on the server (NestJS) with identical behavior.
+ */
 
-const STRIP_HTML_OPTIONS: sanitizeHtml.IOptions = {
-  allowedTags: [],
-  allowedAttributes: {},
-};
+/** Tags whose inner content must be dropped entirely, not just the tags. */
+const NON_TEXT_TAGS = ['script', 'style', 'textarea', 'title', 'option'];
+
+const NON_TEXT_BLOCK = new RegExp(
+  `<(${NON_TEXT_TAGS.join('|')})\\b[^>]*>[\\s\\S]*?<\\/\\1\\s*>`,
+  'gi',
+);
+
+/** Opening non-text tag with no matching close — drop it and the rest. */
+const DANGLING_NON_TEXT = new RegExp(
+  `<(${NON_TEXT_TAGS.join('|')})\\b[\\s\\S]*$`,
+  'i',
+);
 
 function decodeHtmlEntities(text: string): string {
   return text
@@ -21,7 +34,11 @@ function decodeHtmlEntities(text: string): string {
 }
 
 function stripHtml(value: string): string {
-  return sanitizeHtml(value, STRIP_HTML_OPTIONS);
+  return value
+    .replace(NON_TEXT_BLOCK, '')
+    .replace(DANGLING_NON_TEXT, '')
+    .replace(/<[^>]*>/g, '')
+    .replace(/<[^>]*$/g, '');
 }
 
 /** Strip HTML tags, scripts, and event handlers — plain text only. */
