@@ -13,6 +13,11 @@ export const API_PATHS = {
   root: apiPath(),
   auth: {
     register: apiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER),
+    login: apiPath(BE_ROUTES.AUTH, BE_ROUTES.LOGIN),
+    refresh: apiPath(BE_ROUTES.AUTH, BE_ROUTES.REFRESH),
+  },
+  users: {
+    me: apiPath(BE_ROUTES.USERS, BE_ROUTES.ME),
   },
 } as const;
 

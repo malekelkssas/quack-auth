@@ -4,11 +4,11 @@ import {
   getApiTestApp,
   registerApiTestLifecycle,
 } from '../../setup/api-spec-lifecycle';
+import { expectAuthUserShape } from '../../helpers/auth-user';
+import { expectAuthCookiesSet } from '../../helpers/cookies';
 import { expectApiError } from '../../helpers/expect-error';
 import { resetDb } from '../../helpers/db';
-import { api, apiPath, fullApiPath } from '../../helpers/request';
-
-const registerPath = apiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER);
+import { api, API_PATHS, fullApiPath } from '../../helpers/request';
 
 const validSignup = (overrides: Record<string, unknown> = {}) => ({
   email: 'new@example.com',
@@ -25,16 +25,23 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
       await resetDb();
     });
 
-    it('creates a new user (201)', async () => {
-      await api(getApiTestApp())
-        .post(registerPath)
-        .send(validSignup())
+    it('creates a new user with AuthUser shape and auth cookies (201)', async () => {
+      const payload = validSignup();
+      const response = await api(getApiTestApp())
+        .post(API_PATHS.auth.register)
+        .send(payload)
         .expect(201);
+
+      expectAuthUserShape(response.body.user, {
+        email: payload.email,
+        name: payload.name,
+      });
+      expectAuthCookiesSet(response.headers['set-cookie']);
     });
 
     it('returns 409 when email is already seeded', async () => {
       const response = await api(getApiTestApp())
-        .post(registerPath)
+        .post(API_PATHS.auth.register)
         .send(userFixtures[0])
         .expect(409);
 
@@ -99,7 +106,7 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
       ],
     ] as const)('rejects %s', async (_label, body, message) => {
       const response = await api(getApiTestApp())
-        .post(registerPath)
+        .post(API_PATHS.auth.register)
         .send(body)
         .expect(400);
 

@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` merged with `main` @ `2967592` (cookie JWT auth BE + FE duck auth pages from `quack-06`).
+**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` (auth API Supertest suite: register/login/refresh/me, 27 tests).
 
 ---
 
@@ -182,21 +182,21 @@ The PDF uses older names; the repo has evolved:
 
 ## 7. Testing
 
-| #   | Item                                      | Status | Evidence / notes                                   |
-| --- | ----------------------------------------- | ------ | -------------------------------------------------- |
-| 7.1 | Jest (BE) — dependency / config           | [~]    | `jest.config.ts`; no `*.spec.ts` files             |
-| 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | —                                                  |
-| 7.3 | Supertest e2e (HTTP + Mongo)              | [ ]    | BE generated with `--e2e-test-runner=none`         |
-| 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config |
-| 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                  |
-| 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`         |
-| 7.7 | `mongodb-memory-server` usage             | [~]    | Dev dependency; unused                             |
-| 7.8 | CI test step                              | [~]    | Commented in `.github/workflows/ci.yml`            |
+| #   | Item                                      | Status | Evidence / notes                                                                       |
+| --- | ----------------------------------------- | ------ | -------------------------------------------------------------------------------------- |
+| 7.1 | Jest (BE) — dependency / config           | [x]    | `jest.config.ts`, `*.api-spec.ts` under `apps/BE/src/test/`                            |
+| 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | API-level only per Developer preference                                                |
+| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth endpoints covered (`register`, `login`, `refresh`, `me`); expand as features land |
+| 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config                                     |
+| 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                                                      |
+| 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`                                             |
+| 7.7 | `mongodb-memory-server` usage             | [x]    | `global-setup.ts` for BE API tests                                                     |
+| 7.8 | CI test step                              | [x]    | `pnpm ci` includes `pnpm nx test BE`                                                   |
 
 ### Testing tasks
 
-- [ ] BE: Jest unit tests for auth service, password hashing, guards
-- [ ] BE: Supertest e2e against in-memory or test-container Mongo
+- [ ] BE: colocated unit tests (optional — Developer prefers API-level Supertest)
+- [x] BE: Supertest auth API specs (`apps/BE/src/test/api/auth/`, `users/me.api-spec.ts`)
 - [ ] FE: Vitest + React Testing Library for forms and guards
 - [ ] FE: Cypress flows for full auth journey
 - [ ] Uncomment and stabilize CI test jobs

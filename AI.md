@@ -1153,3 +1153,16 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - [x] `pnpm nx run BE:lint --skip-nx-cache`
 - [x] `pnpm nx run BE:typecheck --skip-nx-cache`
+
+**Follow-up — auth API test suite (S017)**
+
+- Added Supertest specs: `auth/register`, `auth/login`, `auth/refresh`, `users/me` (27 tests total).
+- Helpers: `cookies.ts`, `auth.ts`, `auth-user.ts`; extended `API_PATHS` in `request.ts`.
+- Removed legacy `users/signup.api-spec.ts` (superseded by `auth/register.api-spec.ts`).
+- Refresh rotation reuse test waits 1.1s so JWT `iat` differs (same-second refresh can re-issue identical tokens).
+- Expired access token tested via `jwt.sign({ expiresIn: -60 })` — no time mock needed.
+
+**Verified (auth tests)**
+
+- [x] `pnpm nx test BE --skip-nx-cache` (27 passed)
+- [x] `pnpm check`

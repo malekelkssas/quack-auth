@@ -19,9 +19,16 @@ pnpm nx test BE       # equivalent
 apps/BE/src/test/
 ├── api/                          # *.api-spec.ts — HTTP integration specs
 │   ├── app.api-spec.ts           # smoke / root routes
+│   ├── auth/
+│   │   ├── register.api-spec.ts  # POST /api/auth/register
+│   │   ├── login.api-spec.ts     # POST /api/auth/login
+│   │   └── refresh.api-spec.ts   # POST /api/auth/refresh
 │   └── users/
-│       └── signup.api-spec.ts    # POST /api/users/signup
+│       └── me.api-spec.ts        # GET /api/users/me (cookie JWT guard)
 ├── helpers/
+│   ├── auth.ts                   # loginFixtureUser, registerUser session helpers
+│   ├── auth-user.ts              # expectAuthUserShape — safe user payload
+│   ├── cookies.ts                # parse Set-Cookie, build Cookie header
 │   ├── db.ts                     # resetDb() → loadFixtures({ reset: true })
 │   ├── expect-error.ts           # expectApiError() — exact message assertions
 │   └── request.ts                # api(), apiPath(), API_PATHS, fullApiPath()
@@ -32,17 +39,17 @@ apps/BE/src/test/
     └── global-teardown.ts        # disconnect + stop memory server
 ```
 
-| Artifact                 | Role                                                                                |
-| ------------------------ | ----------------------------------------------------------------------------------- |
-| `jest.config.ts`         | `testMatch: **/*.api-spec.ts`, `globalSetup` / `globalTeardown`, `maxWorkers: 1`    |
-| `tsconfig.spec.json`     | TypeScript for test sources                                                         |
-| `configure-app.ts` (app) | Shared HTTP config for production **and** tests (`setGlobalPrefix(BE_ROUTES.BASE)`) |
+| Artifact                 | Role                                                                             |
+| ------------------------ | -------------------------------------------------------------------------------- |
+| `jest.config.ts`         | `testMatch: **/*.api-spec.ts`, `globalSetup` / `globalTeardown`, `maxWorkers: 1` |
+| `tsconfig.spec.json`     | TypeScript for test sources                                                      |
+| `configure-app.ts` (app) | Shared HTTP config for production **and** tests (prefix, CORS, `cookie-parser`)  |
 
 ## Naming convention
 
 - File suffix: **`*.api-spec.ts`**
 - One spec file per route group or feature area under `test/api/`
-- `describe` titles use **`fullApiPath(...)`** so failures show the same path as production (e.g. `POST /api/users/signup`)
+- `describe` titles use **`fullApiPath(...)`** so failures show the same path as production (e.g. `POST /api/auth/register`)
 
 ## Memory Mongo and fixtures
 
@@ -56,7 +63,7 @@ Each spec file:
 
 ## HTTP helpers and `BE_ROUTES`
 
-`test/helpers/request.ts` wraps Supertest with the global `/api` prefix. Route segments come from **`BE_ROUTES`** — never hard-code `/users/signup` in specs.
+`test/helpers/request.ts` wraps Supertest with the global `/api` prefix. Route segments come from **`BE_ROUTES`** — never hard-code paths in specs.
 
 ```ts
 import { BE_ROUTES } from '@shared/constants';
@@ -65,7 +72,7 @@ import { api, API_PATHS, fullApiPath } from '../helpers/request';
 describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
   it('creates a user', async () => {
     await api(app)
-      .post(API_PATHS.users.signup)
+      .post(API_PATHS.auth.register)
       .send({ email, name, password })
       .expect(201);
   });
@@ -75,9 +82,28 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
 | Helper          | Purpose                                        |
 | --------------- | ---------------------------------------------- |
 | `api(app)`      | Supertest client scoped to `/api`              |
-| `apiPath(...)`  | Join controller segments → `/users/signup`     |
+| `apiPath(...)`  | Join controller segments → `/auth/register`    |
 | `API_PATHS`     | Named routes used in `.post()` / `.get()`      |
 | `fullApiPath()` | Include `BE_ROUTES.BASE` for `describe` titles |
+
+### Cookie auth helpers
+
+Auth endpoints set HttpOnly access + refresh cookies. Use `helpers/cookies.ts` to parse `Set-Cookie` from a login/register response and pass them to protected routes:
+
+```ts
+import { collectAuthCookies, cookieHeader } from '../../helpers/cookies';
+
+const loginRes = await api(app)
+  .post(API_PATHS.auth.login)
+  .send(credentials)
+  .expect(200);
+const cookies = collectAuthCookies(loginRes);
+
+await api(app)
+  .get(API_PATHS.users.me)
+  .set('Cookie', cookieHeader(cookies))
+  .expect(200);
+```
 
 ## Error message assertions
 
@@ -89,14 +115,14 @@ describe(`POST ${fullApiPath(BE_ROUTES.AUTH, BE_ROUTES.REGISTER)}`, () => {
 import { expectApiError } from '../../helpers/expect-error';
 
 const response = await api(app)
-  .post(API_PATHS.users.signup)
+  .post(API_PATHS.auth.register)
   .send({ name: 'Alice', password: FIXTURE_USER_PASSWORD })
   .expect(400);
 
 expectApiError(response, 'A valid email is required');
 ```
 
-Use Supertest `.expect(status)` for HTTP status; `expectApiError` asserts only `response.body.message`. Message strings must match the shared Zod schemas in `libs/dtos` (e.g. `signup.dto.ts`, `password.schema.ts`) or service-layer exceptions (e.g. duplicate email → `Email is already registered`).
+Use Supertest `.expect(status)` for HTTP status; `expectApiError` asserts only `response.body.message`. Message strings must match the shared Zod schemas in `libs/dtos` (e.g. `signup.dto.ts`, `login.dto.ts`, `password.schema.ts`) or service-layer exceptions (e.g. duplicate email → `Email is already registered`).
 
 When adding a new endpoint test:
 
@@ -104,22 +130,32 @@ When adding a new endpoint test:
 2. Read the Zod schema (or `MongooseErrorHandler`) for the exact `message`.
 3. Add a case per distinct error path; prefer `userFixtures` for seeded conflict scenarios.
 
+## Auth test coverage (current)
+
+| Spec                   | Route                     | Cases                                                            |
+| ---------------------- | ------------------------- | ---------------------------------------------------------------- |
+| `register.api-spec.ts` | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, validation matrix |
+| `login.api-spec.ts`    | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation    |
+| `refresh.api-spec.ts`  | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear          |
+| `me.api-spec.ts`       | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token     |
+| `app.api-spec.ts`      | `GET /api`                | smoke                                                            |
+
+**27** tests total. Refresh rotation specs include a short delay because JWT `iat` is second-granular — identical tokens can be issued within the same second without a `jti` claim.
+
 ## CI
 
 `.github/workflows/ci.yml` runs `pnpm ci` (`check` + `build` + `pnpm nx test BE`). See [Husky & quality gates](../../setup/09-husky-quality-gates.md).
 
 ## Troubleshooting
 
-**Nx shows an old test count** (e.g. “4 passed” after you added specs) — Nx may replay a **cached** `BE:test` result (`Nx read the output from the cache instead of running the command`). The suite on disk is authoritative; force a fresh run:
+**Nx shows an old test count** — Nx may replay a **cached** `BE:test` result. Force a fresh run:
 
 ```bash
 pnpm nx reset && pnpm nx test BE --skip-nx-cache
 ```
 
-Current signup + app smoke suite: **12** tests (`signup.api-spec.ts` × 11, `app.api-spec.ts` × 1).
-
 ## Related
 
-- [Backend overview](./overview.md) — dev server, validation, filters
+- [Backend overview](./overview.md) — dev server, validation, filters, auth endpoints
 - [MongoDB](../mongodb.md) — fixtures and `loadFixtures()`
 - [nestjs-zod setup](../../setup/06-nestjs-zod.md)
