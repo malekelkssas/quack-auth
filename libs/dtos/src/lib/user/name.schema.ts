@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { sanitizePlainText } from '../sanitize';
 
-const MAX_NAME_LENGTH = 100;
+export const MAX_NAME_LENGTH = 100;
 
 const nameLength = z
   .string()

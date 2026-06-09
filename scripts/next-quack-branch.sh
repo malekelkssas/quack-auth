@@ -50,8 +50,11 @@ while IFS= read -r branch; do
   [ -n "$branch" ] || continue
   num="${branch#quack-}"
   num="${num%%-*}"
-  if [[ "$num" =~ ^[0-9]+$ ]] && [ "$num" -gt "$max" ]; then
-    max="$num"
+  if [[ "$num" =~ ^[0-9]+$ ]]; then
+    num_dec=$((10#$num))
+    if [ "$num_dec" -gt "$max" ]; then
+      max="$num_dec"
+    fi
   fi
 done <<< "$quack_branches"
 

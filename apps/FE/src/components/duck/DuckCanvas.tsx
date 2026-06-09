@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export type DuckMode = 'duckling' | 'mallard' | 'both';
 
@@ -90,6 +90,7 @@ interface DuckCanvasProps {
 
 export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -98,6 +99,8 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     if (!ctx) return;
     ctx.imageSmoothingEnabled = false;
 
+    setReady(false);
+
     const keys: DuckKey[] = mode === 'both' ? ['duckling', 'mallard'] : [mode];
     const images: Partial<Record<DuckKey, HTMLImageElement>> = {};
     const metrics: Partial<Record<DuckKey, DuckMetrics>> = {};
@@ -105,6 +108,7 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
       duckling: { x: -80, frameIdx: 0, frameTimer: 0 },
       mallard: { x: -200, frameIdx: 0, frameTimer: 0 },
     };
+    let positioned = false;
 
     let animId = 0;
     let lastTime = performance.now();
@@ -112,6 +116,26 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     let tabVisible = !document.hidden;
     let canvasWidth = 0;
     let canvasHeight = 0;
+
+    // Line ducks up just off the left edge (staggered) so they walk in from
+    // the left almost immediately, instead of teleporting in mid-canvas or
+    // waiting on a long off-screen approach.
+    const ENTRY_GAP = 28;
+    const placeDucks = () => {
+      if (positioned || canvasWidth === 0) return;
+      let allReady = true;
+      let offset = 0;
+      keys.forEach((key) => {
+        const m = metrics[key];
+        if (!m) {
+          allReady = false;
+          return;
+        }
+        pos[key].x = -m.dw - offset;
+        offset += m.dw + ENTRY_GAP;
+      });
+      if (allReady) positioned = true;
+    };
 
     const syncCanvasSize = () => {
       const nextWidth = canvas.offsetWidth;
@@ -128,6 +152,8 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
         const img = images[key];
         if (img) metrics[key] = computeMetrics(img, SPRITE[key], canvasHeight);
       }
+
+      placeDucks();
     };
 
     const resizeObserver = new ResizeObserver(() => syncCanvasSize());
@@ -174,7 +200,7 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
         );
 
         p.x += sp.speed * 60 * dt;
-        if (p.x > canvas.width + 20) p.x = -m.dw - 20;
+        if (p.x > canvas.width + 20) p.x = -m.dw;
 
         p.frameTimer += dt;
         if (p.frameTimer >= 1 / sp.fps) {
@@ -201,8 +227,21 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
         }
       }
 
+      // Recompute metrics for the now-loaded sprites even if the canvas size
+      // did not change since the first (pre-load) sync, then position ducks.
+      for (const key of keys) {
+        const img = images[key];
+        if (img && canvasHeight) {
+          metrics[key] = computeMetrics(img, SPRITE[key], canvasHeight);
+        }
+      }
       syncCanvasSize();
-      if (alive) animId = requestAnimationFrame(loop);
+      placeDucks();
+
+      if (alive) {
+        setReady(true);
+        animId = requestAnimationFrame(loop);
+      }
     }
 
     void setup();
@@ -219,7 +258,8 @@ export function DuckCanvas({ mode, height = 72 }: DuckCanvasProps) {
     <canvas
       ref={canvasRef}
       height={height}
-      className="pixelated block h-full w-full"
+      className="pixelated block h-full w-full transition-opacity duration-500 ease-in-out"
+      style={{ opacity: ready ? 1 : 0 }}
       aria-hidden="true"
     />
   );

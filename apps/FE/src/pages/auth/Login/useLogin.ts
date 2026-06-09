@@ -1,22 +1,55 @@
-import { type FormEvent } from 'react';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { useNavigate } from 'react-router-dom';
+import { Login } from '@shared/dtos';
+import type { z } from 'zod';
 
-import { toast } from '@/hooks/use-toast';
+import { useLoginMutation } from '@/hooks/slices/useAuth';
+import { useError } from '@/hooks/use-error';
 import { usePasswordVisibility } from '@/hooks/use-password-visibility';
-import { TOAST_DEFAULT_TITLE, TOAST_VARIANTS } from '@/utils/constants';
+import { toast } from '@/hooks/use-toast';
+import {
+  FE_ROUTES,
+  TOAST_DEFAULT_TITLE,
+  TOAST_VARIANTS,
+} from '@/utils/constants';
+import { toErrorResponse } from '@/utils/rtk-error.util';
 
-/** Login page logic — UI only until a BE login route exists. */
 export function useLogin() {
+  const navigate = useNavigate();
   const { showPassword, toggleShowPassword, passwordInputType } =
     usePasswordVisibility();
 
-  const onSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    toast({
-      variant: TOAST_VARIANTS.WARNING,
-      title: TOAST_DEFAULT_TITLE,
-      description: "Login isn't open yet — sign up to enter the pond!",
-    });
-  };
+  const [login, { isLoading, error, reset }] = useLoginMutation();
 
-  return { showPassword, toggleShowPassword, passwordInputType, onSubmit };
+  const form = useForm<z.input<typeof Login>, unknown, z.output<typeof Login>>({
+    resolver: zodResolver(Login),
+    defaultValues: { email: '', password: '' },
+  });
+
+  const onSubmit = form.handleSubmit(async (values) => {
+    try {
+      await login(values).unwrap();
+      toast({
+        variant: TOAST_VARIANTS.SUCCESS,
+        title: TOAST_DEFAULT_TITLE,
+        description: 'Welcome back to the pond!',
+      });
+      form.reset();
+      navigate(FE_ROUTES.HOME);
+    } catch {
+      // surfaced via useError
+    }
+  });
+
+  useError({ error: toErrorResponse(error), clearError: reset });
+
+  return {
+    form,
+    showPassword,
+    toggleShowPassword,
+    passwordInputType,
+    onSubmit,
+    isLoggingIn: isLoading,
+  };
 }

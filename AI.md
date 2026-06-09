@@ -124,6 +124,28 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 ---
 
+## 2026-06-09 16:13 — Quack endpoint FE integration
+
+**Session** — `S012-fe-quack-home`
+
+**Local start time** — `2026-06-09 16:13`
+
+**Cursor surface** — Agents
+
+**Model** — Claude Opus 4.8
+
+**Branch** — `quack-09-fe-auth-rtk-query` (worktree `br0z`; not switched)
+
+**Done** — Inspected the `main`-branch quack endpoint via `gh` (read-only, no checkout) and integrated it into the protected Home page.
+
+- **Endpoint (main):** `POST /api/quack`, guarded by `JwtCookieAuthGuard` (cookie auth). Body `QuackInput` (`{ name?: string }`, optional override); response `QuackResponse` (`{ quack: string }`). Service falls back to the stored user's name → `"<name> quack"`.
+- **Mirrored to this branch (was missing):** added `BE_ROUTES.QUACK = 'quack'`; added `libs/dtos/src/lib/quack/` (`quack.dto.ts`, `quack-response.dto.ts`, `index.ts`) + barrel export. `QuackResponse` is an exact mirror; `QuackInput` is a self-contained wire-shape mirror (main's `OptionalPlainTextName` pulls in the `sanitize`/`name.schema` modules that do not exist on this branch — kept the length rules, BE still sanitizes server-side).
+- **FE:** new `store/api/quackApi.ts` `createApi` slice (`quack` **query**, POST, empty body for auto-greet on mount); wired reducer (`root-reducer.ts`), middleware (`store.ts`), and cache blacklist (`persist.config.ts`) mirroring `authApi`. `useHome.ts` calls `useQuackQuery()` and feeds the live quack into the Det. Quacksworth `SpeechBubble` (loading + error fallbacks), prepends a ticker item, and flips the status bar to `SIGNAL LOST` on error. Paths from `@shared/constants`, types from `@shared/dtos` — no magic strings.
+
+**Verified** — `pnpm nx run FE:typecheck --skip-nx-cache` ✅, `pnpm nx run FE:lint --skip-nx-cache` ✅, `pnpm check` ✅ (5 projects typecheck + prettier), `pnpm nx build DOCS` ✅.
+
+**Changed vs default AI** — used a `builder.query` (not mutation) for the POST so the greeting auto-fetches on Home mount; kept quack in a separate `quackApi` slice rather than overloading `authApi`.
+
 ## 2026-06-08 18:30 — Initial scaffolding & shared libs
 
 **Session** — `S001-initial-scaffold`
@@ -1209,6 +1231,36 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 ---
 
+## 2026-06-09 16:00 — S008-fe-auth-rtk-query
+
+**Session id** — `S008-fe-auth-rtk-query`
+
+**Local start time** — `2026-06-09 16:00`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `cursor/5bce9f1d`
+
+**Chat summary** — No
+
+**Decisions**
+
+- **Auth HTTP via RTK Query** — `authApi` + `axiosBaseQuery` on the shared axios instance; removed `AuthService.signup` and `createAsyncThunk` signup from `authSlice`.
+- **Session state split** — `authSlice` holds `user` only; matchers sync from `register` / `login` / `getMe` / `logout` fulfilled.
+- **Persist** — blacklist `authApi` cache; whitelist `auth.user` only via `createTransform`.
+- **401 refresh** — `setupAxiosInterceptors` with single-flight queue; refresh 401 → `resetApp()` + `authApi.util.resetApiState()` + `persistor.purge()` + hard redirect to login (not soft `navigate`).
+- **Routes** — `/` protected home; `FE_DEFAULT_ROUTE = LOGIN`; `/logout` trigger page; `ProtectedRoute` always calls `lazyGetMe()` to validate cookies even when `user` is rehydrated.
+- **Page hooks** — signup/login use RTK Query mutation `unwrap()` + inline success toast + navigate home; `useError` + `toErrorResponse()` for mutation errors (no slice-level signup flags).
+
+**Verified**
+
+- [x] `pnpm nx build DOCS`
+- [x] `pnpm check`
+
+---
+
 ## 2026-06-09 16:00 — S008-be-security-hardening
 
 **Session id** — `S008-be-security-hardening`
@@ -1345,3 +1397,132 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Judgement:** **Not needed.** Names are already sanitized at **signup** (`Signup.name` → `PlainTextName` / `sanitizePlainText` transform). Re-sanitizing on read in quack was defensive over-engineering from `/code-review` / `/simplify` — rejected.
 
 **Reverted:** `quack.service.ts` uses `user.name` as stored; optional request `name` still goes through `QuackInput` / `OptionalPlainTextName` (sanitize + length on input only).
+
+---
+
+## 2026-06-09 16:55 — S010-fe-merge-duck-polish
+
+**Session id** — `S010-fe-merge-duck-polish`
+
+**Local start time** — `2026-06-09 16:55`
+
+**Cursor surface** — Agents
+
+**Model** — Claude Opus 4.8
+
+**Branch** — `quack-09-fe-auth-rtk-query`
+
+**Chat summary** — No
+
+**Scope** — Commit/push the FE auth RTK Query + detective-home + quack work, merge `main`, then fix a merge regression and polish the duck canvas.
+
+**Decisions**
+
+- **Branch/commits** — split the FE work into Conventional Commits (`fix(scripts)`, `feat(dtos)` quack route/DTO, `feat(FE)` auth+home+quack, `docs`), pushed `quack-09-fe-auth-rtk-query` with upstream tracking. Git auth fixed by switching `origin` to HTTPS + `gh auth setup-git` (was failing on SSH publickey).
+- **Merge `main`** — resolved 5 conflicts: took main's canonical `QuackInput` (`OptionalPlainTextName`, real sanitize) over my simplified mirror; kept both `sanitize` export + `useCsrfBootstrap`; merged both AI.md/TODO.md log blocks.
+- **Sanitizer regression (root cause)** — main's `sanitizePlainText` used Node-only `sanitize-html`; because the shared `Signup`/`Login` DTOs are imported by the FE, Vite tried to bundle `sanitize-html` (fs/path/url/source-map-js externalized warnings), breaking the auth-page module graph so `DuckCanvas` stopped rendering. Reimplemented `sanitizePlainText` as a **pure-JS isomorphic** stripper (script/style content removal + tag strip + entity-decode loop), no external deps — single shared schema preserved, BE behavior unchanged.
+- **DuckCanvas UX** — ducks now spread across the canvas on first paint (no slow off-screen walk-in), smaller wrap gap, and a `transition-opacity duration-500` fade keyed off a `ready` flag so the duckling/mallard/both toggle crossfades instead of snapping.
+
+**Verified**
+
+- [x] `pnpm check` (pre-commit, all commits)
+- [x] `pnpm nx test dtos --skip-nx-cache` (**5** passed — sanitize behavior unchanged)
+- [x] `pnpm nx test BE --skip-nx-cache` (**59** passed — incl. XSS signup spec)
+- [x] `pnpm nx build FE --skip-nx-cache` (2000 modules, no `sanitize-html` externalization)
+- [x] FE typecheck + lint
+
+**Changed vs default AI**
+
+- Chose an isomorphic regex/JS sanitizer over polyfilling Node built-ins in Vite or splitting the shared schema — keeps one `@shared/dtos` source of truth while unblocking the browser bundle.
+
+**Needs Developer note**
+
+- `sanitize-html` (+ `@types/sanitize-html`) is now an **unused dependency** — safe to drop from `package.json` in a follow-up cleanup.
+- Quack query auto-fires on Home mount and may race the CSRF bootstrap on a cold load (one-off 403, SpeechBubble shows error fallback) — can convert to a lazy/triggered query if it surfaces.
+
+---
+
+## 2026-06-09 17:32 — S011-fe-home-401-disappear
+
+**Session id** — `S011-fe-home-401-disappear`
+
+**Local start time** — `2026-06-09 17:32`
+
+**Cursor surface** — Agents (multitasking subagent)
+
+**Model** — Claude Opus 4.8
+
+**Branch** — `quack-09-fe-auth-rtk-query`
+
+**Chat summary** — Yes (context compacted earlier this chat — see summary note below)
+
+**Scope** — Home-page bug triage: (1) content disappears "after some time, background remains"; (2) Developer reports `GET /api/users/me → 401` in the Network tab while still sitting on the homepage (NOT redirected to `/login`). Also: make quack user-triggered, remove action buttons + pond, confirm `/me` name in Redux.
+
+### Developer notice — `GET /api/users/me 401` but stays on homepage (logged via Developer request)
+
+**Observed (Developer):** Network tab shows `GET http://localhost:3000/api/users/me → 401 Unauthorized`, yet the homepage stays mounted (no redirect to `/login`). Console also shows a React Grab `v0.1.44` dev-tool banner line (dev-only `react-grab` from `dev-tools.ts`); unrelated to the 401.
+
+**Root cause (confirmed against the running BE on `:3000` via curl, FE `:4200`):**
+
+- `auth.user` is persisted (redux-persist whitelist) → on boot `isAuthenticated` is `true` **immediately**, before any network call. The FE's "logged in" state is the persisted user object, not the httpOnly access cookie.
+- `ProtectedRoute` fires `getMe` once (`useLazyGetMeQuery`, `attemptedRef`). The access token (`AUTH_ACCESS_TOKEN_TTL_SECONDS=600`) has expired, so `GET /users/me` returns **401**.
+- The axios response interceptor (`setupAxiosInterceptors.ts`) catches that 401 — `/users/me` is **not** in `AUTH_SKIP_401_PATHS` — and fires `POST /auth/refresh`. The refresh token is valid for 24h, so refresh returns **200** and rotates the cookies; the interceptor then **retries** `GET /users/me`, which now returns **200**.
+- `axiosBaseQuery` only ever sees the successful retry, so RTK `getMe` resolves **fulfilled** (never `isError`). `ProtectedRoute`'s `if (isError || !isAuthenticated)` branch never runs → `<Outlet/>` (Home) stays. **The 401 is the transient pre-refresh probe and is expected** — followed in the Network tab by `POST /auth/refresh 200` + a second `GET /users/me 200`.
+
+**curl contract verification (live BE):**
+
+| Request                                                    | Status                |
+| ---------------------------------------------------------- | --------------------- |
+| `GET /api/users/me` (valid access cookie)                  | 200                   |
+| `GET /api/users/me` (refresh cookie only → expired access) | 401                   |
+| `POST /api/auth/refresh` (valid refresh)                   | 200 + rotates cookies |
+| `POST /api/auth/refresh` (garbage / missing refresh)       | 401                   |
+
+**Tie-in to "content disappears, background remains":** same flow, but when the **refresh also fails** (refresh token expired after 24h, cleared cookies, or `POST /auth/refresh 401`), the interceptor's `catch` runs `handleSessionDead()` → `resetApp()` + `authApi.util.resetApiState()` + `persistor.purge()` + **`window.location.assign('/login')`**. The hard reload tears down the React tree → the browser shows only the page's navy base background with no content → looks like a crash → then `/login` loads. A _separate_ failure mode (any render-time throw) also blanked the whole tree because the app had **no error boundary**.
+
+**Fix decision:**
+
+1. **Soft session-death redirect** — drop the hard `window.location.assign('/login')` from `handleSessionDead`. The store resets already flip `isAuthenticated` false and the failed `/me` makes `getMe` `isError`, so `ProtectedRoute` performs an in-app `<Navigate to=LOGIN>` (no reload, no blank). Keeps `resetApp` + `resetApiState` + `purge` for a clean slate.
+2. **App-wide `ErrorBoundary`** (`apps/FE/src/components/ErrorBoundary.tsx`, wraps `App` in `main.tsx`) — converts any render-time throw from a silent blank into a visible recoverable fallback + logged `error.message`.
+3. **Quack is now user-triggered** (`useLazyQuackQuery` + name input form) instead of auto-firing on mount — removes a background CSRF POST that could 401 after token expiry. Removed the action-buttons `<div>` and the pond ellipse from `Home.tsx`. `/me` name already flows into Redux via `getMe.matchFulfilled` and is persisted.
+
+**Verified** — `pnpm nx lint FE`, `pnpm nx typecheck FE`; BE auth/refresh contract confirmed via curl against the running server. (Browser repro via chrome-devtools MCP unavailable — no Chrome debug port.)
+
+### Chat summary
+
+Context was compacted earlier this chat. Prior work this chat (before this notice): converted quack to user-triggered lazy query, removed Home action buttons + pond ellipse, added root `ErrorBoundary`, and diagnosed the `/me 401`-but-stays behavior as the expected silent-refresh path. All edits in the Desktop checkout (`/mnt/smalek/github/quack-auth/quack-auth`, branch `quack-09-fe-auth-rtk-query`); the `br0z` worktree is this chat's incidental workspace and was not edited.
+
+### Chat summary — 2026-06-09 17:42 (follow-up: refresh 401 + blank screen)
+
+**Local time** — `2026-06-09 17:42` (UTC+3)
+
+**Developer report (still broken after prior soft-redirect fix):** `GET /api/users/me → 401` then `POST /api/auth/refresh → 401`; user not redirected to `/login`. After idle, screen goes blank — inspector shows `html` height `0`, only dark navy background + thin bright blue bar at top (ProgressLoader).
+
+**Root cause:**
+
+1. **No redirect** — Prior fix removed `window.location.assign('/login')` from `handleSessionDead`, expecting `ProtectedRoute` to soft-navigate. That failed because `handleSessionDead` calls `authApi.util.resetApiState()`, which resets `getMe` to `isUninitialized`. `ProtectedRoute` checked `isChecking` (includes `isUninitialized`) **before** `!isAuthenticated`, and `attemptedRef` blocked a second `getMe` trigger. Result: infinite `ProgressLoader` gate, never reaching `<Navigate to=LOGIN>`.
+2. **Blank screen / html height 0** — `ProgressLoader` is `position: fixed; height: 4px` with no in-flow content. When it became the only rendered output, the document collapsed to zero height; `body` background (`duck-navy`) + blue progress bar matched the screenshot. Not an ErrorBoundary catch or PersistGate hang.
+3. **`axiosBaseQuery` does not swallow errors** — RTK Query receives `{ error }` correctly; the bug was route-guard ordering + `resetApiState`, not error masking.
+
+**Fix applied:**
+
+- `ProtectedRoute` — check `!isAuthenticated` **before** `isChecking`; remove one-shot `attemptedRef`; re-trigger `getMe` when `isAuthenticated`; wrap loading state in `min-h-screen` container.
+- `SessionDeathRedirect` + `SESSION_DEAD_EVENT` — axios interceptor dispatches event after `resetApp`/`purge`; `App` listens and `navigate(LOGIN)` as backup.
+- `styles.css` — `min-height: 100%` on `html`, `body`, `#root`.
+- `main.tsx` — PersistGate loading wrapped in `min-h-screen` for same safety.
+
+**Verified** — `pnpm nx lint FE`, `pnpm nx typecheck FE`, fresh `eslint` + `tsc` on changed files (exit 0).
+
+### Final polish — 2026-06-09 17:50
+
+**Local time** — `2026-06-09 17:50` (UTC+3)
+
+**Developer** — Happy with session-death + mobile nav fixes; requested commit of all pending work, seamless ticker loop, and signup field max bounds.
+
+**Ticker glitch** — Single flex row duplicated items with `translateX(-50%)` could flash on loop reset (subpixel seam + uneven gap at the duplicate boundary). Replaced with two identical `TickerTrack` siblings (`pr-12` matches inter-item `gap-12`) and `translate3d(-50%, 0, 0)` + `will-change-transform` for a seamless infinite marquee.
+
+**Signup max bounds** — `name` already capped at 100 via `PlainTextName` in `name.schema.ts`. Added `MAX_PASSWORD_LENGTH = 128` + `.max()` on `Password` in `password.schema.ts` (consumed by `Signup` in `signup.dto.ts`). Prevents abuse-length payloads before hashing.
+
+**Also in commit** — Responsive Home nav (mobile: initials-only greeting, `[ OUT ]`, tighter padding); `ErrorBoundary`, `SessionDeathRedirect`, `ProtectedRoute` dead-session fix, user-triggered quack form, pond/action-buttons removal, root `min-height` safety.
+
+**Verified** — `pnpm check` before commit.

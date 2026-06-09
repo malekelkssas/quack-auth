@@ -1,48 +1,35 @@
 import { useCallback } from 'react';
-import type { Signup } from '@shared/dtos';
 
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
-  clearAuthError,
-  clearSignupState,
+  resetAuth,
   selectAuthUser,
-  selectIsSigningUp,
-  selectSignupError,
-  selectSignupSucceeded,
-  signup,
+  selectIsAuthenticated,
 } from '@/store/slices/authSlice';
 
+export {
+  useGetMeQuery,
+  useLazyGetMeQuery,
+  useLoginMutation,
+  useLogoutMutation,
+  useRegisterMutation,
+} from '@/store/api/authApi';
+
 /**
- * Unified auth slice interface — when slice shape or actions change, update
- * this hook (and sibling slice hooks) instead of many page/component consumers.
+ * Unified auth slice interface — when slice shape or RTK Query hooks change,
+ * update this hook (and sibling slice hooks) instead of many page consumers.
  */
 export function useAuth() {
   const dispatch = useAppDispatch();
 
   const user = useAppSelector(selectAuthUser);
-  const isSigningUp = useAppSelector(selectIsSigningUp);
-  const signupError = useAppSelector(selectSignupError);
-  const signupSucceeded = useAppSelector(selectSignupSucceeded);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
 
-  const signupUser = useCallback(
-    (body: Signup) => dispatch(signup(body)),
-    [dispatch],
-  );
-
-  const clearSignup = useCallback(
-    () => dispatch(clearSignupState()),
-    [dispatch],
-  );
-
-  const clearError = useCallback(() => dispatch(clearAuthError()), [dispatch]);
+  const clearAuth = useCallback(() => dispatch(resetAuth()), [dispatch]);
 
   return {
     user,
-    isSigningUp,
-    signupError,
-    signupSucceeded,
-    signup: signupUser,
-    clearSignup,
-    clearError,
+    isAuthenticated,
+    resetAuth: clearAuth,
   };
 }
