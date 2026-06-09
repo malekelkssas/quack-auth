@@ -25,6 +25,16 @@ export const userSchema = new Schema<IUserDocument>(
       required: true,
       select: false,
     },
+    [UserPaths.refreshTokenHash]: {
+      type: String,
+      required: false,
+      select: false,
+    },
+    [UserPaths.refreshTokenRotatedAt]: {
+      type: Date,
+      required: false,
+      select: false,
+    },
   },
   { timestamps: true },
 );

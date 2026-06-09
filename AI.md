@@ -658,3 +658,66 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - Fixtures use `UserModel.create()` not `insertMany()` — pre-save middleware must run for hashing.
 - Seed runner uses `ts-node` + `tsconfig-paths` + `node --env-file=.env` instead of adding `dotenv`.
+
+---
+
+## 2026-06-09 00:43 — Login + cookie JWT auth endpoints
+
+**Session** — `S017-login-auth-endpoints`
+
+**Local start time** — `2026-06-09 00:43`
+
+**Cursor surface** — Agents
+
+**Model** — Codex 5.3
+
+**Branch** — `quack-07-login-auth-endpoints`
+
+**Chat summary** — No
+
+**Developer confirmed route decisions**
+
+- Auth endpoints under `/api/auth` (`register`, `login`, `refresh`)
+- `GET /api/users/me` remains under users
+
+**Implemented**
+
+- Added shared route/env constants and DTOs for login + auth response payloads.
+- Added backend `auth` module with register/login/refresh endpoints, cookie issuance, token verification, refresh-token hashing and rotation.
+- Added cookie-based guard for `/api/users/me` returning `401` when unauthorized.
+- Updated user persistence model/repository for `refreshTokenHash` metadata and rotation timestamp.
+- Replaced FE scaffold with `/signin` and protected `/app` flow using `@shared/dtos` `Login` schema and credentialed requests.
+- Synced docs (`apps/DOCS`), `TODO.md`, and `.env.example` with the new auth flow.
+
+**Security defaults implemented**
+
+- Access token TTL: `600` seconds (10 minutes)
+- Refresh token TTL: `86400` seconds (24 hours)
+- HttpOnly cookies for both access and refresh tokens
+- `SameSite=lax` default, `Secure` in production
+- Invalid/expired refresh returns `401` and clears cookies
+
+**Verified**
+
+- [x] `pnpm nx run BE:typecheck`
+- [x] `pnpm nx run FE:typecheck`
+- [x] `pnpm nx build BE`
+- [x] `pnpm nx build FE`
+- [x] `pnpm check` (lint + typecheck + format:check)
+
+**Follow-up — DTO mirror + auth response shape (Developer request)**
+
+- Extended `libs/dtos/src/lib/user/user.model.ts` to mirror persisted user docs: `_id`, `createdAt`, `updatedAt`, plus refresh metadata fields.
+- Removed hand-written `auth-user.dto.ts`; `AuthUser` is now `User.pick({ _id, email, name, createdAt, updatedAt })` in `auth-response.dto.ts`.
+- Updated repository/auth service/FE to use `_id` (not `id`) for API user payloads and JWT `sub`.
+
+**Follow-up — `@CurrentUser()` decorator (Developer request)**
+
+- Replaced manual `request.user?.sub` extraction in `users.controller.ts` with `@CurrentUser()` param decorator.
+- Moved decorator to `apps/BE/src/decorators/current-user.decorator.ts` (shared decorators live under `decorators/`, not feature folders).
+- Documented BE decorators layout in `.cursor/rules/project-conventions.mdc`.
+
+**Verified (follow-up)**
+
+- [x] `pnpm nx run BE:lint --skip-nx-cache`
+- [x] `pnpm nx run BE:typecheck --skip-nx-cache`

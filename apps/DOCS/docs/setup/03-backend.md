@@ -18,3 +18,12 @@ pnpm nx serve BE
 ```
 
 API is served at http://localhost:3000/api
+
+### Auth routes (current)
+
+- `POST /api/auth/register`
+- `POST /api/auth/login`
+- `POST /api/auth/refresh`
+- `GET /api/users/me` (protected)
+
+JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh).

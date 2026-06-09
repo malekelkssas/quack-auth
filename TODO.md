@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-08 — `quack-03-signup-endpoint` @ `dabd7cf` (signup API, unified `GlobalExceptionFilter`, `ErrorResponse`).
+**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` (login/register/refresh cookie JWT + `/users/me` guard).
 
 ---
 
@@ -45,8 +45,8 @@ The PDF uses older names; the repo has evolved:
 ### Convention follow-ups
 
 - [ ] Tag Nx projects (`type:app`, `scope:fe`, `scope:be`, `scope:lib`) and tighten `depConstraints`
-- [ ] Add `login.dto.ts` under `libs/dtos/src/lib/user/` (signup exists; login missing)
-- [~] Wrap user/auth Zod schemas with `createZodDto` in BE — `SignupDto` in `users/users.dto.ts`; login/me wrappers still missing
+- [x] Add `login.dto.ts` under `libs/dtos/src/lib/user/` (signup exists; login missing)
+- [x] Wrap user/auth Zod schemas with `createZodDto` in BE (`auth/auth.dto.ts`, `users/users.dto.ts`)
 - [x] Feature-colocated DTO wrappers (`<feature>/<feature>.dto.ts`) — `users/users.dto.ts`
 - [x] `BE_ROUTES` enum for path segments — `libs/qu-constants/src/lib/be-routes.constants.ts`
 - [x] BE `*.util.ts` + `utils/libs/<service>/` layout
@@ -57,22 +57,22 @@ The PDF uses older names; the repo has evolved:
 
 ## 2. Frontend
 
-| #    | Item                                 | Status | Evidence / notes                              |
-| ---- | ------------------------------------ | ------ | --------------------------------------------- |
-| 2.1  | React + TypeScript                   | [x]    | `apps/FE/src/main.tsx`                        |
-| 2.2  | Vite (via Nx)                        | [x]    | `apps/FE/vite.config.mts`                     |
-| 2.3  | Tailwind (scaffold)                  | [x]    | `tailwind.config.js`                          |
-| 2.4  | Redux Toolkit + RTK Query            | [ ]    | Not in `package.json`                         |
-| 2.5  | React Router v6                      | [ ]    | Single static view (`NxWelcome`) in `app.tsx` |
-| 2.6  | Sign Up page + shared Zod validation | [ ]    | No signup UI                                  |
-| 2.7  | Sign In page                         | [ ]    | No signin UI                                  |
-| 2.8  | Protected route / auth guard         | [ ]    | —                                             |
-| 2.9  | Global error boundary                | [ ]    | —                                             |
-| 2.10 | FE imports `@shared/dtos` for forms  | [ ]    | Aliases configured; no usage yet              |
+| #    | Item                                 | Status | Evidence / notes                                   |
+| ---- | ------------------------------------ | ------ | -------------------------------------------------- |
+| 2.1  | React + TypeScript                   | [x]    | `apps/FE/src/main.tsx`                             |
+| 2.2  | Vite (via Nx)                        | [x]    | `apps/FE/vite.config.mts`                          |
+| 2.3  | Tailwind (scaffold)                  | [x]    | `tailwind.config.js`                               |
+| 2.4  | Redux Toolkit + RTK Query            | [ ]    | Not in `package.json`                              |
+| 2.5  | React Router v6                      | [x]    | `apps/FE/src/app/app.tsx` routes `/signin`, `/app` |
+| 2.6  | Sign Up page + shared Zod validation | [ ]    | No signup UI                                       |
+| 2.7  | Sign In page                         | [x]    | `/signin` page posts to `/api/auth/login`          |
+| 2.8  | Protected route / auth guard         | [x]    | `/app` checks `/api/users/me` and redirects on 401 |
+| 2.9  | Global error boundary                | [ ]    | —                                                  |
+| 2.10 | FE imports `@shared/dtos` for forms  | [x]    | `Login` schema consumed in `/signin` form          |
 
 ### Frontend tasks
 
-- [ ] Add React Router with `/signup`, `/signin`, `/app` (protected)
+- [~] Add React Router with `/signup`, `/signin`, `/app` (protected) — `/signin` + `/app` done
 - [ ] Add RTK Query API slice for auth endpoints
 - [ ] Reuse `SignupSchema` (and future `LoginSchema`) from `@shared/dtos` on the client
 - [ ] Auth guard HOC or route wrapper redirecting unauthenticated users
@@ -90,11 +90,11 @@ The PDF uses older names; the repo has evolved:
 | 3.4  | Swagger at `/docs`                   | [x]    | `apps/BE/src/main.ts` + `cleanupOpenApiDoc`                                      |
 | 3.5  | Mongoose user schema                 | [x]    | `mongoose/models/user/user.schema.ts`                                            |
 | 3.6  | `MongooseModule` wired in BE         | [~]    | `dbClient()` in `main.ts`; direct `UserModel` — no `@nestjs/mongoose` module yet |
-| 3.7  | `POST /auth/register` (or `/signup`) | [x]    | `POST /api/users/signup` → 201 (`quack-03-signup-endpoint`)                      |
+| 3.7  | `POST /auth/register` (or `/signup`) | [x]    | `POST /api/auth/register` implemented                                            |
 | 3.13 | Repository + service layers          | [x]    | `repositories/user.repository.ts`, `services/user.service.ts`                    |
 | 3.14 | Global Mongoose error mapping        | [x]    | `mongoose-error.handler.util.ts` + `GlobalExceptionFilter`                       |
-| 3.8  | `POST /auth/login`                   | [ ]    | —                                                                                |
-| 3.9  | `GET /auth/me` (protected)           | [ ]    | —                                                                                |
+| 3.8  | `POST /auth/login`                   | [x]    | `POST /api/auth/login`                                                           |
+| 3.9  | `GET /auth/me` (protected)           | [x]    | Implemented as `GET /api/users/me` per route decision                            |
 | 3.10 | Passport.js + JWT strategy           | [ ]    | Not in dependencies                                                              |
 | 3.11 | `@nestjs/throttler` on `/auth/*`     | [ ]    | —                                                                                |
 | 3.12 | class-validator (secondary)          | [ ]    | Intentionally Zod-only via nestjs-zod                                            |
@@ -102,14 +102,14 @@ The PDF uses older names; the repo has evolved:
 ### Backend tasks
 
 - [~] Wire `mongoose/client.ts` in `main.ts` (done); `MongooseModule` in `app.module.ts` still optional
-- [~] Auth module: **signup** done (`UsersModule`); login, me still missing
+- [x] Auth module: `register`, `login`, `refresh` under `apps/BE/src/auth/`
 - [~] **Argon2id** hash on signup (`mongoose/utils/password.util.ts`); login `verify` not implemented (PDF says bcrypt — repo chose Argon2id per OWASP)
 - [ ] **Unified repository layer interface** — shared contract/base for all repositories (Developer request)
 - [ ] **Atomic transaction setup** — MongoDB session/transaction wrapper for multi-document repository operations (Developer request)
-- [ ] JWT issued into **HttpOnly** cookie (short expiry + refresh pattern per PDF)
-- [ ] Auth guard on `GET /me`
+- [x] JWT issued into **HttpOnly** access + refresh cookies (10m/24h defaults + rotation)
+- [x] Auth guard on `GET /users/me`
 - [ ] OpenAPI: `@ApiTags('auth')`, `@ApiBearerAuth` or cookie security scheme
-- [ ] Align route naming with PDF (`/auth/register` vs `/auth/signup`) — pick one and document in DOCS
+- [x] Align route naming with PDF (`/auth/register` selected) and document in DOCS
 
 ---
 
@@ -121,19 +121,19 @@ The PDF uses older names; the repo has evolved:
 | 4.2 | `signup.dto.ts`                        | [x]    | `libs/dtos/src/lib/user/signup.dto.ts`                        |
 | 4.3 | `user.model.ts` (persisted shape)      | [x]    | `libs/dtos/src/lib/user/user.model.ts`                        |
 | 4.4 | `password.schema.ts` (strength rules)  | [x]    | Shared building block                                         |
-| 4.5 | `login.dto.ts`                         | [ ]    | —                                                             |
+| 4.5 | `login.dto.ts`                         | [x]    | `libs/dtos/src/lib/user/login.dto.ts`                         |
 | 4.6 | XSS sanitization in Zod `.transform()` | [ ]    | PDF: strip `<script>`, `<img onerror>`, etc. on FE **and** BE |
 | 4.7 | nestjs-zod bridge                      | [x]    | Global pipe + greeting DTOs                                   |
 | 4.8 | Shared `ErrorResponse` DTO             | [x]    | `libs/dtos/src/lib/error/error-response.dto.ts`               |
 
 ### Validation tasks
 
-- [ ] Add `login.dto.ts` (email + password; no plaintext storage fields in model DTO)
+- [x] Add `login.dto.ts` (email + password; no plaintext storage fields in model DTO)
 - [ ] Implement shared sanitize helper used inside Zod transforms (both apps)
 - [ ] Export user schemas from `libs/dtos/src/index.ts` / `user/index.ts` as needed
 - [x] BE: `createZodDto` wrapper for Signup (`users/users.dto.ts`)
 - [x] Zod validation errors → `ErrorResponse` (first issue only) in `global-exception.filter.ts`
-- [ ] BE: `createZodDto` wrappers for Login, User response
+- [x] BE: `createZodDto` wrappers for Login, User response
 
 ---
 
@@ -142,7 +142,7 @@ The PDF uses older names; the repo has evolved:
 | Area        | PDF decision                           | Status | Notes                                                                         |
 | ----------- | -------------------------------------- | ------ | ----------------------------------------------------------------------------- |
 | Passwords   | bcrypt, salt rounds 12 (PDF)           | [~]    | **Argon2id** (OWASP min) on signup; PDF still says bcrypt — reconcile in DOCS |
-| Auth tokens | JWT in HttpOnly cookie                 | [ ]    | —                                                                             |
+| Auth tokens | JWT in HttpOnly cookie                 | [x]    | Access + refresh cookies with rotation                                        |
 | CSRF        | Double-submit cookie (`csurf`)         | [ ]    | Required once cookie auth exists                                              |
 | XSS         | Zod `.transform()` sanitize            | [ ]    | See §4.6                                                                      |
 | Rate limit  | `@nestjs/throttler` on `/auth/*`       | [ ]    | —                                                                             |
@@ -151,12 +151,12 @@ The PDF uses older names; the repo has evolved:
 ### Security tasks (ordered)
 
 1. [~] Password hashing on write (`argon2id` signup); verify on login path not built
-2. [ ] JWT + HttpOnly cookie + refresh strategy
+2. [x] JWT + HttpOnly cookie + refresh strategy
 3. [ ] Helmet in `apps/BE/src/main.ts`
 4. [ ] ThrottlerModule — per-IP limits on auth routes; env-configurable TTL/limit
 5. [ ] CSRF middleware for state-changing routes when using cookies
 6. [ ] XSS sanitization at schema level (§4.6)
-7. [ ] Review cookie flags: `Secure`, `SameSite`, `HttpOnly`
+7. [x] Review cookie flags: `Secure`, `SameSite`, `HttpOnly`
 8. [ ] Never return password hash in API responses (enforce via `user.model.ts` + serializers)
 
 ---

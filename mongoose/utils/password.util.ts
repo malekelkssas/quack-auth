@@ -15,3 +15,10 @@ export function isArgon2Hash(value: string): boolean {
 export async function hashPassword(plain: string): Promise<string> {
   return argon2.hash(plain, ARGON2_OPTIONS);
 }
+
+export async function verifyPassword(
+  plain: string,
+  hashed: string,
+): Promise<boolean> {
+  return argon2.verify(hashed, plain);
+}

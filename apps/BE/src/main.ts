@@ -5,8 +5,9 @@
 
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import cookieParser = require('cookie-parser');
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { BE_ROUTES } from '@shared/constants';
+import { BE_ROUTES, ENV_KEYS } from '@shared/constants';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from './app/app.module';
@@ -15,6 +16,13 @@ async function bootstrap() {
   await dbClient();
 
   const app = await NestFactory.create(AppModule);
+  app.use(cookieParser());
+
+  app.enableCors({
+    origin: process.env[ENV_KEYS.FRONTEND_ORIGIN] ?? 'http://localhost:4200',
+    credentials: true,
+  });
+
   const globalPrefix = BE_ROUTES.BASE;
   app.setGlobalPrefix(globalPrefix);
 

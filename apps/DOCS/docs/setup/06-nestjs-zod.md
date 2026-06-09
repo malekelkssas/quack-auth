@@ -57,7 +57,7 @@ export const ErrorResponse = z.object({
 - Zod validation failures return the **first** issue only (`message` + optional Zod `code`, e.g. `invalid_format`).
 - Other `HttpException`s (e.g. `ConflictException`) map to `{ message: "…" }` via `fromHttpException()` in `apps/BE/src/utils/error-response.util.ts`.
 
-Example validation failure (`POST /api/users/signup` with invalid body):
+Example validation failure (`POST /api/auth/register` with invalid body):
 
 ```json
 { "message": "A valid email is required", "code": "invalid_format" }
