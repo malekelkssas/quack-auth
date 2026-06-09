@@ -7,4 +7,5 @@ export enum BE_ROUTES {
   REFRESH = 'refresh',
   LOGOUT = 'logout',
   ME = 'me',
+  QUACK = 'quack',
 }
