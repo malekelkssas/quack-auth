@@ -11,15 +11,16 @@ pnpm nx g @nx/react:app FE --directory=apps/FE --e2e-test-runner=none --style=ta
 pnpm approve-builds
 ```
 
-### PostCSS / ESM fix
+### Tailwind CSS v4 (FE)
 
-`pnpm nx init` adds `"type": "module"` to the root `package.json`. The Nx-generated `postcss.config.js` and `tailwind.config.js` use CommonJS (`require` / `module.exports`), which breaks Vite with:
+The Nx React generator scaffolds **Tailwind v3** (`tailwind.config.js` + PostCSS). This repo migrates `apps/FE` to **Tailwind v4**:
 
-```
-Failed to load PostCSS config ... require is not defined in ES module scope
-```
+- `@tailwindcss/vite` in `apps/FE/vite.config.mts`
+- Theme tokens in `apps/FE/src/styles.css` (`@import "tailwindcss"`, `@theme inline`)
+- `tw-animate-css` instead of `tailwindcss-animate`
+- shadcn: `apps/FE/components.json`, components under `apps/FE/src/components/ui`
 
-Remove `"type": "module"` from the root `package.json` — nothing in the monorepo depends on root-level ESM.
+See `.cursor/rules/project-conventions.mdc` — **FE styling (Tailwind v4)**.
 
 ### Run the dev server
 

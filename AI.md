@@ -27,8 +27,8 @@ The Developer is moving to the **Agents** window next for **multi-chat / multi-b
 | ------------------------- | --------------------- |
 | `quack-XX-<feature-slug>` | `quack-01-auth-login` |
 
-1. Inspect: `git branch -a | grep quack-`
-2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>`
+1. Inspect: `git branch -a | grep quack-` and `git worktree list` (parallel agents may hold `quack-XX-*` only in another worktree).
+2. Create: `./scripts/next-quack-branch.sh <feature-slug>` or `git checkout -b quack-XX-<feature>` — the script scans refs **and** checked-out worktree branches when picking the next `XX`.
 3. Log **branch name** in session entries when useful.
 
 `XX` = next zero-padded number. One branch per chat — do not share across agents.
@@ -485,6 +485,232 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 ---
 
+## 2026-06-08 22:10 — FE Redux store + encrypt-storage (Developer request)
+
+**Session** — `S012-fe-redux-store`
+
+**Local start time** — `2026-06-08 22:10` (continued from earlier turns in same chat)
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- Checkout `quack-02-fe-setup` for deep FE work; install RTK + `react-redux` + `redux-persist` + `@types/react-redux`; add `VITE_REDUX_PERSIST_SECRET_KEY` to `.env.example` and `ENV_KEYS`; scaffold `apps/FE/src/store/`.
+- **Research encrypt integration first** — Developer shared findings: `redux-persist-transform-encrypt` is abandoned; static `VITE_*` keys are bundled and give false security; prefer runtime auth token or `encrypt-storage` as redux-persist storage engine.
+- **Log this in `AI.md`** — Developer flagged that prior FE work skipped `AI.md`; update `AGENTS.md` so agents do not forget the logging rule.
+
+**Implemented**
+
+- Installed `@reduxjs/toolkit`, `react-redux`, `redux-persist`, `encrypt-storage`, `@types/react-redux`.
+- **Skipped** `redux-persist-transform-encrypt` (archived Feb 2024); used **`encrypt-storage`** `AsyncEncryptStorage` as redux-persist `storage` with `stateManagementUse: true`.
+- `apps/FE/src/store/` — `persist-secret.ts` (`getDevPersistSecretKey`, `setRuntimePersistSecretKey` for future JWT/session key), `encrypted-storage.ts`, `persist.config.ts`, `root-reducer.ts`, `store.ts`, `hooks.ts`, `index.ts`.
+- `main.tsx` — `Provider` + `PersistGate` (loading placeholder until ProgressLoader lands in follow-up commit).
+- `.env.example` + `libs/qu-constants/src/lib/env.constants.ts` — `VITE_REDUX_PERSIST_SECRET_KEY` with comment that it is dev obfuscation only.
+
+**Decisions different from Developer’s initial package list**
+
+| Developer listed                  | Chosen                                        | Why                                                                                          |
+| --------------------------------- | --------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| `redux-persist-transform-encrypt` | `encrypt-storage`                             | Original archived; storage-level encryption is the maintained redux-persist integration path |
+| Static `VITE_` key as “security”  | Dev fallback + `setRuntimePersistSecretKey()` | `VITE_*` is in client bundle; real key should be runtime session/JWT when auth exists        |
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+**Developer asked for (same session, next)**
+
+- Commit Redux work; then shadcn scaffold (`apps/FE/src/components/ui`, `@/lib/utils.ts`); `ProgressLoader` on `PersistGate` instead of `null` loading.
+
+**Implemented (continued)**
+
+- Committed `feat(FE): add Redux store with encrypted redux-persist` (`8fcd399`).
+- shadcn scaffold: `apps/FE/components.json` (CLI-ready, `ui` → `@/components/ui`), `src/lib/utils.ts` (`cn`), empty `src/components/ui/`.
+- Deps: `tailwind-merge`, `class-variance-authority`, `lucide-react`, `tailwindcss-animate`; Tailwind theme tokens + `--academic-blue` in `styles.css`.
+- `ProgressLoader` at `src/components/ProgressLoader.tsx`; `PersistGate loading={<ProgressLoader />}`.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck` (shadcn + ProgressLoader)
+
+---
+
+## 2026-06-08 22:20 — FE axios client convention
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:20`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Install **axios**; create FE convention; `apps/FE/src/api/axiosConfig.ts` only — keep it simple (no interceptors, domain modules, or env wiring yet); **log in `AI.md`**.
+
+**Implemented**
+
+- `pnpm add axios`.
+- `apps/FE/src/api/axiosConfig.ts` — default-exported instance, JSON content-type (baseURL initially wrong — see fix below).
+- Convention in `.cursor/rules/project-conventions.mdc` — single shared instance, no stray `axios.create()`, future `*.api.ts` + interceptors rules; one-line pointer in `AGENTS.md`.
+
+**Output that needed fixing**
+
+- **Hard-coded API `baseURL`** — AI set `http://localhost:3000/api` directly in `axiosConfig.ts` instead of `VITE_API_URL` + `ENV_KEYS`. Developer corrected immediately.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+---
+
+## 2026-06-08 22:23 — Fix axios baseURL env (Developer correction)
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:23`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Developer asked for**
+
+- Replace hard-coded `baseURL` with **`VITE_API_URL`**; update `.env.example` and `libs/qu-constants/src/lib/env.constants.ts`; log the mistake.
+
+**Fixed**
+
+- `VITE_API_URL=http://localhost:3000/api` in `.env.example`.
+- `ENV_KEYS.VITE_API_URL` in `env.constants.ts`.
+- `axiosConfig.ts` reads `import.meta.env[ENV_KEYS.VITE_API_URL]` with throw if missing.
+- `project-conventions.mdc` — `baseURL` must come from `VITE_API_URL`, never hard-coded.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+
+---
+
+## 2026-06-08 22:29 — Vite host env + FE build chunks
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:29`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Developer asked for**
+
+- Commit axios work; add `VITE_ALLOWED_HOSTS` + `VITE_HOST` to `.env.example` and `ENV_KEYS`; update `apps/FE/vite.config.mts` (server/preview host + `allowedHosts`, vendor chunk split) — **no** `@tailwindcss/vite` or `react-grab`.
+
+**Implemented**
+
+- Committed `feat(FE): add axios client with VITE_API_URL env` (`5e637f8`).
+- `.env.example` — `VITE_ALLOWED_HOSTS=localhost`, `VITE_HOST=localhost` (comment notes `0.0.0.0` option).
+- `vite.config.mts` — `process.env.VITE_HOST`, `VITE_ALLOWED_HOSTS` comma-split, `manualChunks` vendor split, `chunkSizeWarningLimit: 1000`.
+
+**Output that needed fixing**
+
+- **`manualChunks` object** — Vite 8 / Rolldown expects a **function**, not `{ vendor: [...] }`; converted to `manualChunks(id)` guard for react/react-dom.
+
+**Verified**
+
+- [x] `pnpm nx run FE:build`
+
+---
+
+## 2026-06-08 22:37 — FE Tailwind v3 → v4 migration
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:37`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5 (Developer switched to **Plan mode** for migration planning; implementation resumed in Agent mode on a **different model/context handoff** from the planning turn)
+
+**Chat summary** — No
+
+**Developer asked for**
+
+- Implement attached **FE Tailwind v4 Migration Plan** after committing pending vite-host work.
+- Developer explicitly flipped assistant to **Plan mode** because migration is annoying/complex; requested **AI.md** note about Plan mode and **model switch**.
+- Note that **Nx template ships Tailwind v3** — FE migrated to latest v4.
+
+**Implemented**
+
+- Committed `feat(FE): add Vite host env and build chunk tuning` (`b883208`) before migration.
+- Deps: `tailwindcss@4.3.0`, `@tailwindcss/vite@4.3.0`, `tw-animate-css`; removed `tailwindcss@3.4.3`, `tailwindcss-animate`, `autoprefixer`.
+- `apps/FE/vite.config.mts` — `@tailwindcss/vite` plugin (host/chunk settings preserved).
+- `apps/FE/src/styles.css` — `@import "tailwindcss"`, `@import "tw-animate-css"`, `@custom-variant dark`, `@theme inline` shadcn tokens, `--academic-blue`, `animate-progress`.
+- Removed `apps/FE/tailwind.config.js` and `apps/FE/postcss.config.js` (v4 CSS-first).
+- `apps/FE/components.json` — `"config": ""` for shadcn v4 CLI.
+- `ProgressLoader` — `var(--academic-blue)` + `animate-progress` token.
+- Docs/conventions: `project-conventions.mdc`, `AGENTS.md`, `apps/DOCS/docs/setup/02-frontend.md`.
+
+**Verified**
+
+- [x] `pnpm nx run FE:typecheck`
+- [x] `pnpm nx run FE:build`
+
+---
+
+## 2026-06-08 22:45 — FE dev tools: React Scan + React Grab
+
+**Session** — `S012-fe-redux-store` (same chat)
+
+**Local start time** — `2026-06-08 22:45`
+
+**Cursor surface** — Agents
+
+**Branch** — `quack-02-fe-setup`
+
+**Model** — Composer 2.5
+
+**Developer asked for**
+
+- Add [React Grab](https://www.react-grab.com/) and [React Scan](https://react-scan.com/) to FE; **dev environment only**; document usefulness in `AI.md` and FE docs.
+
+**Implemented**
+
+- Dev deps: `react-grab`, `react-scan` (no Vite plugin — `react-grab` uses official `index.html` pattern; avoids Vite 8 peer mismatch on `@react-scan/vite-plugin-react-scan`).
+- ~~`apps/FE/index.html` dynamic `await import()`~~ — **wrong** vs upstream docs; fixed below.
+
+**Output that needed fixing (dev tools)**
+
+- **index.html async imports** — not the latest Vite pattern. [React Scan](https://github.com/aidenybai/react-scan/blob/main/docs/installation/vite.md) requires **static** `import { scan } from 'react-scan'` before React. [React Grab](https://github.com/aidenybai/react-grab/blob/main/README.md#vite) belongs at the top of `main.tsx` via `import('react-grab')` when `import.meta.env.DEV`.
+
+**Fixed (2026-06-08)**
+
+- `apps/FE/src/dev-tools.ts` — static `scan` import + `scan({ enabled: true })` + `void import('react-grab')` in dev (per GitHub READMEs).
+- `dev-entry.ts` → `dev-tools.ts` (when `!import.meta.env.PROD`) → `main.tsx` — correct load order; `index.html` no longer uses async imports.
+- `vite.config.mts` — on `vite build`, force `import.meta.env.PROD` / `DEV` when Nx sets `NODE_ENV=development` so dev-tool chunks are not shipped.
+- Docs: `apps/DOCS/docs/apps/frontend.md` — **Dev-only tooling** table with links; `project-conventions.mdc` — **FE dev tooling**.
+
+**Why these tools**
+
+- **React Scan** — zero-config visual highlights for avoidable re-renders during UI work.
+- **React Grab** — copy component/file/HTML context straight into coding agents (⌘C / Ctrl+C on hover).
+
+**Verified**
+
+- [x] `pnpm nx run FE:build` — no `react-scan` / `react-grab` strings in `dist/apps/FE` output
+
+---
+
 ## 2026-06-08 21:50 — BE utils + mongoose path aliases
 
 **Session** — `S012-be-utils-mongoose-alias`
@@ -641,7 +867,7 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Implemented**
 
 - `mongoose/fixtures/user.fixtures.ts` — three dev users (`alice@example.com`, `bob@example.com`, `admin@quack.dev`) with known plaintext passwords (`FIXTURE_USER_PASSWORD` / `AdminPass1!`).
-- `mongoose/fixtures/load.fixtures.ts` — `loadUserFixtures()` / `loadFixtures()` using `UserModel.create()` so Argon2id pre-save hashing runs; supports `{ reset: true }`.
+- `mongoose/fixtures/load.fixtures.ts` — `loadFixtures()` using `UserModel.create()` so Argon2id pre-save hashing runs; supports `{ reset: true }`.
 - `mongoose/fixtures/index.ts` — re-exports.
 - `mongoose/seed.ts` — CLI entry; `--reset` drops users before insert.
 - `mongoose/register-paths.js` + `mongoose/tsconfig.json` `ts-node` commonjs block — path alias resolution for standalone seed script.
@@ -658,6 +884,212 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - Fixtures use `UserModel.create()` not `insertMany()` — pre-save middleware must run for hashing.
 - Seed runner uses `ts-node` + `tsconfig-paths` + `node --env-file=.env` instead of adding `dotenv`.
+
+---
+
+## 2026-06-08 23:50 — FE auth branch + worktree-aware branch script
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-08 23:50`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages` (created from `main` @ `166ba97`)
+
+**Developer request**
+
+- Start a branch for FE theme/design and sign-up + login pages (sign-up wired first; login UI only for now).
+- When running `./scripts/next-quack-branch.sh`, **do not miss `quack-XX-*` branches checked out in other Cursor worktrees** — Developer noticed parallel worktrees (`quack-04-be-tests-setup`, `quack-05-db-seed-fixtures`) and asked for script + doc updates.
+
+**Implemented**
+
+- Updated `scripts/next-quack-branch.sh` to union branch names from `refs/heads`, `refs/remotes/origin`, and `git worktree list --porcelain` (`branch refs/heads/...`); prints active worktrees on quack branches before creating the next branch.
+- Ran `./scripts/next-quack-branch.sh fe-auth-pages` → `quack-06-fe-auth-pages` (next after `05`, worktrees listed correctly).
+- Updated **Branch per chat** section above to mention worktree inspection + script behavior.
+
+**Planned on this branch (not started this turn)**
+
+- FE theme/design system baseline, sign-up page (functional), login page (static/shell).
+
+---
+
+## 2026-06-09 00:05 — FE API conventions (`handleError`, `services/`)
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:05`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer conventions (new)**
+
+1. **`apps/FE/src/api/handleError.ts`** — maps `AxiosError` / network failures to `ErrorResponse` (`@shared/dtos`); axios codes/messages in `apps/FE/src/utils/constants.ts`.
+2. **`apps/FE/src/api/services/`** — domain axios call sites (e.g. `authService.ts`); routes built from `BE_ROUTES` (`@shared/constants`), shared `api` instance from `axiosConfig.ts`.
+
+**Implemented**
+
+- `handleError.ts`, `utils/constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
+- `services/authService.ts` — `AuthService.signup` → `POST /users/signup`.
+- Updated `.cursor/rules/project-conventions.mdc` (FE HTTP client section).
+
+---
+
+## 2026-06-09 00:20 — Convention must sync Docusaurus docs (Developer catch)
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:20`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer feedback**
+
+- FE API conventions were added to `project-conventions.mdc` but **Docusaurus app docs were not updated** — Developer asked to make doc updates **mandatory** when conventions change.
+
+**Implemented**
+
+- `project-conventions.mdc` — step 3 + **Convention → docs map** (FE → `frontend.md`, BE → `backend.md`, Mongoose, setup, AI).
+- `ai-first-engineering.mdc` step 0 — same requirement; `AGENTS.md` pointer updated.
+- Backfilled docs: `apps/DOCS/docs/apps/frontend.md` (HTTP client), `backend.md` (`BE_ROUTES`), `setup/10-git-branches-commits.md` (worktree list).
+
+---
+
+## 2026-06-09 00:45 — FE Redux slices, slice hooks, layered flow
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 00:45`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Developer rationale (slice hooks)**
+
+> Unified slice-hook interface so when slice shape changes, you update few interface files instead of many consumers across the app.
+
+**Implemented**
+
+- `store/slices/authSlice.ts` — `signup` async thunk (`AuthService.signup` + `handleError` + `rejectWithValue`); granular `isSigningUp` / `signupError` / `signupSucceeded`; `user` placeholder for future auth endpoints.
+- `hooks/slices/useAuth.ts` — unified auth slice interface (state + `signup` / `clearSignup` / `clearError`).
+- `api/services/index.ts` — barrel export for `AuthService`.
+- `root-reducer.ts` — wired `auth` slice.
+- Conventions: `project-conventions.mdc` (Redux, slice hooks, layered flow); `frontend.md` (full FE flow + mermaid); `README.md` (monorepo + FE layer diagram); `@docusaurus/theme-mermaid` enabled in DOCS.
+
+**Deferred**
+
+- Full auth pages, page contexts, component logic hooks — structure only; login/checkAuth/logout thunks wait for BE routes.
+
+## 2026-06-09 01:15 — FE duck theme + auth pages + toast system
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 01:15`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-06-fe-auth-pages`
+
+**Overview**
+
+> Retheme FE Tailwind tokens to the retro "duck pond" design language, build animated-duck Login + Sign-up pages with react-router, add a classic shadcn toast system with success/warning/error variants + `use-error`/`use-success`, and wire Sign-up to the `useAuth` slice hook via react-hook-form + the shared Zod `Signup` DTO.
+
+**Deps added** (root `package.json`, hoisted to FE)
+
+- `react-router-dom` — real `/login` + `/signup` routes.
+- `react-hook-form` + `@hookform/resolvers` — `zodResolver` (Zod v4 compatible).
+- `@radix-ui/react-toast` — classic shadcn toast primitive.
+
+**Implemented**
+
+- **Tokens & fonts** — full token replacement to the duck pond palette (single dark theme; dropped the `.dark` block), Google Fonts `@import` (Press Start 2P + VT323), `@theme inline` `--color-*` + `--font-pixel`/`--font-body`, `bob` keyframes + `.pixelated` helper; duck `index.html` title.
+- **Sprites + visuals** — walking-duck sprite sheets in `apps/FE/public/sprites/` (`duckling.png`, `mallard.png`); `components/duck/` `DuckCanvas` (6-frame animation, modes `duckling`/`mallard`/`both`), `StarField`, `PixelField`, `PixelButton`.
+- **Routing + pages** — `BrowserRouter` in `main.tsx`; `Routes` (`/login`, `/signup`, `/` → `/signup`) + `<Toaster/>` in `app/app.tsx`; `pages/auth/` with `AuthLayout`, `Login` (UI only) + `useLogin`, `Signup` + `useSignup`.
+- **Toast system** — classic shadcn `toast.tsx`/`toaster.tsx` + `use-toast`; `success`/`warning`/`error` variants; `utils/constants.ts` → `utils/constants/` dir (`index.ts` barrel, `axios.constants.ts`, `toast-variants.constants.ts`); `use-error` / `use-success` system hooks.
+- **Signup integration** — `useSignup` uses `useForm<z.input, unknown, z.output>` + `zodResolver(Signup)` from `@shared/dtos` → `useAuth().signup`; success toast "Welcome to the pond!", error via `use-error`, cleanup on unmount.
+- **Docs** — expanded `docs/apps/frontend.md` into the `docs/apps/FE/` directory (`_category_.json` + `01-overview`…`09-testing`, new testing page), deleted the old `frontend.md`, fixed cross-links (`backend.md`, `ai/maintenance.md`); updated `project-conventions.mdc` (FE docs-map row + new pages/system-hooks/constants-dir/toast-variant/public-assets conventions), `AGENTS.md`, `ai-first-engineering.mdc`, `docusaurus-docs.mdc`, and `TODO.md`.
+
+**Judgement calls / deviations**
+
+- **Classic toast vs `sonner`** — chose the classic shadcn Radix toast for a typed `cva` variant API + reducer queue that `use-error`/`use-success` can drive, rather than `sonner`.
+- **`useEffectEvent` availability** — verified the installed React supports it; otherwise the toast hooks fall back to a `useRef`-of-latest-values pattern.
+- **Single dark duck theme** — dropped the shadcn light/dark split in favor of one dark pond theme per the design language.
+
+## 2026-06-09 01:50 — FE route path constants
+
+**Session** — `S016-fe-auth-pages`
+
+**Local start time** — `2026-06-09 01:50`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Developer request**
+
+> Use a constants file for FE route paths (e.g. redirects in `app.tsx` and cross-links in Login/Signup) instead of scattered magic strings like `"/login"` and `"/signup"`. Log this in `AI.md`.
+
+**Done**
+
+- Added `apps/FE/src/utils/constants/routes.constants.ts` — `FE_ROUTES` (`HOME`, `LOGIN`, `SIGNUP`), `FE_DEFAULT_ROUTE` (`FE_ROUTES.SIGNUP`); re-exported from `@/utils/constants`.
+- Wired `app/app.tsx` (`<Route>`, `<Navigate>`), `Login.tsx` and `Signup.tsx` (`<Link>`) to the constants.
+- Updated `project-conventions.mdc` (FE pages routing + `utils/constants/` list) and `apps/DOCS/docs/apps/FE/04-routing-pages.md`.
+
+---
+
+## 2026-06-08 — BE API test plan revised (`quack-04-be-tests-setup`)
+
+**Session** — `S017-be-tests-setup`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `quack-04-be-tests-setup`
+
+**Deferred then implemented** — execution paused until S016 (`quack-05-db-seed-fixtures`) merged; tests reuse `mongoose/fixtures/` + `loadFixtures({ reset: true })`.
+
+**Developer direction (testing preferences)**
+
+- **API-level only** — same habit as plain Node: **Supertest** on HTTP, not colocated unit `*.spec.ts` next to services.
+- **Branch** — `quack-04-be-tests-setup`; fixtures/seeding (`quack-05`) had to land first so tests share `mongoose/fixtures/`.
+- **Follow-up asks (same session):**
+  - Use **`BE_ROUTES`** from `libs/qu-constants/.../be-routes.constants.ts` in test helpers/paths (no hardcoded `/users/signup`).
+  - **Signup coverage** — trace DTO → controller → service → repo; add edge cases with **exact** `response.body.message` (e.g. missing password, weak password rules) via `expectApiError()` convention.
+  - **Docs** — expand BE section under `apps/DOCS/docs/apps/be/` (not just a line in `backend.md`); dedicated **testing** page for structure, fixtures, CI.
+  - **README** — document `pnpm test:be` / `pnpm nx test BE` and CI including BE tests.
+
+**AI.md correction (S016)** — only `loadFixtures()` exists; `loadUserFixtures()` was a logging typo.
+
+**Implemented**
+
+- `apps/BE/src/test/` — Jest + Supertest API specs (`*.api-spec.ts`), in-memory Mongo, `resetDb()` → `loadFixtures({ reset: true })`.
+- `apps/BE/src/app/configure-app.ts` — shared global prefix + CORS for `main.ts` and tests.
+- `apps/BE/jest.config.ts`, `tsconfig.spec.json`; `pnpm test:be` / `pnpm nx test BE`; CI via `pnpm ci`.
+- Test helpers: `API_PATHS` / `apiPath()` from `BE_ROUTES`; `expectApiError()` for exact `{ message }` assertions.
+- Signup specs: **11** cases + **1** app smoke = **12** total (201, 409 duplicate, 400 validation — missing fields, email, name length, password rules).
+- Docs: `apps/DOCS/docs/apps/be/` (`overview.md` slug `/apps/backend`, `testing.md`); README **Tests** section.
+
+**Verified** — `pnpm nx test BE` (12 tests), `pnpm nx typecheck BE`, `pnpm nx build DOCS`.
+
+**Developer noticed: “only 4 tests?”** — Nx had **cached** an earlier `BE:test` run from before signup expansion (`Nx read the output from the cache instead of running the command`). Fresh run: `pnpm nx reset && pnpm nx test BE --skip-nx-cache` → **12 passed**. Not a missing-spec bug; stale task cache. After noticing, confirmed all 11 signup + 1 app tests in source.
+
+**Developer workflow (first triple command in one message)** — Ran **`/code-review`**, **`/simplify`**, and **`/babysit`** together in a single chat message (not split across messages/chats). Outcomes: code review flagged docs/CI wiring gap (`pnpm ci` missing `nx test BE` despite README); simplify pass added `api-spec-lifecycle`, `it.each` validation table, slimmer `expectApiError`; babysit targeted merge-ready fixes before PR.
 
 ---
 

@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` (login/register/refresh cookie JWT + `/users/me` guard).
+**Last audited:** 2026-06-09 — `quack-07-login-auth-endpoints` merged with `main` @ `2967592` (cookie JWT auth BE + FE duck auth pages from `quack-06`).
 
 ---
 
@@ -57,24 +57,24 @@ The PDF uses older names; the repo has evolved:
 
 ## 2. Frontend
 
-| #    | Item                                 | Status | Evidence / notes                                   |
-| ---- | ------------------------------------ | ------ | -------------------------------------------------- |
-| 2.1  | React + TypeScript                   | [x]    | `apps/FE/src/main.tsx`                             |
-| 2.2  | Vite (via Nx)                        | [x]    | `apps/FE/vite.config.mts`                          |
-| 2.3  | Tailwind (scaffold)                  | [x]    | `tailwind.config.js`                               |
-| 2.4  | Redux Toolkit + RTK Query            | [ ]    | Not in `package.json`                              |
-| 2.5  | React Router v6                      | [x]    | `apps/FE/src/app/app.tsx` routes `/signin`, `/app` |
-| 2.6  | Sign Up page + shared Zod validation | [ ]    | No signup UI                                       |
-| 2.7  | Sign In page                         | [x]    | `/signin` page posts to `/api/auth/login`          |
-| 2.8  | Protected route / auth guard         | [x]    | `/app` checks `/api/users/me` and redirects on 401 |
-| 2.9  | Global error boundary                | [ ]    | —                                                  |
-| 2.10 | FE imports `@shared/dtos` for forms  | [x]    | `Login` schema consumed in `/signin` form          |
+| #    | Item                                 | Status | Evidence / notes                                                                       |
+| ---- | ------------------------------------ | ------ | -------------------------------------------------------------------------------------- |
+| 2.1  | React + TypeScript                   | [x]    | `apps/FE/src/main.tsx`                                                                 |
+| 2.2  | Vite (via Nx)                        | [x]    | `apps/FE/vite.config.mts`                                                              |
+| 2.3  | Tailwind (scaffold)                  | [x]    | `tailwind.config.js`                                                                   |
+| 2.4  | Redux Toolkit + RTK Query            | [ ]    | Not in `package.json`                                                                  |
+| 2.5  | React Router v6                      | [x]    | `react-router-dom`; `/login`, `/signup`, `/` → `/signup` (`app/app.tsx`)               |
+| 2.6  | Sign Up page + shared Zod validation | [x]    | `pages/auth/Signup` + `useSignup` (RHF + `zodResolver(Signup)` from `@shared/dtos`)    |
+| 2.7  | Sign In page                         | [~]    | `pages/auth/Login` UI done; BE `POST /api/auth/login` exists — FE wiring still pending |
+| 2.8  | Protected route / auth guard         | [ ]    | —                                                                                      |
+| 2.9  | Global error boundary                | [ ]    | —                                                                                      |
+| 2.10 | FE imports `@shared/dtos` for forms  | [x]    | `Signup` in `useSignup`; `Login` DTO available for login form                          |
 
 ### Frontend tasks
 
-- [~] Add React Router with `/signup`, `/signin`, `/app` (protected) — `/signin` + `/app` done
+- [~] Add React Router with `/signup`, `/signin`, `/app` (protected) — `/login` + `/signup` done; protected `/app` still missing
 - [ ] Add RTK Query API slice for auth endpoints
-- [ ] Reuse `SignupSchema` (and future `LoginSchema`) from `@shared/dtos` on the client
+- [x] Reuse `SignupSchema` (and future `LoginSchema`) from `@shared/dtos` on the client — `Signup` wired into `useSignup`
 - [ ] Auth guard HOC or route wrapper redirecting unauthenticated users
 - [ ] React error boundary at app root
 
@@ -103,7 +103,7 @@ The PDF uses older names; the repo has evolved:
 
 - [~] Wire `mongoose/client.ts` in `main.ts` (done); `MongooseModule` in `app.module.ts` still optional
 - [x] Auth module: `register`, `login`, `refresh` under `apps/BE/src/auth/`
-- [~] **Argon2id** hash on signup (`mongoose/utils/password.util.ts`); login `verify` not implemented (PDF says bcrypt — repo chose Argon2id per OWASP)
+- [x] **Argon2id** hash on signup + `verifyPassword` on login (`mongoose/utils/password.util.ts`; PDF says bcrypt — repo chose Argon2id per OWASP)
 - [ ] **Unified repository layer interface** — shared contract/base for all repositories (Developer request)
 - [ ] **Atomic transaction setup** — MongoDB session/transaction wrapper for multi-document repository operations (Developer request)
 - [x] JWT issued into **HttpOnly** access + refresh cookies (10m/24h defaults + rotation)

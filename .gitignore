@@ -154,3 +154,5 @@ tmp/
 # Generated Docusaurus files
 .docusaurus/
 .cache-loader/
+# Docusaurus static build output (apps/DOCS)
+apps/DOCS/build/

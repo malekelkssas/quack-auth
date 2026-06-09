@@ -2,6 +2,10 @@ import mongoose from 'mongoose';
 import { ENV_KEYS, NODE_ENV } from '@shared/constants';
 
 export const dbClient = async () => {
+  if (mongoose.connection.readyState === 1) {
+    return;
+  }
+
   try {
     let mongoUri: string | undefined;
 
@@ -21,7 +25,10 @@ export const dbClient = async () => {
 
     const dbName = process.env[ENV_KEYS.MONGODB_DATABASE];
     await mongoose.connect(mongoUri, { dbName });
-    console.log('Connected to MongoDB');
+
+    if (process.env[ENV_KEYS.NODE_ENV] === NODE_ENV.DEVELOPMENT) {
+      console.log('Connected to MongoDB');
+    }
   } catch (error) {
     console.error(error);
     throw error;

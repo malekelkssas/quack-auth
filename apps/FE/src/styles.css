@@ -1,4 +1,113 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+/**
+ * Duck pond design language — single dark theme (cozy retro pond at dusk).
+ * Palette + typography per tmp/duck theme — design language.txt.
+ */
+:root {
+  /* shadcn token surface mapped onto the duck pond palette */
+  --background: #1a0a2e;
+  --foreground: #e0e0ff;
+  --card: #0f0f23;
+  --card-foreground: #e0e0ff;
+  --popover: #0f0f23;
+  --popover-foreground: #e0e0ff;
+  --primary: #f5c842;
+  --primary-foreground: #0f0f23;
+  --secondary: #333366;
+  --secondary-foreground: #e0e0ff;
+  --muted: #0a0a1a;
+  --muted-foreground: #8888bb;
+  --accent: #333366;
+  --accent-foreground: #f5c842;
+  --destructive: #ff6b6b;
+  --destructive-foreground: #0f0f23;
+  --border: #333366;
+  --input: #0a0a1a;
+  --ring: #f5c842;
+  --radius: 0.5rem;
+
+  /* named duck tokens */
+  --duck-navy: #1a0a2e;
+  --duck-amber: #f5c842;
+  --grass-green: #4a9429;
+  --sky-blue: #87ceeb;
+  --cream: #fffbeb;
+
+  /* toast status colors */
+  --success: #4ade80;
+  --warning: #f5c842;
+  --error: #ff6b6b;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  /* duck tokens → utilities (bg-duck-navy, text-duck-amber, …) */
+  --color-duck-navy: var(--duck-navy);
+  --color-duck-amber: var(--duck-amber);
+  --color-grass-green: var(--grass-green);
+  --color-sky-blue: var(--sky-blue);
+  --color-cream: var(--cream);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-error: var(--error);
+
+  /* fonts → font-pixel / font-body utilities */
+  --font-pixel: 'Press Start 2P', monospace;
+  --font-body: 'VT323', monospace;
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-progress: progress 2s ease-in-out infinite;
+}
+
+@keyframes progress {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+  }
+}
+
+@layer utilities {
+  /* crisp pixel-art scaling for sprites and duck visuals */
+  .pixelated {
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+  }
+}

@@ -4,15 +4,43 @@ A full-stack authentication module — sign up, sign in, and quack your way in. 
 
 ## What’s in the repo
 
-| Area        | Path                              | Notes                                           |
-| ----------- | --------------------------------- | ----------------------------------------------- |
-| Frontend    | `apps/FE`                         | React + Vite + Tailwind                         |
-| Backend     | `apps/BE`                         | NestJS, Swagger at `/docs`, Zod validation      |
-| Docs site   | `apps/DOCS`                       | Docusaurus — setup guides, app notes, AI policy |
-| Shared libs | `libs/dtos`, `libs/qu-constants`  | `@shared/dtos`, `@shared/constants`             |
-| MongoDB     | `mongoose/`, `docker-compose.yml` | Mongoose client, models, local Docker DB        |
+| Area        | Path                              | Notes                                                                    |
+| ----------- | --------------------------------- | ------------------------------------------------------------------------ |
+| Frontend    | `apps/FE`                         | React + Vite + Tailwind                                                  |
+| Backend     | `apps/BE`                         | NestJS, Swagger at `/docs`, Zod validation, API tests (Jest + Supertest) |
+| Docs site   | `apps/DOCS`                       | Docusaurus — setup guides, app notes, AI policy                          |
+| Shared libs | `libs/dtos`, `libs/qu-constants`  | `@shared/dtos`, `@shared/constants`                                      |
+| MongoDB     | `mongoose/`, `docker-compose.yml` | Mongoose client, models, local Docker DB                                 |
 
 For architecture details, setup walkthroughs, path aliases, nestjs-zod wiring, and AI workflow — see the **documentation site** (below).
+
+## Architecture (high level)
+
+```mermaid
+flowchart TB
+  subgraph monorepo["Nx monorepo"]
+    FE["apps/FE — React + Redux"]
+    BE["apps/BE — NestJS"]
+    LIBS["libs/dtos + qu-constants"]
+    MONGO["mongoose/"]
+    DOCS["apps/DOCS"]
+  end
+
+  subgraph feLayers["FE data flow"]
+    API["api/services"]
+    SLICE["store/slices"]
+    HOOK["hooks/slices"]
+    CTX["Page context — fetch*"]
+    LOGIC["useComponentName"]
+    UI["ComponentName.tsx"]
+    API --> SLICE --> HOOK --> CTX --> LOGIC --> UI
+  end
+
+  FE --> feLayers
+  FE --> LIBS
+  BE --> LIBS
+  BE --> MONGO
+```
 
 ## Prerequisites
 
@@ -44,6 +72,17 @@ pnpm nx serve BE      # http://localhost:3000/api  (Swagger: /docs)
 pnpm nx serve DOCS    # http://localhost:4001
 ```
 
+## Tests
+
+**BE API tests** — Jest + Supertest against the real Nest app (in-memory Mongo, shared fixtures from `mongoose/fixtures/`):
+
+```bash
+pnpm test:be          # alias for pnpm nx test BE
+pnpm nx test BE
+```
+
+Specs live in `apps/BE/src/test/api/**/*.api-spec.ts`. See **DOCS → Apps → Backend → Testing** (`pnpm nx serve DOCS` → http://localhost:4001/apps/be/testing) for layout, fixtures, and error-message conventions.
+
 ## Documentation
 
 **Full docs live in the Docusaurus app** — not in this README.
@@ -67,7 +106,7 @@ pnpm format         # Prettier write
 pnpm format:check   # Prettier check
 ```
 
-**CI** (`.github/workflows/ci.yml`) runs **`pnpm ci`** (`pnpm check` + **`pnpm build`**) on push/PR. Husky pre-commit stays on `pnpm check` only — builds are too slow for every commit. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). BE unit tests and FE E2E are commented in `ci.yml` until ready.
+**CI** (`.github/workflows/ci.yml`) runs **`pnpm ci`** (`pnpm check` + **`pnpm build`** + **`pnpm nx test BE`**) on push/PR. Husky pre-commit stays on `pnpm check` only — builds and tests are too slow for every commit. On **PR opened**, `.github/workflows/pr-open-change-summary.yml` runs the Cursor agent (read-only) and appends a change digest to the PR description — see [Setup → Husky & quality gates](http://localhost:4001/setup/09-husky-quality-gates) (`pnpm nx serve DOCS`). FE E2E is not in CI yet.
 
 ### GitHub Actions secrets (maintainers)
 

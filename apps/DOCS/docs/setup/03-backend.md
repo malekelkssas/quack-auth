@@ -19,6 +19,23 @@ pnpm nx serve BE
 
 API is served at http://localhost:3000/api
 
+### CORS (required for local FE)
+
+The FE dev server runs on **http://localhost:4200** and calls the API on **:3000**. Set `CORS_ORIGIN` in the repo root `.env` (see `.env.example`):
+
+```bash
+CORS_ORIGIN=http://localhost:4200
+```
+
+CORS is applied in `apps/BE/src/app/configure-app.ts` (shared with API tests). Restart the BE after changing `.env`:
+
+```bash
+pnpm nx build BE --skip-nx-cache
+pnpm nx serve BE
+```
+
+Without a fresh build + restart, the browser blocks FE requests with a CORS error — the **OPTIONS** preflight may return **404** and `Access-Control-Allow-Origin` is missing.
+
 ### Auth routes (current)
 
 - `POST /api/auth/register`
@@ -27,3 +44,5 @@ API is served at http://localhost:3000/api
 - `GET /api/users/me` (protected)
 
 JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh).
+
+Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md).

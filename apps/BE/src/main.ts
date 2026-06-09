@@ -5,26 +5,18 @@
 
 import { Logger } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
-import cookieParser = require('cookie-parser');
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
-import { BE_ROUTES, ENV_KEYS } from '@shared/constants';
+import { BE_ROUTES } from '@shared/constants';
 import { cleanupOpenApiDoc } from 'nestjs-zod';
 import { dbClient } from '@quack/mongoose/client';
 import { AppModule } from './app/app.module';
+import { configureApp } from './app/configure-app';
 
 async function bootstrap() {
   await dbClient();
 
   const app = await NestFactory.create(AppModule);
-  app.use(cookieParser());
-
-  app.enableCors({
-    origin: process.env[ENV_KEYS.FRONTEND_ORIGIN] ?? 'http://localhost:4200',
-    credentials: true,
-  });
-
-  const globalPrefix = BE_ROUTES.BASE;
-  app.setGlobalPrefix(globalPrefix);
+  configureApp(app);
 
   const openApiDoc = SwaggerModule.createDocument(
     app,
@@ -39,7 +31,7 @@ async function bootstrap() {
   const port = process.env.PORT || 3000;
   await app.listen(port);
   Logger.log(
-    `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`,
+    `🚀 Application is running on: http://localhost:${port}/${BE_ROUTES.BASE}`,
   );
   Logger.log(`📚 Swagger docs: http://localhost:${port}/docs`);
 }

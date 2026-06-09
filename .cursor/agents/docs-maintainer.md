@@ -12,12 +12,12 @@ You maintain the **Quack Auth** docs site (`apps/DOCS`, [Docusaurus](https://doc
 
 ## Doc map
 
-| Area              | Path                                                               |
-| ----------------- | ------------------------------------------------------------------ |
-| Home              | `apps/DOCS/docs/intro.md`                                          |
-| Setup steps       | `apps/DOCS/docs/setup/01-*.md` … `09-husky-quality-gates.md`       |
-| FE / BE / MongoDB | `apps/DOCS/docs/apps/` (`frontend.md`, `backend.md`, `mongodb.md`) |
-| AI policy         | `apps/DOCS/docs/ai/`                                               |
+| Area              | Path                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------- |
+| Home              | `apps/DOCS/docs/intro.md`                                                               |
+| Setup steps       | `apps/DOCS/docs/setup/01-*.md` … `09-husky-quality-gates.md`                            |
+| FE / BE / MongoDB | `apps/DOCS/docs/apps/` (`frontend.md`, `be/overview.md`, `be/testing.md`, `mongodb.md`) |
+| AI policy         | `apps/DOCS/docs/ai/`                                                                    |
 
 **Never** add or restore root `docs/setup.md` — all setup docs live in Docusaurus.
 

@@ -19,7 +19,7 @@ Use the docs-maintainer subagent to update docs for [change description]
 | New setup step              | `apps/DOCS/docs/setup/NN-*.md` + `08-docusaurus` if tooling changes                     |
 | Husky / lint / CI           | `apps/DOCS/docs/setup/09-husky-quality-gates.md` + `intro.md`                           |
 | Git / commitlint            | `apps/DOCS/docs/setup/10-git-branches-commits.md`                                       |
-| FE/BE/MongoDB behavior      | `apps/DOCS/docs/apps/frontend.md`, `backend.md`, or `mongodb.md`                        |
+| FE/BE/MongoDB behavior      | `apps/DOCS/docs/apps/FE/`, `apps/be/overview.md`, `apps/be/testing.md`, or `mongodb.md` |
 | Mongoose domain layout      | `apps/DOCS/docs/setup/07-mongodb.md` + `apps/DOCS/docs/apps/mongodb.md`                 |
 | DTO suffix / domain folders | `apps/DOCS/docs/setup/05-shared-libraries.md` + `.cursor/rules/project-conventions.mdc` |
 | Env / Docker                | `apps/DOCS/docs/setup/07-mongodb.md` + `.env.example`                                   |

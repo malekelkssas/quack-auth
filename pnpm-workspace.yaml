@@ -7,5 +7,6 @@ allowBuilds:
   core-js: true
   less: true
   mongodb-memory-server: true
+  msgpackr-extract: true
   nx: true
   unrs-resolver: true
