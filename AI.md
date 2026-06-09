@@ -1397,3 +1397,45 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 **Judgement:** **Not needed.** Names are already sanitized at **signup** (`Signup.name` → `PlainTextName` / `sanitizePlainText` transform). Re-sanitizing on read in quack was defensive over-engineering from `/code-review` / `/simplify` — rejected.
 
 **Reverted:** `quack.service.ts` uses `user.name` as stored; optional request `name` still goes through `QuackInput` / `OptionalPlainTextName` (sanitize + length on input only).
+
+---
+
+## 2026-06-09 16:55 — S010-fe-merge-duck-polish
+
+**Session id** — `S010-fe-merge-duck-polish`
+
+**Local start time** — `2026-06-09 16:55`
+
+**Cursor surface** — Agents
+
+**Model** — Claude Opus 4.8
+
+**Branch** — `quack-09-fe-auth-rtk-query`
+
+**Chat summary** — No
+
+**Scope** — Commit/push the FE auth RTK Query + detective-home + quack work, merge `main`, then fix a merge regression and polish the duck canvas.
+
+**Decisions**
+
+- **Branch/commits** — split the FE work into Conventional Commits (`fix(scripts)`, `feat(dtos)` quack route/DTO, `feat(FE)` auth+home+quack, `docs`), pushed `quack-09-fe-auth-rtk-query` with upstream tracking. Git auth fixed by switching `origin` to HTTPS + `gh auth setup-git` (was failing on SSH publickey).
+- **Merge `main`** — resolved 5 conflicts: took main's canonical `QuackInput` (`OptionalPlainTextName`, real sanitize) over my simplified mirror; kept both `sanitize` export + `useCsrfBootstrap`; merged both AI.md/TODO.md log blocks.
+- **Sanitizer regression (root cause)** — main's `sanitizePlainText` used Node-only `sanitize-html`; because the shared `Signup`/`Login` DTOs are imported by the FE, Vite tried to bundle `sanitize-html` (fs/path/url/source-map-js externalized warnings), breaking the auth-page module graph so `DuckCanvas` stopped rendering. Reimplemented `sanitizePlainText` as a **pure-JS isomorphic** stripper (script/style content removal + tag strip + entity-decode loop), no external deps — single shared schema preserved, BE behavior unchanged.
+- **DuckCanvas UX** — ducks now spread across the canvas on first paint (no slow off-screen walk-in), smaller wrap gap, and a `transition-opacity duration-500` fade keyed off a `ready` flag so the duckling/mallard/both toggle crossfades instead of snapping.
+
+**Verified**
+
+- [x] `pnpm check` (pre-commit, all commits)
+- [x] `pnpm nx test dtos --skip-nx-cache` (**5** passed — sanitize behavior unchanged)
+- [x] `pnpm nx test BE --skip-nx-cache` (**59** passed — incl. XSS signup spec)
+- [x] `pnpm nx build FE --skip-nx-cache` (2000 modules, no `sanitize-html` externalization)
+- [x] FE typecheck + lint
+
+**Changed vs default AI**
+
+- Chose an isomorphic regex/JS sanitizer over polyfilling Node built-ins in Vite or splitting the shared schema — keeps one `@shared/dtos` source of truth while unblocking the browser bundle.
+
+**Needs Developer note**
+
+- `sanitize-html` (+ `@types/sanitize-html`) is now an **unused dependency** — safe to drop from `package.json` in a follow-up cleanup.
+- Quack query auto-fires on Home mount and may race the CSRF bootstrap on a cold load (one-off 403, SpeechBubble shows error fallback) — can convert to a lazy/triggered query if it surfaces.
