@@ -1,7 +1,6 @@
 import type { INestApplication } from '@nestjs/common';
 import type { AuthUser, Signup } from '@shared/dtos';
 import { FIXTURE_USER_PASSWORD, userFixtures } from '@quack/mongoose/fixtures';
-import { fetchCsrf, withCsrf } from './csrf';
 import { api, API_PATHS } from './request';
 import { parseCookiesFromResponse } from './cookies';
 
@@ -17,10 +16,7 @@ async function createAuthSession(
   body: Record<string, unknown>,
   expectedStatus: number,
 ): Promise<AuthSession> {
-  const csrf = await fetchCsrf(app);
-  const response = await withCsrf(api(app).post(path), csrf)
-    .send(body)
-    .expect(expectedStatus);
+  const response = await api(app).post(path).send(body).expect(expectedStatus);
 
   return {
     response,

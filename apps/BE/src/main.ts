@@ -15,7 +15,7 @@ import { configureApp } from './app/configure-app';
 async function bootstrap() {
   await dbClient();
 
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
   configureApp(app);
 
   const openApiDoc = SwaggerModule.createDocument(

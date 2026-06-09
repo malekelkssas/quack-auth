@@ -1,7 +1,9 @@
 import type { INestApplication } from '@nestjs/common';
 import cookieParser = require('cookie-parser');
 import { BE_ROUTES, ENV_KEYS } from '@shared/constants';
+import { configureBodyParser } from './body-parser.config';
 import { configureCsrf } from './csrf.config';
+import { configureHelmet } from './helmet.config';
 
 function resolveCorsOrigins(): string | string[] {
   const origins =
@@ -14,11 +16,14 @@ function resolveCorsOrigins(): string | string[] {
 
 /** Shared HTTP config for production and API tests (excludes Swagger and listen). */
 export function configureApp(app: INestApplication): void {
-  app.use(cookieParser());
-  configureCsrf(app);
-  app.setGlobalPrefix(BE_ROUTES.BASE);
+  // CORS first so preflight and middleware 403s (e.g. CSRF) still get ACAO headers.
   app.enableCors({
     origin: resolveCorsOrigins(),
     credentials: true,
   });
+  configureBodyParser(app);
+  app.use(cookieParser());
+  configureHelmet(app);
+  configureCsrf(app);
+  app.setGlobalPrefix(BE_ROUTES.BASE);
 }

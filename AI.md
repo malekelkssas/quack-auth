@@ -1206,3 +1206,142 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - [x] `pnpm nx test BE --skip-nx-cache` (**41** passed)
 - [x] `pnpm nx build DOCS`
+
+---
+
+## 2026-06-09 16:00 — S008-be-security-hardening
+
+**Session id** — `S008-be-security-hardening`
+
+**Local start time** — `2026-06-09 16:00`
+
+**Branch** — `quack-08-be-security-hardening`
+
+**Scope** — TODO Phase C: Helmet, `@nestjs/throttler` on auth routes, shared Zod XSS sanitize, password-hash response regression tests, docs sync.
+
+**Multi-agent** — Wave 1 (parallel): Helmet, Throttler, XSS sanitize. Wave 2: integration tests. Wave 3: docs-maintainer. Parent: `pnpm ci` + TODO audit.
+
+**Decisions**
+
+- **Helmet:** `helmet.config.ts` colocated with `csrf.config.ts`; CSP off outside production (Swagger); prod HSTS + `frameguard: deny` + `noSniff`.
+- **Throttler:** `@UseGuards(ThrottlerGuard)` on `AuthController` only (not global); defaults 10 req / 60s; e2e `AUTH_THROTTLE_LIMIT=1000`.
+- **XSS:** `sanitizePlainText` via `sanitize-html` with decode+strip loop (preserves plain `&`); `Signup.name` only — not password/email.
+- **Build:** `esModuleInterop` in `apps/BE/tsconfig.app.json` for webpack + dtos `sanitize-html` import; dtos `tsconfig.lib.json` excludes `*.spec.ts`.
+
+**Documentation**
+
+- [docs-maintainer](cfbc1bf5-de91-4b35-a71f-143ba902586d): `security.md`, `03-backend.md`, `testing.md` — **48** BE tests documented.
+
+**Verified**
+
+- [x] `pnpm ci` (check + build + `pnpm nx test BE`)
+- [x] `pnpm nx test dtos` (**5** passed)
+- [x] `pnpm nx build DOCS`
+
+**Changed vs default AI**
+
+- Iterative decode+strip for XSS (Agent 3) vs single `sanitize-html` pass.
+- `esModuleInterop` on BE app tsconfig (not only dtos) to unblock webpack build.
+
+### Developer notice — ErrorResponse + body limit (follow-up)
+
+**Developer found (review after S008 wave):**
+
+1. Rate limiter **429** did not follow our `ErrorResponse` convention — message was internal Nest text (`ThrottlerException: Too Many Requests`), no stable `code`.
+2. **Max JSON body size** was never configured or documented — only Express default (~100kb), no `BE_JSON_BODY_LIMIT` env.
+
+**Developer asked explicitly:** (1) Does the rate limiter 429 respect `libs/dtos/src/lib/error/error-response.dto.ts`? (2) Is max JSON body size indicated/configured?
+
+**What initial S008 got wrong (AI oversight):**
+
+- Shipped `@nestjs/throttler` and asserted the raw exception string in `throttle.api-spec.ts` instead of mapping through `fromHttpException` / `API_ERROR_CODES` like other API errors.
+- Omitted body-parser limit wiring in `configure-app.ts` and env/docs for payload size.
+- Closed S008 with `pnpm ci` (build + test) but **did not verify `pnpm nx serve BE`** — so the Swagger/OpenAPI path was untested until the Developer ran serve locally.
+
+**Before fix:** Throttle **429** returned `{ message: 'ThrottlerException: Too Many Requests' }` — `{ message }` shape only, not a product-facing error. No env-configurable body size limit.
+
+**Fix**
+
+- `fromHttpException` maps **429** → `{ message: 'Too many requests', code: 'TOO_MANY_REQUESTS' }` and **413** → `{ message: 'Request body too large', code: 'PAYLOAD_TOO_LARGE' }` (`API_ERROR_CODES` in `@shared/constants`).
+- `GlobalExceptionFilter` handles Express `entity.too.large` for oversized bodies.
+- `BE_JSON_BODY_LIMIT` (default `100kb`) via `body-parser.config.ts`; apps created with `{ bodyParser: false }`.
+- Tests: `throttle.api-spec.ts` updated; new `body-size.api-spec.ts` + `error-response.util.spec.ts`. `expectApiError` accepts optional `code`.
+
+**Verified (follow-up)**
+
+- [x] `pnpm nx test BE --skip-nx-cache` (**52** passed)
+- [x] `pnpm check`
+
+### Fix — Zod date / OpenAPI startup crash (Developer terminal find)
+
+**Developer surfaced:** `pnpm nx serve BE` exit **1** — stack in `zod/v4/core/json-schema-processors.cjs` (`dateProcessor`): **`Date cannot be represented in JSON Schema`**. Observed while serving BE after S008 (local terminal during `nx serve BE`).
+
+**Root cause:** `AuthUser` picked `createdAt`/`updatedAt` from persisted `User` (`z.coerce.date()`). nestjs-zod / Swagger `cleanupOpenApiDoc` at startup cannot emit Zod dates to JSON Schema (Zod v4). Build + API tests passed; **serve-only** failure.
+
+**Fix**
+
+- `AuthUser` (`auth-response.dto.ts`): `createdAt`/`updatedAt` as `z.iso.datetime()` (API/OpenAPI-safe ISO strings); persisted `User` model keeps `z.coerce.date()`.
+- `UserRepository.toAuthUser`: `toISOString()` when mapping Mongoose dates to `AuthUser`.
+
+**Verified**
+
+- [x] `pnpm nx build dtos --skip-nx-cache` + `pnpm nx build BE --skip-nx-cache`
+- [x] `pnpm nx serve BE --skip-nx-cache` — starts; Swagger at `/docs`
+- [x] `pnpm nx test BE --skip-nx-cache` (**52** passed)
+
+### Developer UAT — signup 403 / “CORS Missing Allow Origin”
+
+**Developer reported:** `POST /api/auth/register` from FE showed **403** and browser **“CORS header Access-Control-Allow-Origin missing”** while testing XSS on signup.
+
+**Actual cause:** **CSRF** rejection (`invalid csrf token`) — FE never bootstrapped `qa_csrf_token` before the first mutating request; CSRF error responses also lacked CORS headers when CORS was registered after CSRF middleware (browser misreported as CORS).
+
+**Fix**
+
+- `apps/FE/src/hooks/use-csrf-bootstrap.ts` + `useCsrfBootstrap()` in `app.tsx` — safe `GET /api` on load (matches test `fetchCsrf` flow).
+- `configure-app.ts` — `enableCors` moved **first** so 403s include `Access-Control-Allow-Origin`.
+
+**Developer XSS signup test (after fix):** use name `bad<script>alert(1)</script>guy` → expect stored/display name `badguy`; fresh email + password `Password1!`.
+
+---
+
+## 2026-06-09 — S009-quack-endpoint
+
+**Session id** — `S009-quack-endpoint`
+
+**Local start time** — _not recorded at session start_
+
+**Branch** — `quack-11-endpoint`
+
+**Cursor surface** — Agents
+
+**Developer intent**
+
+- **CSRF scope shift:** Remove CSRF from login/register/refresh/logout — no real authenticated state change there yet; CSRF belongs on **logged-in mutations** instead.
+- **New `POST /api/quack`:** JWT cookie auth; optional `name` in body; response `{ quack: "<resolvedName> quack" }`; fallback to stored user name when `name` omitted.
+- **Response shape confirmed:** `{ "quack": "Jane quack" }`.
+
+**Implementation**
+
+- `BE_ROUTES.QUACK` + `QuackInput` / `QuackResponse` in `libs/dtos`.
+- `apps/BE/src/quack/` module — `JwtCookieAuthGuard`, name resolution via `UserService.getMe`.
+- `csrf.config.ts` — protects `POST /api/quack` only; **403** includes `INVALID_CSRF_TOKEN`.
+- Tests: `quack.api-spec.ts` (401/403/200 cases); CSRF stripped from auth specs + `auth.ts` helper.
+- Docs: `security.md`, `overview.md`, `testing.md`, `TODO.md`.
+
+**Verified**
+
+- [x] `pnpm check`
+- [x] `pnpm nx test BE --skip-nx-cache` (**56** passed)
+- [x] `pnpm nx build DOCS`
+
+**Changed vs default AI**
+
+- 401 quack spec bootstraps CSRF without auth cookies — global CSRF middleware runs before `JwtCookieAuthGuard`, so bare POST without token returns **403**, not **401**.
+
+### Developer override — no sanitize on quack name fallback (2026-06-09 16:03)
+
+**Developer asked:** why does `QuackService` call `sanitizePlainText(user.name)` when falling back to the stored name?
+
+**Judgement:** **Not needed.** Names are already sanitized at **signup** (`Signup.name` → `PlainTextName` / `sanitizePlainText` transform). Re-sanitizing on read in quack was defensive over-engineering from `/code-review` / `/simplify` — rejected.
+
+**Reverted:** `quack.service.ts` uses `user.name` as stored; optional request `name` still goes through `QuackInput` / `OptionalPlainTextName` (sanitize + length on input only).

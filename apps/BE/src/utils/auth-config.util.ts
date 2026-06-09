@@ -18,6 +18,19 @@ export function assertProductionSecret(
   }
 }
 
+export function resolvePositiveIntEnv(
+  envKey: string,
+  fallback: number,
+): number {
+  const raw = process.env[envKey]?.trim();
+  if (!raw) {
+    return fallback;
+  }
+
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
 export function resolveAuthSecret(
   envKey: string,
   devFallback: string,
