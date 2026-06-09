@@ -4,7 +4,6 @@ import { ENV_KEYS, NODE_ENV } from '@shared/constants';
 import { randomUUID } from 'node:crypto';
 import type { Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { MongoTransaction } from '../../decorators/mongo-transaction.decorator';
 import { UserRepository } from '../../repositories/user.repository';
 import { resolveAuthSecret } from '../../utils/auth-config.util';
 import { MongooseErrorHandler } from '../../utils/mongoose-error.handler.util';
@@ -58,7 +57,6 @@ export class AuthService {
 
   constructor(private readonly userRepository: UserRepository) {}
 
-  @MongoTransaction()
   async register(input: Signup, response: Response): Promise<AuthResponse> {
     try {
       const user = await this.userRepository.create({
@@ -66,7 +64,16 @@ export class AuthService {
         name: input.name,
         password: input.password,
       });
-      await this.issueSession(response, user);
+      const sessionTokens = this.createSessionTokens(user);
+      await this.userRepository.setRefreshTokenHash(
+        user._id,
+        sessionTokens.refreshTokenHash,
+      );
+      this.setAuthCookies(
+        response,
+        sessionTokens.accessToken,
+        sessionTokens.refreshToken,
+      );
       return { user };
     } catch (error) {
       MongooseErrorHandler.rethrow(

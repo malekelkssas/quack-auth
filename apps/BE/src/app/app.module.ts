@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { ENV_KEYS } from '@shared/constants';
-import { LoggerModule } from 'nestjs-pino';
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { AuthModule } from '../controllers/auth/auth.module';
 import { QuackModule } from '../controllers/quack/quack.module';
@@ -10,16 +9,11 @@ import { UsersModule } from '../controllers/users/users.module';
 import { DatabaseModule } from '../database/database.module';
 import { GlobalExceptionFilter } from '../filters/global-exception.filter';
 import { resolvePositiveIntEnv } from '../utils/auth-config.util';
-import { CorrelationIdModule } from '../utils/libs/logging/correlation-id.module';
-import { pinoLoggerConfig } from '../utils/libs/logging/pino.config';
-
 const DEFAULT_AUTH_THROTTLE_TTL_MS = 60_000;
 const DEFAULT_AUTH_THROTTLE_LIMIT = 10;
 
 @Module({
   imports: [
-    CorrelationIdModule,
-    LoggerModule.forRoot(pinoLoggerConfig),
     DatabaseModule,
     ThrottlerModule.forRootAsync({
       useFactory: () => ({

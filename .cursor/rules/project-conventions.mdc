@@ -200,8 +200,8 @@ Axios interceptor (401 refresh) — shared axios instance, benefits all RTK Quer
 | **`app/`** | Bootstrap module wiring only (`app.module.ts`) — **no** feature controllers or config | `app/app.module.ts` |
 | **`config/`** | HTTP/OpenAPI/security config (Helmet, CSRF, body parser, Swagger, `configureApp`) | `config/openapi.config.ts`, `config/configure-app.ts` |
 | **`controllers/<feature>/`** | Feature modules: controller + service + DTO wrappers + module | `controllers/users/users.controller.ts` |
-| **`decorators/`** | Reusable Nest decorators **and guards** shared across features | `current-user.decorator.ts`, `mongo-transaction.decorator.ts`, `jwt-cookie-auth.guard.ts` |
-| **`utils/libs/<domain>/`** | Wrappers for external services (logger, S3, email, …) | `utils/libs/logging/pino.config.ts` |
+| **`decorators/`** | Reusable Nest decorators **and guards** shared across features | `current-user.decorator.ts`, `jwt-cookie-auth.guard.ts` |
+| **`utils/libs/<domain>/`** | Wrappers for external services (S3, email, …) | `utils/libs/s3/s3.client.ts` |
 | **`database/`**, **`filters/`**, **`middleware/`**, **`repositories/`** | Cross-cutting infra (unchanged) | `database/database.module.ts` |
 
 ## Backend feature modules (`apps/BE/src/controllers/<feature>/`)
@@ -221,12 +221,10 @@ Axios interceptor (401 refresh) — shared axios instance, benefits all RTK Quer
 
 | File | Purpose | Example |
 | ---- | ------- | ------- |
-| **`*.decorator.ts`** | Nest param/method/class decorators shared across features | `current-user.decorator.ts` → `@CurrentUser()`, `mongo-transaction.decorator.ts` → `@MongoTransaction()` |
-| **`mongo-transaction.context.ts`** | AsyncLocalStorage session for repository writes inside `@MongoTransaction()` | `getMongoTransactionSession()` |
+| **`*.decorator.ts`** | Nest param/method/class decorators shared across features | `current-user.decorator.ts` → `@CurrentUser()` |
 | **`*.guard.ts`** | Reusable auth/route guards | `jwt-cookie-auth.guard.ts` → `@UseGuards(JwtCookieAuthGuard)` |
 
 - Colocate reusable Nest decorators and guards under `apps/BE/src/decorators/`, not inside feature folders (`controllers/auth/`, …).
-- **MongoDB transactions** — service methods use `@MongoTransaction()`; repositories read the active session via `getMongoTransactionSession()` (no manual `session` threading).
 
 ## Backend utilities (`apps/BE/src/utils/`)
 

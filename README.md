@@ -65,15 +65,11 @@ Local infrastructure lives in root `docker-compose.yml`. Copy env first (`cp .en
 ```bash
 # MongoDB (required for BE auth against a real DB)
 docker compose up -d mongodb
-
-# Optional: Seq log UI for browsing structured BE logs (dev only)
-docker compose up -d seq
 ```
 
-| Service | URL / port            | Env / notes                                                                |
-| ------- | --------------------- | -------------------------------------------------------------------------- |
-| MongoDB | `localhost:27017`     | `MONGODB_URI`, `MONGODB_DATABASE` in `.env` (defaults match compose creds) |
-| Seq     | http://localhost:5341 | No BE env required for local pretty logs; Seq is optional log browsing     |
+| Service | URL / port        | Env / notes                                                                |
+| ------- | ----------------- | -------------------------------------------------------------------------- |
+| MongoDB | `localhost:27017` | `MONGODB_URI`, `MONGODB_DATABASE` in `.env` (defaults match compose creds) |
 
 **How apps connect**
 

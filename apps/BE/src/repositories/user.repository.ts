@@ -2,8 +2,6 @@ import { Injectable } from '@nestjs/common';
 import type { AuthUser } from '@shared/dtos';
 import type { IUserDocument } from '@quack/mongoose/models/user';
 import { UserModel, UserPaths } from '@quack/mongoose/models/user';
-import type { ClientSession } from 'mongoose';
-import { getMongoTransactionSession } from '../decorators/mongo-transaction.context';
 
 export type CreateUserData = Pick<IUserDocument, 'email' | 'name' | 'password'>;
 export type UserWithPassword = AuthUser & Pick<IUserDocument, 'password'>;
@@ -13,21 +11,11 @@ export type UserWithRefreshHash = AuthUser &
 @Injectable()
 export class UserRepository {
   async create(data: CreateUserData): Promise<AuthUser> {
-    const session = this.resolveSession();
-    const [created] = await UserModel.create(
-      [
-        {
-          [UserPaths.email]: data.email,
-          [UserPaths.name]: data.name,
-          [UserPaths.password]: data.password,
-        },
-      ],
-      session ? { session } : undefined,
-    );
-
-    if (!created) {
-      throw new Error('Failed to create user document');
-    }
+    const created = await UserModel.create({
+      [UserPaths.email]: data.email,
+      [UserPaths.name]: data.name,
+      [UserPaths.password]: data.password,
+    });
 
     return this.toAuthUser(created);
   }
@@ -79,7 +67,6 @@ export class UserRepository {
     userId: string,
     refreshTokenHash: string,
   ): Promise<void> {
-    const session = this.resolveSession();
     await UserModel.updateOne(
       { _id: userId },
       {
@@ -88,7 +75,6 @@ export class UserRepository {
           [UserPaths.refreshTokenRotatedAt]: new Date(),
         },
       },
-      session ? { session } : undefined,
     ).exec();
   }
 
@@ -97,7 +83,6 @@ export class UserRepository {
     expectedHash: string,
     newHash: string,
   ): Promise<boolean> {
-    const session = this.resolveSession();
     const result = await UserModel.updateOne(
       {
         _id: userId,
@@ -109,14 +94,12 @@ export class UserRepository {
           [UserPaths.refreshTokenRotatedAt]: new Date(),
         },
       },
-      session ? { session } : undefined,
     ).exec();
 
     return result.modifiedCount === 1;
   }
 
   async clearRefreshTokenHash(userId: string): Promise<void> {
-    const session = this.resolveSession();
     await UserModel.updateOne(
       { _id: userId },
       {
@@ -127,12 +110,7 @@ export class UserRepository {
           [UserPaths.refreshTokenRotatedAt]: new Date(),
         },
       },
-      session ? { session } : undefined,
     ).exec();
-  }
-
-  private resolveSession(): ClientSession | undefined {
-    return getMongoTransactionSession();
   }
 
   withoutPassword(user: UserWithPassword): AuthUser {

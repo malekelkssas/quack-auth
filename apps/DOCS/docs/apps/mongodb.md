@@ -92,25 +92,6 @@ The BE wires Mongo via `apps/BE/src/database/database.module.ts`:
 - CLI scripts (`pnpm db:seed`) still call `dbClient()` directly
 - Repositories import `UserModel` from `@quack/mongoose/models/user` (shared schema registration on the default connection)
 
-## MongoDB transactions
-
-Service methods that perform multiple repository writes use `@MongoTransaction()` (`apps/BE/src/decorators/mongo-transaction.decorator.ts`). The decorator starts a MongoDB session and binds it via AsyncLocalStorage (`mongo-transaction.context.ts`).
-
-Repositories call `getMongoTransactionSession()` internally — no manual `session` argument on write methods.
-
-```ts
-import { MongoTransaction } from '@/decorators/mongo-transaction.decorator';
-
-@MongoTransaction()
-async register(input: Signup, response: Response): Promise<AuthResponse> {
-  const user = await this.userRepository.create({ ... });
-  await this.issueSession(response, user); // setRefreshTokenHash joins the same txn
-  return { user };
-}
-```
-
-**Tests:** `MongoMemoryReplSet` (single-node `rs0`) in `global-setup.ts` so transactions work in API specs.
-
 ## Related packages
 
 - **Runtime:** `mongoose`, `@nestjs/mongoose` (BE `DatabaseModule`)

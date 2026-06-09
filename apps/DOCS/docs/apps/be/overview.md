@@ -39,7 +39,6 @@ Details: [Path aliases](../../setup/04-path-aliases.md).
 | `config/`                                               | HTTP/OpenAPI config (`configure-app.ts`, Helmet, CSRF, Swagger)       |
 | `controllers/<feature>/`                                | Feature controllers, services, DTO wrappers, modules                  |
 | `decorators/`                                           | Shared decorators and guards (`@CurrentUser()`, `JwtCookieAuthGuard`) |
-| `utils/libs/logging/`                                   | `nestjs-pino` + correlation ID wiring                                 |
 | `database/`, `filters/`, `middleware/`, `repositories/` | Cross-cutting infra                                                   |
 
 ## Routes
@@ -105,11 +104,11 @@ Duplicate email on signup resolves to **409** with message `Email is already reg
 
 ## Database
 
-MongoDB is documented as its own app — see [MongoDB](../mongodb.md). Nest connects via **`DatabaseModule`** (`MongooseModule.forRootAsync` in `apps/BE/src/database/database.module.ts`); repositories continue to use `UserModel` from `@quack/mongoose/models/user`. Multi-document writes use `@MongoTransaction()` on service methods — see [MongoDB → transactions](../mongodb.md#mongodb-transactions).
+MongoDB is documented as its own app — see [MongoDB](../mongodb.md). Nest connects via **`DatabaseModule`** (`MongooseModule.forRootAsync` in `apps/BE/src/database/database.module.ts`); repositories continue to use `UserModel` from `@quack/mongoose/models/user`.
 
-## Observability
+## Logging
 
-Structured JSON logs (`nestjs-pino`), correlation IDs, and optional Seq in Docker: [Backend observability](./observability.md).
+The BE uses NestJS built-in `Logger` (`@nestjs/common`) — bootstrap messages in `main.ts`; `GlobalExceptionFilter` logs unexpected errors with stack traces.
 
 ## OpenAPI (Swagger)
 

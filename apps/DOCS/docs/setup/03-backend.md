@@ -47,11 +47,7 @@ Without a fresh build + restart, the browser blocks FE requests with a CORS erro
 
 JWT access and refresh tokens are stored in HttpOnly cookies. Default TTLs are 10 minutes (access) and 24 hours (refresh). CSRF (`csrf-csrf` double-submit) applies to **`POST /api/quack`** only — not auth POSTs. Bootstrap the CSRF cookie with any safe `GET` under `/api` (e.g. `GET /api/users/me` returns 401 without auth but still issues the CSRF cookie) before the first quack call.
 
-Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, Helmet, throttling, XSS sanitize, production secrets): [Backend security](../apps/be/security.md). Structured logging and correlation IDs: [Backend observability](../apps/be/observability.md).
-
-### Structured logging (local)
-
-With `NODE_ENV=development`, the BE uses `nestjs-pino` with `pino-pretty` automatically. Optional Seq UI: `docker compose up -d seq` → http://localhost:5341.
+Runtime docs (validation, filters, API tests): [Backend overview](../apps/be/overview.md). Security (cookies, rotation, CSRF, Helmet, throttling, XSS sanitize, production secrets): [Backend security](../apps/be/security.md).
 
 ### Auth rate limiting (env)
 

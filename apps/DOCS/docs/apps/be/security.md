@@ -176,7 +176,6 @@ Password hashing and refresh HMAC storage stay server-side only. Tokens are issu
 
 ## Related
 
-- [Backend observability](./observability.md) — structured logs, correlation IDs, Seq
 - [Backend overview](./overview.md) — routes and validation
 - [Backend API tests](./testing.md) — CSRF helpers, throttle/sanitize/security-headers/response-secrets specs
 - [Setup → Backend app](../../setup/03-backend.md) — first-time BE setup

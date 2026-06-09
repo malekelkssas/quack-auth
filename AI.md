@@ -1647,3 +1647,67 @@ Context was compacted earlier this chat. Prior work this chat (before this notic
 **Judgement** — ALS matches correlation-id pattern; only `register` uses the decorator today (multi-write signup). Login/refresh remain single-document writes without the decorator.
 
 **Verified** — `pnpm nx test BE` **58** pass after switching test harness to `MongoMemoryReplSet` (transactions require replica set).
+
+---
+
+## 2026-06-09 18:00 — S014-register-dbclient-fix
+
+**Session id** — `S014-be-structure-refactor` (continuation)
+
+**Local start time** — `2026-06-09 18:00`
+
+**Branch** — `quack-12-dry-run`
+
+**Model** — Composer 2.5 (subagent [Fix register 400 bug](cf62da57-9ce8-400a-8217-0796b0d897a0))
+
+**Problem** — `POST /api/auth/register` → **400** after **~10s**; misleading `Database operation failed` message.
+
+**Root cause** — `MongooseError: Operation users.insertOne() buffering timed out after 10000ms`. Webpack-bundled `@quack/mongoose` `UserModel` had no live default connection in dev; tests called `dbClient()` before Nest boot (`create-test-app.ts`) but `main.ts` did not.
+
+**Fix** — `await dbClient()` in `apps/BE/src/main.ts` before `NestFactory.create`. Kept `mongo-transaction.context.ts` replica-set skip for standalone Docker Mongo.
+
+**Verified** — curl register **201** ~98ms; `mongo-transaction` api-spec 2 pass; `pnpm check` pass.
+
+**Judgement** — Initial txn-on-standalone hypothesis was wrong; buffer timeout was the signal.
+
+---
+
+## 2026-06-09 18:15 — S015-revert-seq-logger
+
+**Session id** — `S015-revert-seq-logger`
+
+**Local start time** — `2026-06-09 18:15`
+
+**Branch** — `quack-12-dry-run`
+
+**Model** — Composer 2.5 (subagent [Revert Seq logger changes](bc6c27b6-bb85-4828-aee9-805ab25c36ec))
+
+**Developer request** — Remove Seq and nestjs-pino; restore Nest built-in `Logger`.
+
+**What changed** — Removed `LoggerModule`, correlation-id middleware, pino/Seq streams, Seq docker service, `SEQ_SERVER_URL`; deleted `observability.md`; pino deps dropped from `package.json`.
+
+**Verified** — `pnpm check`, `pnpm nx build BE`, `pnpm nx build DOCS` pass.
+
+**Judgement** — Deleted observability doc rather than stub; Mongo/auth/structure work left intact.
+
+---
+
+## 2026-06-09 20:00 — S014-remove-mongo-transactions
+
+**Session id** — `S014-be-structure-refactor` (continuation)
+
+**Cursor surface** — Agents
+
+**Local start time** — `2026-06-09 20:00`
+
+**Branch** — `quack-12-dry-run`
+
+**Model** — Composer 2.5
+
+**Developer request** — Remove MongoDB transactions entirely (`@MongoTransaction`, ALS/session plumbing); keep `dbClient()` in `main.ts`.
+
+**What changed** — Deleted `mongo-transaction.decorator.ts`, `mongo-transaction.context.ts`, `mongo-transaction.api-spec.ts`; `AuthService.register` does sequential `create` + `setRefreshTokenHash`; `UserRepository` write methods no longer join sessions; E2E `global-setup.ts` reverted to `MongoMemoryServer`.
+
+**Reverts** — S014 txn decorator work (2026-06-09 19:34); `TODO.md` atomic txn item unchecked.
+
+**Judgement** — Standalone Docker mongo + buffering fix (`dbClient()` before Nest) is sufficient; txn fallback on standalone was logging noise without rollback benefit.

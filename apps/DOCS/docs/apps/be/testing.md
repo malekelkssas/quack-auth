@@ -18,7 +18,6 @@ pnpm nx test BE       # equivalent
 ```
 apps/BE/src/test/
 ├── api/                          # *.api-spec.ts — HTTP integration specs
-│   ├── app.api-spec.ts           # smoke / root routes
 │   ├── auth/
 │   │   ├── register.api-spec.ts       # POST /api/auth/register
 │   │   ├── login.api-spec.ts          # POST /api/auth/login
@@ -27,7 +26,6 @@ apps/BE/src/test/
 │   │   ├── throttle.api-spec.ts       # 429 ErrorResponse when AUTH_THROTTLE_LIMIT exceeded
 │   │   ├── body-size.api-spec.ts      # 413 ErrorResponse when BE_JSON_BODY_LIMIT exceeded
 │   │   ├── sanitize.api-spec.ts       # XSS strip on signup name
-│   │   ├── mongo-transaction.api-spec.ts # @MongoTransaction rollback + dual-write commit
 │   │   └── response-secrets.api-spec.ts # AuthUser only — no password/hash in JSON
 │   ├── quack/
 │   │   └── quack.api-spec.ts          # POST /api/quack — JWT + CSRF, name fallback/sanitize
@@ -47,8 +45,8 @@ apps/BE/src/test/
 └── setup/
     ├── api-spec-lifecycle.ts     # registerApiTestLifecycle() — one app/connection per file
     ├── create-test-app.ts        # Nest TestingModule + configureApp
-    ├── global-setup.ts           # MongoMemoryReplSet (transactions)
-    └── global-teardown.ts        # disconnect + stop repl set
+    ├── global-setup.ts           # MongoMemoryServer
+    └── global-teardown.ts        # disconnect + stop memory server
 ```
 
 | Artifact                 | Role                                                                                          |
@@ -65,7 +63,7 @@ apps/BE/src/test/
 
 ## Memory Mongo and fixtures
 
-**`global-setup.ts`** starts **`MongoMemoryReplSet`** (single-node replica set — required for `@MongoTransaction()`), sets `NODE_ENV=e2e`, and exports the URI via `E2E_MONGODB_URI`. `mongoose/client.ts` connects to that URI in e2e mode.
+**`global-setup.ts`** starts **`MongoMemoryServer`**, sets `NODE_ENV=e2e`, and exports the URI via `E2E_MONGODB_URI`. `mongoose/client.ts` connects to that URI in e2e mode.
 
 Each spec file:
 
@@ -108,7 +106,7 @@ import { loginFixtureUser } from '../../helpers/auth';
 
 const app = getApiTestApp();
 const { cookies } = await loginFixtureUser(app);
-const csrf = await fetchCsrf(app); // GET /api bootstraps qa_csrf_token cookie
+const csrf = await fetchCsrf(app); // GET /api/users/me (401) bootstraps qa_csrf_token cookie
 
 await withCsrf(api(app).post(API_PATHS.quack), csrf, cookies)
   .send({ name: 'Ducky' })
@@ -171,31 +169,21 @@ When adding a new endpoint test:
 
 ## Auth test coverage (current)
 
-| Spec                            | Route                     | Cases                                                                                                      |
-| ------------------------------- | ------------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `register.api-spec.ts`          | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, validation matrix (`SIGNUP_VALIDATION_CASES`)               |
-| `quack.api-spec.ts`             | `POST /api/quack`         | 401 with CSRF but no auth cookies, 403 missing CSRF when logged in, 200 name fallback/custom/sanitize      |
-| `login.api-spec.ts`             | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation                                              |
-| `refresh.api-spec.ts`           | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear                                                    |
-| `logout.api-spec.ts`            | `POST /api/auth/logout`   | 204 + cookie clear + DB hash revoked, idempotent without cookies, re-login                                 |
-| `me.api-spec.ts`                | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token                                               |
-| `throttle.api-spec.ts`          | `POST /api/auth/*`        | 429 `Too many requests` + `TOO_MANY_REQUESTS` after burst (isolated app instance)                          |
-| `body-size.api-spec.ts`         | `POST /api/auth/register` | 413 `Request body too large` + `PAYLOAD_TOO_LARGE` when body exceeds low `BE_JSON_BODY_LIMIT`              |
-| `sanitize.api-spec.ts`          | `POST /api/auth/register` | 201 with HTML stripped from `name` (XSS payload → plain text)                                              |
-| `response-secrets.api-spec.ts`  | Auth + `GET /users/me`    | JSON never includes `password`, `refreshTokenHash`, or `refreshTokenRotatedAt`; DB still stores hashes     |
-| `mongo-transaction.api-spec.ts` | `POST /api/auth/register` | Both user + refresh hash persist on success; simulated hash failure rolls back user create (no orphan doc) |
-| `security-headers.api-spec.ts`  | `GET /api/users/me`       | Helmet `X-Frame-Options`, `X-Content-Type-Options` on responses                                            |
+| Spec                           | Route                     | Cases                                                                                                  |
+| ------------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------ |
+| `register.api-spec.ts`         | `POST /api/auth/register` | 201 + AuthUser shape + cookies, 409 duplicate, validation matrix (`SIGNUP_VALIDATION_CASES`)           |
+| `quack.api-spec.ts`            | `POST /api/quack`         | 401 with CSRF but no auth cookies, 403 missing CSRF when logged in, 200 name fallback/custom/sanitize  |
+| `login.api-spec.ts`            | `POST /api/auth/login`    | 200 + cookies, 401 wrong password / unknown email, validation                                          |
+| `refresh.api-spec.ts`          | `POST /api/auth/refresh`  | rotation, missing/invalid/reused refresh + cookie clear                                                |
+| `logout.api-spec.ts`           | `POST /api/auth/logout`   | 204 + cookie clear + DB hash revoked, idempotent without cookies, re-login                             |
+| `me.api-spec.ts`               | `GET /api/users/me`       | 200 after session, 401 missing/tampered/expired access token                                           |
+| `throttle.api-spec.ts`         | `POST /api/auth/*`        | 429 `Too many requests` + `TOO_MANY_REQUESTS` after burst (isolated app instance)                      |
+| `body-size.api-spec.ts`        | `POST /api/auth/register` | 413 `Request body too large` + `PAYLOAD_TOO_LARGE` when body exceeds low `BE_JSON_BODY_LIMIT`          |
+| `sanitize.api-spec.ts`         | `POST /api/auth/register` | 201 with HTML stripped from `name` (XSS payload → plain text)                                          |
+| `response-secrets.api-spec.ts` | Auth + `GET /users/me`    | JSON never includes `password`, `refreshTokenHash`, or `refreshTokenRotatedAt`; DB still stores hashes |
+| `security-headers.api-spec.ts` | `GET /api/users/me`       | Helmet `X-Frame-Options`, `X-Content-Type-Options` on responses                                        |
 
-**60** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
-
-### What transaction tests prove (and skip)
-
-| Test                               | Why it matters                                                                                       |
-| ---------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| Dual-write commit on register      | `@MongoTransaction()` must leave **both** `create` and `setRefreshTokenHash` visible after 201       |
-| Rollback on simulated hash failure | Proves ALS + session wiring — without a txn, the user row would survive when the second write throws |
-
-Not tested: login/refresh/logout (single-document writes today), decorator unit tests in isolation (covered indirectly by rollback), or multi-collection transactions (no second collection yet).
+**58** tests total (`pnpm nx test BE --skip-nx-cache`). Auth JWTs include a unique `jti` claim so refresh rotation tests do not depend on wall-clock delays. `global-setup.ts` sets `AUTH_THROTTLE_LIMIT=1000` so existing auth specs are not rate-limited; only `throttle.api-spec.ts` lowers the limit. `body-size.api-spec.ts` boots with a low `BE_JSON_BODY_LIMIT` (`50b`) to assert **413** behavior.
 
 Shared signup validation rows live in `test/fixtures/signup-validation.cases.ts` for `it.each` reuse.
 

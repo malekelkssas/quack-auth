@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-09 — `quack-12-dry-run`: `DatabaseModule` (`MongooseModule`), `nestjs-pino` + correlation IDs + Seq compose, OpenAPI auth docs, `withMongoTransaction`, Passport deferred (custom `JwtCookieAuthGuard`), FE error boundary + Tailwind v4 evidence synced; BE API suite count verified on branch.
+**Last audited:** 2026-06-09 — `quack-12-dry-run`: removed `@MongoTransaction` / ALS txn plumbing; E2E harness back to `MongoMemoryServer`; `dbClient()` in `main.ts` retained.
 
 ---
 
@@ -107,7 +107,7 @@ The PDF uses older names; the repo has evolved:
 - [x] Refresh token HMAC storage + compare-and-swap rotation (`token-hash.util.ts`, `rotateRefreshTokenHash`)
 - [x] **Argon2id** hash on signup + `verifyPassword` on login (`mongoose/utils/password.util.ts`; PDF says bcrypt — repo chose Argon2id per OWASP)
 - [ ] **Unified repository layer interface** — shared contract/base for all repositories (Developer request)
-- [x] **Atomic transaction setup** — `@MongoTransaction()` decorator + `getMongoTransactionSession()` ALS; repos auto-join active txn (e.g. `AuthService.register`)
+- [ ] **Atomic transaction setup** — removed on `quack-12-dry-run` (standalone Docker/mongo; sequential writes; no replica set)
 - [x] JWT issued into **HttpOnly** access + refresh cookies (10m/24h defaults + rotation)
 - [x] Auth guard on `GET /users/me`
 - [x] OpenAPI: `@ApiTags('auth'|'users'|'quack')`, cookie + CSRF security schemes (`openapi.config.ts`)
@@ -165,20 +165,20 @@ The PDF uses older names; the repo has evolved:
 
 ## 6. Logging & observability
 
-| #   | Item                                          | Status | Evidence / notes                                                |
-| --- | --------------------------------------------- | ------ | --------------------------------------------------------------- |
-| 6.1 | nestjs-pino structured JSON logs              | [x]    | `LoggerModule` + `pino.config.ts`; `app.useLogger` in `main.ts` |
-| 6.2 | Correlation ID middleware (AsyncLocalStorage) | [x]    | `correlation-id.middleware.ts` + `CorrelationIdModule`          |
-| 6.3 | pino-pretty for local dev                     | [x]    | Auto in `NODE_ENV=development`; optional pipe documented        |
-| 6.4 | Seq in Docker (optional dev UI)               | [x]    | `docker-compose.yml` → host `:5341`                             |
-| 6.5 | Request journey sample in PDF                 | [x]    | `apps/DOCS/docs/apps/be/observability.md`                       |
+| #   | Item                                          | Status | Evidence / notes                                             |
+| --- | --------------------------------------------- | ------ | ------------------------------------------------------------ |
+| 6.1 | nestjs-pino structured JSON logs              | [ ]    | Reverted — Nest built-in `Logger` in `main.ts` / filters     |
+| 6.2 | Correlation ID middleware (AsyncLocalStorage) | [ ]    | Removed with pino revert                                     |
+| 6.3 | pino-pretty for local dev                     | [ ]    | Removed with pino revert                                     |
+| 6.4 | Seq in Docker (optional dev UI)               | [ ]    | Removed from `docker-compose.yml`                            |
+| 6.5 | Request journey sample in PDF                 | [ ]    | `observability.md` removed; overview documents Nest `Logger` |
 
 ### Logging tasks
 
-- [x] Add `nestjs-pino` + configure JSON output with `level`, `route`, `ms`
-- [x] Correlation ID middleware; bind `correlationId` into pino via `customProps`
-- [x] Add Seq service to `docker-compose.yml` (container port 80 → host 5341, dev-only)
-- [x] Document log workflow in `apps/DOCS` (`observability.md`)
+- [ ] Add `nestjs-pino` + configure JSON output with `level`, `route`, `ms`
+- [ ] Correlation ID middleware; bind `correlationId` into pino via `customProps`
+- [ ] Add Seq service to `docker-compose.yml` (container port 80 → host 5341, dev-only)
+- [ ] Document log workflow in `apps/DOCS`
 
 ---
 
