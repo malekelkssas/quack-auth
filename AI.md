@@ -124,6 +124,28 @@ Nx monorepo (`pnpm` + Nx 22) with:
 
 ---
 
+## 2026-06-09 16:13 — Quack endpoint FE integration
+
+**Session** — `S012-fe-quack-home`
+
+**Local start time** — `2026-06-09 16:13`
+
+**Cursor surface** — Agents
+
+**Model** — Claude Opus 4.8
+
+**Branch** — `quack-09-fe-auth-rtk-query` (worktree `br0z`; not switched)
+
+**Done** — Inspected the `main`-branch quack endpoint via `gh` (read-only, no checkout) and integrated it into the protected Home page.
+
+- **Endpoint (main):** `POST /api/quack`, guarded by `JwtCookieAuthGuard` (cookie auth). Body `QuackInput` (`{ name?: string }`, optional override); response `QuackResponse` (`{ quack: string }`). Service falls back to the stored user's name → `"<name> quack"`.
+- **Mirrored to this branch (was missing):** added `BE_ROUTES.QUACK = 'quack'`; added `libs/dtos/src/lib/quack/` (`quack.dto.ts`, `quack-response.dto.ts`, `index.ts`) + barrel export. `QuackResponse` is an exact mirror; `QuackInput` is a self-contained wire-shape mirror (main's `OptionalPlainTextName` pulls in the `sanitize`/`name.schema` modules that do not exist on this branch — kept the length rules, BE still sanitizes server-side).
+- **FE:** new `store/api/quackApi.ts` `createApi` slice (`quack` **query**, POST, empty body for auto-greet on mount); wired reducer (`root-reducer.ts`), middleware (`store.ts`), and cache blacklist (`persist.config.ts`) mirroring `authApi`. `useHome.ts` calls `useQuackQuery()` and feeds the live quack into the Det. Quacksworth `SpeechBubble` (loading + error fallbacks), prepends a ticker item, and flips the status bar to `SIGNAL LOST` on error. Paths from `@shared/constants`, types from `@shared/dtos` — no magic strings.
+
+**Verified** — `pnpm nx run FE:typecheck --skip-nx-cache` ✅, `pnpm nx run FE:lint --skip-nx-cache` ✅, `pnpm check` ✅ (5 projects typecheck + prettier), `pnpm nx build DOCS` ✅.
+
+**Changed vs default AI** — used a `builder.query` (not mutation) for the POST so the greeting auto-fetches on Home mount; kept quack in a separate `quackApi` slice rather than overloading `authApi`.
+
 ## 2026-06-08 18:30 — Initial scaffolding & shared libs
 
 **Session** — `S001-initial-scaffold`
@@ -1206,3 +1228,33 @@ A **slight delay** in the Developer’s planned parallel agent workflow — one 
 
 - [x] `pnpm nx test BE --skip-nx-cache` (**41** passed)
 - [x] `pnpm nx build DOCS`
+
+---
+
+## 2026-06-09 16:00 — S008-fe-auth-rtk-query
+
+**Session id** — `S008-fe-auth-rtk-query`
+
+**Local start time** — `2026-06-09 16:00`
+
+**Cursor surface** — Agents
+
+**Model** — Composer 2.5
+
+**Branch** — `cursor/5bce9f1d`
+
+**Chat summary** — No
+
+**Decisions**
+
+- **Auth HTTP via RTK Query** — `authApi` + `axiosBaseQuery` on the shared axios instance; removed `AuthService.signup` and `createAsyncThunk` signup from `authSlice`.
+- **Session state split** — `authSlice` holds `user` only; matchers sync from `register` / `login` / `getMe` / `logout` fulfilled.
+- **Persist** — blacklist `authApi` cache; whitelist `auth.user` only via `createTransform`.
+- **401 refresh** — `setupAxiosInterceptors` with single-flight queue; refresh 401 → `resetApp()` + `authApi.util.resetApiState()` + `persistor.purge()` + hard redirect to login (not soft `navigate`).
+- **Routes** — `/` protected home; `FE_DEFAULT_ROUTE = LOGIN`; `/logout` trigger page; `ProtectedRoute` always calls `lazyGetMe()` to validate cookies even when `user` is rehydrated.
+- **Page hooks** — signup/login use RTK Query mutation `unwrap()` + inline success toast + navigate home; `useError` + `toErrorResponse()` for mutation errors (no slice-level signup flags).
+
+**Verified**
+
+- [x] `pnpm nx build DOCS`
+- [x] `pnpm check`

@@ -93,58 +93,68 @@ mongoose/
 - **`baseURL`** — from `VITE_API_URL` via `ENV_KEYS` (see `.env.example`); never hard-code API hosts in FE.
 - **Import** — `import api from '@/api/axiosConfig'` (or relative `../axiosConfig` under `api/services/`).
 - **`handleError.ts`** — normalizes `unknown` / `AxiosError` into `ErrorResponse` from `@shared/dtos`; axios-specific codes/messages live in `apps/FE/src/utils/constants/axios.constants.ts` (`AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`).
-- **`services/`** — domain axios call sites (e.g. `authService.ts`); import `BE_ROUTES` from `@shared/constants` for path segments — **no magic route strings** in FE services.
-- Interceptors (auth token, global errors) stay in `axiosConfig.ts` only.
-- **`services/index.ts`** — barrel re-export for domain services (e.g. `import { AuthService } from '@/api/services'`).
+- **`axiosBaseQuery.ts`** — RTK Query `BaseQueryFn` wrapping the shared axios instance; maps failures to `{ error: ErrorResponse }`.
+- **`setupAxiosInterceptors.ts`** — response interceptor: 401 → single-flight `POST /auth/refresh` → retry; refresh 401 → `resetApp()` + `authApi.util.resetApiState()` + `persistor.purge()` + hard redirect to login. Invoked from `store.ts` after `configureStore`.
+- **Request CSRF** — mutating-method CSRF header stays in `axiosConfig.ts` request interceptor only.
+- **`services/`** — optional domain axios call sites for non-RTK flows; auth HTTP lives in RTK Query `authApi` instead. Import `BE_ROUTES` from `@shared/constants` — **no magic route strings**.
+- **`services/index.ts`** — barrel re-export when domain services exist.
 
 ## FE Redux store (`apps/FE/src/store/`)
 
 | Path | Purpose |
 | ---- | ------- |
-| `slices/*.ts` | Redux Toolkit slices; each slice calls API services from `@/api/services/` in `createAsyncThunk` |
-| `root-reducer.ts` | `combineReducers` — register slices here |
-| `store.ts` / `hooks.ts` | Store setup + typed `useAppDispatch` / `useAppSelector` |
+| `api/authApi.ts` | RTK Query `createApi` — auth HTTP (`register`, `login`, `logout`, `getMe`) via `axiosBaseQuery` |
+| `api/quackApi.ts` | RTK Query `createApi` — non-auth quack greeting (`quack` query, `POST /quack`) via `axiosBaseQuery` |
+| `slices/*.ts` | Client session state (e.g. `auth.user`); **no `createAsyncThunk`** for auth HTTP |
+| `root-reducer.ts` | `combineReducers` + `RESET_APP` wrapper (`appReducer`) |
+| `reset.ts` | `resetApp()` action for full store reset on session death |
+| `persist.config.ts` | Blacklist `authApi` cache; whitelist persist **`auth.user` only** via `createTransform` |
+| `store.ts` / `hooks.ts` | Store + typed `useAppDispatch` / `useAppSelector`; `authApi.middleware`; calls `setupAxiosInterceptors` |
 
-### Slice thunks
+### Auth split (`authApi` + `authSlice`)
 
-- Import services from `@/api/services` (not axios directly in slices).
-- Catch errors with `handleError` from `@/api/handleError` and `rejectWithValue` with `ErrorResponse` (`@shared/dtos`).
-- Use **granular loading flags** per operation (`isSigningUp`, `isCreating`, …) — avoid a single ambiguous `isLoading` when multiple ops can run.
+- **`authApi`** — HTTP only; paths from `BE_ROUTES`; export generated hooks (`useRegisterMutation`, …).
+- **`authSlice`** — `user: AuthUser | null`; `resetAuth` reducer; `extraReducers` matchers on `register` / `login` / `getMe` fulfilled → set `user`; `logout` fulfilled → clear `user`.
+- **Axios refresh** — not RTK Query; direct `api.post` in interceptor so store↔api wiring stays one-way.
 
 ### Slice hooks (`apps/FE/src/hooks/slices/`)
 
-- One hook per slice (e.g. `useAuth.ts`) — **unified interface** exposing slice state, selectors, and dispatch wrappers.
+- One hook per slice (e.g. `useAuth.ts`) — **unified interface** exposing slice state (`user`, `isAuthenticated`) and `resetAuth`.
+- Re-export RTK Query auth hooks from the slice-hook module (or import from `@/store/api/authApi` in page hooks).
 - **Developer rationale:** when slice shape changes, update a few slice-hook files instead of many consumers across pages and components.
-- Slice hooks are for **action ops** (`create` / `update` / `delete` / `select` / `clear`) from component logic hooks — **not** for `fetch*` orchestration.
+- Slice hooks are for **session state + reset** — page hooks call RTK Query mutation hooks directly for auth HTTP.
 
 ## FE layered data flow
 
 ```
-API service → Redux slice → Slice hook → Page Context → component logic hook → UI component
+RTK Query authApi (axiosBaseQuery) → authSlice matchers → Slice hook → Component logic hook → UI
+Axios interceptor (401 refresh) — shared axios instance, benefits all RTK Query requests
 ```
 
 | Layer | Location | Responsibility |
 | ----- | -------- | -------------- |
-| **API service** | `api/services/` | HTTP via shared `axiosConfig`; paths from `BE_ROUTES` |
-| **Redux slice** | `store/slices/` | Async thunks, normalized state, granular loading/error flags |
-| **Slice hook** | `hooks/slices/` | Typed facade over slice state + actions for consumers |
-| **Page context** | `pages/<Page>/` or `contexts/` | **`fetch*` orchestration only** — `useEffect` / `useEffectEvent` to load data; exposes shared `data`, `isLoading`, `error`, pagination; may use `useError` / `useSuccess` for toasts |
-| **Component logic** | `useComponentName.ts` next to `ComponentName.tsx` | Local state, handlers, effects that are **not** fetch orchestration; calls slice-hook action ops |
+| **RTK Query API** | `store/api/authApi.ts` | Auth HTTP via `axiosBaseQuery` + `BE_ROUTES` |
+| **Redux slice** | `store/slices/` | Client session (`user`); matchers sync from API responses |
+| **Slice hook** | `hooks/slices/` | Typed facade over slice state + `resetAuth`; re-exports mutation hooks |
+| **Page context** | `pages/<Page>/` or `contexts/` | **`fetch*` orchestration only** — e.g. `ProtectedRoute` calls `lazyGetMe()` |
+| **Component logic** | `useComponentName.ts` next to `ComponentName.tsx` | RHF + RTK Query mutations; local handlers |
 | **UI component** | `ComponentName.tsx` | Presentational markup; minimal logic |
 
 ### Rules
 
-- **Page context:** `fetch*` effects live here only; use `useEffectEvent` for effect callbacks — do not put those callbacks in dependency arrays.
-- **Component logic:** no `fetch*` effects — delegate loads to page context; use slice hooks for mutations/select/clear.
+- **Auth HTTP** — RTK Query mutations/queries, not `createAsyncThunk`.
+- **Page context / route guards:** `fetch*` effects live in route wrappers or page context only; use `useEffectEvent` for effect callbacks — do not put those callbacks in dependency arrays.
+- **Component logic:** no `fetch*` effects except via route guards; call RTK Query mutation hooks for register/login/logout.
 - **Forms:** react-hook-form + `zodResolver` + shared DTOs from `@shared/dtos`; `useForm<z.input<typeof Schema>, unknown, z.output<typeof Schema>>` when defaults/transforms differ; child form components match parent input type.
-- **Cleanup:** clear page-owned Redux state on unmount unless persistence is required (`redux-persist` blacklist when appropriate).
+- **Cleanup:** `resetAuth` / `RESET_APP` on session death; persist only `auth.user` (blacklist RTK Query cache).
 
 ## FE pages (`apps/FE/src/pages/<Page>/`)
 
 - One folder per page (e.g. `pages/auth/Login/`, `pages/auth/Signup/`): `Page.tsx` (UI) + `usePage.ts` (component logic hook).
 - **Routing** uses `react-router` (`react-router-dom`): `<BrowserRouter>` in `main.tsx`, `<Routes>` + global `<Toaster/>` in `app/app.tsx`. Path segments live in `apps/FE/src/utils/constants/routes.constants.ts` (`FE_ROUTES`, `FE_DEFAULT_ROUTE`) — use them in `<Route>`, `<Navigate>`, and `<Link>`; no magic path strings in components.
+- **Route guards** — `components/routing/ProtectedRoute.tsx` (lazy `getMe` + redirect to login) and `GuestRoute.tsx` (redirect authenticated users to home).
 - **Shared layout** — colocate a layout next to the pages it serves (e.g. `pages/auth/AuthLayout.tsx`) and pass the form via `children`; do not duplicate the scene per page.
-- Mutations (e.g. signup) use a component logic hook calling a slice hook — **no page-context `fetch*` layer** when there is no data to load.
+- Mutations (register/login) use component logic hooks calling RTK Query mutation hooks — **no page-context `fetch*` layer** when there is no data to load.
 
 ## FE system hooks (`apps/FE/src/hooks/`) vs slice hooks (`hooks/slices/`)
 
@@ -157,7 +167,7 @@ API service → Redux slice → Slice hook → Page Context → component logic 
 - `utils/constants/` is a **directory**, not a flat `constants.ts` file:
   - `index.ts` — barrel (keeps `@/utils/constants` imports working).
   - `axios.constants.ts` — `AXIOS_ERROR_CODES`, `AXIOS_CONSTANTS`.
-  - `routes.constants.ts` — `FE_ROUTES` (`HOME`, `LOGIN`, `SIGNUP`), `FE_DEFAULT_ROUTE`.
+  - `routes.constants.ts` — `FE_ROUTES` (`HOME`, `LOGIN`, `SIGNUP`, `LOGOUT`), `FE_DEFAULT_ROUTE`.
   - `toast-variants.constants.ts` — `TOAST_VARIANTS = { SUCCESS, WARNING, ERROR }`.
 - Add new constant groups as `*.constants.ts` files re-exported from the barrel — do not reintroduce a single flat file.
 
