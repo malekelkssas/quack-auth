@@ -1,5 +1,6 @@
 import type { ErrorResponse } from '@shared/dtos';
-import { HttpException } from '@nestjs/common';
+import { API_ERROR_CODES } from '@shared/constants';
+import { HttpException, HttpStatus } from '@nestjs/common';
 import type { ZodError } from 'zod';
 
 /** Nest HTTP exceptions from bundled deps may fail `instanceof HttpException`. */
@@ -13,6 +14,25 @@ export function isHttpExceptionLike(
     'getResponse' in exception &&
     typeof (exception as HttpException).getStatus === 'function' &&
     typeof (exception as HttpException).getResponse === 'function'
+  );
+}
+
+/** Express body-parser `entity.too.large` (413) — not always an HttpException. */
+export function isPayloadTooLargeError(exception: unknown): boolean {
+  if (typeof exception !== 'object' || exception === null) {
+    return false;
+  }
+
+  const err = exception as {
+    type?: string;
+    status?: number;
+    statusCode?: number;
+  };
+
+  return (
+    err.type === 'entity.too.large' ||
+    err.status === HttpStatus.PAYLOAD_TOO_LARGE ||
+    err.statusCode === HttpStatus.PAYLOAD_TOO_LARGE
   );
 }
 
@@ -47,6 +67,22 @@ export function toErrorResponse(message: string, code?: string): ErrorResponse {
 
 /** Map a Nest {@link HttpException} body to {@link ErrorResponse}. */
 export function fromHttpException(exception: HttpException): ErrorResponse {
+  const status = exception.getStatus();
+
+  if (status === HttpStatus.TOO_MANY_REQUESTS) {
+    return toErrorResponse(
+      'Too many requests',
+      API_ERROR_CODES.TOO_MANY_REQUESTS,
+    );
+  }
+
+  if (status === HttpStatus.PAYLOAD_TOO_LARGE) {
+    return toErrorResponse(
+      'Request body too large',
+      API_ERROR_CODES.PAYLOAD_TOO_LARGE,
+    );
+  }
+
   const response = exception.getResponse();
 
   if (typeof response === 'string') {
@@ -58,12 +94,14 @@ export function fromHttpException(exception: HttpException): ErrorResponse {
     response !== null &&
     'message' in response
   ) {
-    const { message } = response as { message?: string | string[] };
-    if (typeof message === 'string') {
-      return toErrorResponse(message);
+    const body = response as { message?: string | string[]; code?: string };
+    if (typeof body.message === 'string') {
+      return body.code
+        ? toErrorResponse(body.message, body.code)
+        : toErrorResponse(body.message);
     }
-    if (Array.isArray(message) && typeof message[0] === 'string') {
-      return toErrorResponse(message[0]);
+    if (Array.isArray(body.message) && typeof body.message[0] === 'string') {
+      return toErrorResponse(body.message[0]);
     }
   }
 

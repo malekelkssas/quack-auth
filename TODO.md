@@ -6,7 +6,7 @@ Living checklist for security, conventions, and feature work. Source of intent: 
 
 **Legend:** `[x]` done · `[~]` partial · `[ ]` not done
 
-**Last audited:** 2026-06-09 — `cursor/5bce9f1d` (FE auth RTK Query: `authApi`, 401 refresh interceptor, protected home, login wiring).
+**Last audited:** 2026-06-09 — merged `main` (`quack-11-endpoint`: `POST /api/quack`, CSRF scope shifted to authenticated mutations only, BE API suite **56** tests — see `apps/DOCS/docs/apps/be/security.md`) into `quack-09-fe-auth-rtk-query` (FE auth RTK Query: `authApi`, 401 refresh interceptor, protected home, login wiring, quack integration).
 
 ---
 
@@ -96,7 +96,7 @@ The PDF uses older names; the repo has evolved:
 | 3.8  | `POST /auth/login`                   | [x]    | `POST /api/auth/login`                                                           |
 | 3.9  | `GET /auth/me` (protected)           | [x]    | Implemented as `GET /api/users/me` per route decision                            |
 | 3.10 | Passport.js + JWT strategy           | [ ]    | Not in dependencies                                                              |
-| 3.11 | `@nestjs/throttler` on `/auth/*`     | [ ]    | —                                                                                |
+| 3.11 | `@nestjs/throttler` on `/auth/*`     | [x]    | `ThrottlerGuard` on `AuthController`; `AUTH_THROTTLE_*` env — `security.md`      |
 | 3.12 | class-validator (secondary)          | [ ]    | Intentionally Zod-only via nestjs-zod                                            |
 
 ### Backend tasks
@@ -117,22 +117,22 @@ The PDF uses older names; the repo has evolved:
 
 ## 4. Shared validation (Zod)
 
-| #   | Item                                   | Status | Evidence / notes                                              |
-| --- | -------------------------------------- | ------ | ------------------------------------------------------------- |
-| 4.1 | Shared Zod library                     | [x]    | `libs/dtos/`                                                  |
-| 4.2 | `signup.dto.ts`                        | [x]    | `libs/dtos/src/lib/user/signup.dto.ts`                        |
-| 4.3 | `user.model.ts` (persisted shape)      | [x]    | `libs/dtos/src/lib/user/user.model.ts`                        |
-| 4.4 | `password.schema.ts` (strength rules)  | [x]    | Shared building block                                         |
-| 4.5 | `login.dto.ts`                         | [x]    | `libs/dtos/src/lib/user/login.dto.ts`                         |
-| 4.6 | XSS sanitization in Zod `.transform()` | [ ]    | PDF: strip `<script>`, `<img onerror>`, etc. on FE **and** BE |
-| 4.7 | nestjs-zod bridge                      | [x]    | Global pipe + greeting DTOs                                   |
-| 4.8 | Shared `ErrorResponse` DTO             | [x]    | `libs/dtos/src/lib/error/error-response.dto.ts`               |
+| #   | Item                                   | Status | Evidence / notes                                                                   |
+| --- | -------------------------------------- | ------ | ---------------------------------------------------------------------------------- |
+| 4.1 | Shared Zod library                     | [x]    | `libs/dtos/`                                                                       |
+| 4.2 | `signup.dto.ts`                        | [x]    | `libs/dtos/src/lib/user/signup.dto.ts`                                             |
+| 4.3 | `user.model.ts` (persisted shape)      | [x]    | `libs/dtos/src/lib/user/user.model.ts`                                             |
+| 4.4 | `password.schema.ts` (strength rules)  | [x]    | Shared building block                                                              |
+| 4.5 | `login.dto.ts`                         | [x]    | `libs/dtos/src/lib/user/login.dto.ts`                                              |
+| 4.6 | XSS sanitization in Zod `.transform()` | [x]    | `sanitizePlainText` in `libs/dtos`; `Signup.name` transform; FE via `@shared/dtos` |
+| 4.7 | nestjs-zod bridge                      | [x]    | Global pipe + greeting DTOs                                                        |
+| 4.8 | Shared `ErrorResponse` DTO             | [x]    | `libs/dtos/src/lib/error/error-response.dto.ts`                                    |
 
 ### Validation tasks
 
 - [x] Add `login.dto.ts` (email + password; no plaintext storage fields in model DTO)
-- [ ] Implement shared sanitize helper used inside Zod transforms (both apps)
-- [ ] Export user schemas from `libs/dtos/src/index.ts` / `user/index.ts` as needed
+- [x] Implement shared sanitize helper used inside Zod transforms (both apps)
+- [x] Export sanitize from `libs/dtos/src/index.ts` (`sanitizePlainText`)
 - [x] BE: `createZodDto` wrapper for Signup (`users/users.dto.ts`)
 - [x] Zod validation errors → `ErrorResponse` (first issue only) in `global-exception.filter.ts`
 - [x] BE: `createZodDto` wrappers for Login, User response
@@ -141,25 +141,25 @@ The PDF uses older names; the repo has evolved:
 
 ## 5. Security
 
-| Area        | PDF decision                           | Status | Notes                                                                                 |
-| ----------- | -------------------------------------- | ------ | ------------------------------------------------------------------------------------- |
-| Passwords   | bcrypt, salt rounds 12 (PDF)           | [~]    | **Argon2id** (OWASP min) on signup; PDF still says bcrypt — reconcile in DOCS         |
-| Auth tokens | JWT in HttpOnly cookie                 | [x]    | Access + refresh cookies with rotation                                                |
-| CSRF        | Double-submit cookie (`csrf-csrf`)     | [x]    | `csrf.config.ts`, FE axios header; [security doc](apps/DOCS/docs/apps/be/security.md) |
-| XSS         | Zod `.transform()` sanitize            | [ ]    | See §4.6                                                                              |
-| Rate limit  | `@nestjs/throttler` on `/auth/*`       | [ ]    | —                                                                                     |
-| Headers     | Helmet.js (CSP, HSTS, X-Frame-Options) | [ ]    | Not in `main.ts`                                                                      |
+| Area        | PDF decision                           | Status | Notes                                                                                                                              |
+| ----------- | -------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Passwords   | bcrypt, salt rounds 12 (PDF)           | [~]    | **Argon2id** (OWASP min) on signup; PDF still says bcrypt — reconcile in DOCS                                                      |
+| Auth tokens | JWT in HttpOnly cookie                 | [x]    | Access + refresh cookies with rotation                                                                                             |
+| CSRF        | Double-submit cookie (`csrf-csrf`)     | [x]    | Protects `POST /api/quack` only (not auth POSTs); `INVALID_CSRF_TOKEN` on 403 — [security doc](apps/DOCS/docs/apps/be/security.md) |
+| XSS         | Zod `.transform()` sanitize            | [x]    | `libs/dtos/src/lib/sanitize/`; `Signup.name` — `security.md`                                                                       |
+| Rate limit  | `@nestjs/throttler` on `/auth/*`       | [x]    | `AuthController` only; defaults 10 req / 60s — `security.md`                                                                       |
+| Headers     | Helmet.js (CSP, HSTS, X-Frame-Options) | [x]    | `helmet.config.ts` via `configure-app.ts`; relaxed CSP in dev/e2e                                                                  |
 
 ### Security tasks (ordered)
 
-1. [~] Password hashing on write (`argon2id` signup); verify on login path not built
+1. [x] Password hashing on write (`argon2id` signup) + `verifyPassword` on login
 2. [x] JWT + HttpOnly cookie + refresh strategy
-3. [ ] Helmet in `apps/BE/src/main.ts`
-4. [ ] ThrottlerModule — per-IP limits on auth routes; env-configurable TTL/limit
-5. [x] CSRF middleware for state-changing routes when using cookies (`csrf-csrf`, auth POSTs)
-6. [ ] XSS sanitization at schema level (§4.6)
+3. [x] Helmet in `configure-app.ts` (`helmet.config.ts`)
+4. [x] ThrottlerModule — per-IP limits on auth routes; env-configurable TTL/limit
+5. [x] CSRF middleware for authenticated mutations (`csrf-csrf`, `POST /api/quack`)
+6. [x] XSS sanitization at schema level (§4.6)
 7. [x] Review cookie flags: `Secure`, `SameSite`, `HttpOnly`
-8. [ ] Never return password hash in API responses (enforce via `user.model.ts` + serializers)
+8. [x] Never return password hash in API responses (`AuthUser` + `response-secrets.api-spec.ts`)
 
 ---
 
@@ -184,21 +184,21 @@ The PDF uses older names; the repo has evolved:
 
 ## 7. Testing
 
-| #   | Item                                      | Status | Evidence / notes                                                                                               |
-| --- | ----------------------------------------- | ------ | -------------------------------------------------------------------------------------------------------------- |
-| 7.1 | Jest (BE) — dependency / config           | [x]    | `jest.config.ts`, `*.api-spec.ts` under `apps/BE/src/test/`                                                    |
-| 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | API-level only per Developer preference                                                                        |
-| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth endpoints covered (`register`, `login`, `refresh`, `logout`, `me`); **41** tests; expand as features land |
-| 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config                                                             |
-| 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                                                                              |
-| 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`                                                                     |
-| 7.7 | `mongodb-memory-server` usage             | [x]    | `global-setup.ts` for BE API tests                                                                             |
-| 7.8 | CI test step                              | [x]    | `pnpm ci` includes `pnpm nx test BE`                                                                           |
+| #   | Item                                      | Status | Evidence / notes                                                                                    |
+| --- | ----------------------------------------- | ------ | --------------------------------------------------------------------------------------------------- |
+| 7.1 | Jest (BE) — dependency / config           | [x]    | `jest.config.ts`, `*.api-spec.ts` under `apps/BE/src/test/`                                         |
+| 7.2 | BE unit tests (services, guards, pipes)   | [ ]    | API-level only per Developer preference                                                             |
+| 7.3 | Supertest e2e (HTTP + Mongo)              | [~]    | Auth + security specs (throttle, sanitize, headers, secrets); **48** tests; expand as features land |
+| 7.4 | Vitest (FE) — dependency                  | [~]    | In devDependencies; no `test` block in vite config                                                  |
+| 7.5 | FE unit tests (components, hooks)         | [ ]    | —                                                                                                   |
+| 7.6 | Cypress e2e (signup → signin → protected) | [ ]    | FE generated with `--e2e-test-runner=none`                                                          |
+| 7.7 | `mongodb-memory-server` usage             | [x]    | `global-setup.ts` for BE API tests                                                                  |
+| 7.8 | CI test step                              | [x]    | `pnpm ci` includes `pnpm nx test BE`                                                                |
 
 ### Testing tasks
 
 - [ ] BE: colocated unit tests (optional — Developer prefers API-level Supertest)
-- [x] BE: Supertest auth API specs (`apps/BE/src/test/api/auth/`, `users/me.api-spec.ts`, CSRF helper, logout spec — 41 tests)
+- [x] BE: Supertest auth + security API specs (`throttle`, `sanitize`, `security-headers`, `response-secrets` — **48** tests)
 - [ ] FE: Vitest + React Testing Library for forms and guards
 - [ ] FE: Cypress flows for full auth journey
 - [ ] Uncomment and stabilize CI test jobs

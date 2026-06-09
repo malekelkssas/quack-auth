@@ -7,7 +7,9 @@ import {
   Req,
   Res,
   UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
+import { ThrottlerGuard } from '@nestjs/throttler';
 import type { Login, Signup } from '@shared/dtos';
 import { BE_ROUTES } from '@shared/constants';
 import type { Request, Response } from 'express';
@@ -15,6 +17,7 @@ import { ZodResponse } from 'nestjs-zod';
 import { AuthResponseDto, LoginDto, RegisterDto } from './auth.dto';
 import { AuthService } from './auth.service';
 
+@UseGuards(ThrottlerGuard)
 @Controller(BE_ROUTES.AUTH)
 export class AuthController {
   constructor(private readonly authService: AuthService) {}

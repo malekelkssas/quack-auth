@@ -54,6 +54,7 @@ export class AuthController {
 - `POST /api/auth/refresh`
 - `POST /api/auth/logout`
 - `GET /api/users/me` (protected; returns `401` when unauthorized)
+- `POST /api/quack` (protected; optional `{ name?: string }` — returns `{ quack: "<name> quack" }`; falls back to stored user name when `name` omitted)
 
 Tokens are transported via HttpOnly cookies for both access and refresh tokens. Default TTLs:
 
@@ -62,7 +63,7 @@ Tokens are transported via HttpOnly cookies for both access and refresh tokens. 
 
 Refresh uses token rotation with compare-and-swap hash updates; invalid or expired refresh tokens return `401` and clear auth cookies. Logout revokes the stored refresh hash and clears cookies (204).
 
-State-changing auth POSTs require CSRF double-submit (`x-csrf-token` header + `qa_csrf_token` cookie). Full detail: [Backend security](./security.md).
+`POST /api/quack` requires JWT cookies **and** CSRF double-submit (`x-csrf-token` header + `qa_csrf_token` cookie). Auth POSTs do **not** require CSRF. Full detail: [Backend security](./security.md).
 
 ## Security
 

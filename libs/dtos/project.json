@@ -20,6 +20,14 @@
       "options": {
         "command": "tsc --noEmit -p libs/dtos/tsconfig.lib.json"
       }
+    },
+    "test": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/libs/dtos"],
+      "options": {
+        "jestConfig": "libs/dtos/jest.config.ts",
+        "passWithNoTests": false
+      }
     }
   }
 }

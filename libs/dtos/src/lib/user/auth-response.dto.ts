@@ -6,8 +6,10 @@ export const AuthUser = User.pick({
   _id: true,
   email: true,
   name: true,
-  createdAt: true,
-  updatedAt: true,
+}).extend({
+  /** ISO-8601 strings for JSON/OpenAPI — persisted `User` model keeps `z.coerce.date()`. */
+  createdAt: z.iso.datetime(),
+  updatedAt: z.iso.datetime(),
 });
 
 export const AuthResponse = z.object({

@@ -21,4 +21,10 @@ export const ENV_KEYS = {
   VITE_REDUX_PERSIST_SECRET_KEY: 'VITE_REDUX_PERSIST_SECRET_KEY',
   /** Comma-separated origins allowed by BE CORS (must include the FE dev URL). */
   CORS_ORIGIN: 'CORS_ORIGIN',
+  /** Auth route rate limit window in milliseconds (per IP). */
+  AUTH_THROTTLE_TTL_MS: 'AUTH_THROTTLE_TTL_MS',
+  /** Max auth requests per IP within AUTH_THROTTLE_TTL_MS. */
+  AUTH_THROTTLE_LIMIT: 'AUTH_THROTTLE_LIMIT',
+  /** Express JSON / urlencoded body size limit (e.g. `100kb`, `1mb`). */
+  BE_JSON_BODY_LIMIT: 'BE_JSON_BODY_LIMIT',
 };
