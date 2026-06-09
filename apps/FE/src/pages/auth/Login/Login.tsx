@@ -1,3 +1,4 @@
+import { MAX_PASSWORD_LENGTH } from '@shared/dtos';
 import { Lock, Mail } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -58,6 +59,7 @@ export function Login() {
           autoComplete="current-password"
           placeholder="••••••••"
           icon={<Lock className="h-4 w-4" />}
+          maxLength={MAX_PASSWORD_LENGTH}
           error={errors.password?.message}
           trailing={
             <PasswordVisibilityToggle

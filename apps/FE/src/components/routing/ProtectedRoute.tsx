@@ -17,10 +17,7 @@ export function ProtectedRoute() {
     }
   }, [isAuthenticated, triggerGetMe]);
 
-  // Must run before the loading gate: handleSessionDead() dispatches resetApp()
-  // (isAuthenticated → false) and authApi.util.resetApiState() (getMe →
-  // isUninitialized). Checking isChecking first used to trap the route on
-  // ProgressLoader forever — fixed height-0 blank screen + blue bar only.
+  // Auth check before loading gate — resetApiState leaves getMe isUninitialized.
   if (!isAuthenticated) {
     return <Navigate to={FE_ROUTES.LOGIN} replace />;
   }

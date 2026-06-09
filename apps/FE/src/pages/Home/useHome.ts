@@ -1,5 +1,5 @@
 import { useCallback, useMemo, useState } from 'react';
-import type { ChangeEvent, FormEvent } from 'react';
+import type { FormEvent } from 'react';
 
 import { useAuth } from '@/hooks/slices/useAuth';
 import { useLazyQuackQuery } from '@/store/api/quackApi';
@@ -44,35 +44,20 @@ export function useHome() {
     [],
   );
 
-  // Transmission to the BE `POST /api/quack` endpoint is now user-driven: the
-  // agent types a name and hits send. We use the lazy trigger so nothing fires
-  // on mount (a background POST that 401s after the access token expires can
-  // trip the session-death redirect in the axios interceptor).
   const [triggerQuack, { data: quackData, isFetching, isError }] =
     useLazyQuackQuery();
 
   const [quackName, setQuackName] = useState('');
 
-  const onQuackNameChange = useCallback(
-    (event: ChangeEvent<HTMLInputElement>) => {
-      setQuackName(event.target.value);
-    },
-    [],
-  );
-
   const onQuackSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
       const trimmed = quackName.trim();
-      // Empty input → no body so the server greets the signed-in agent by
-      // their stored name; otherwise send the typed override.
       void triggerQuack(trimmed ? { name: trimmed } : undefined);
     },
     [quackName, triggerQuack],
   );
 
-  // Feed the latest quack into the detective speech bubble; fall back to an
-  // in-character quote before the first transmission or if the signal drops.
   const quackLines = useMemo<string[]>(() => {
     if (isFetching) return ['Tuning the', 'pond radio...'];
     if (isError) return ['Signal lost.', 'Try again,', 'agent.'];
@@ -106,7 +91,7 @@ export function useHome() {
     pondStatus: isError ? 'SIGNAL LOST' : POND_STATUS,
     openCases: OPEN_CASES,
     quackName,
-    onQuackNameChange,
+    setQuackName,
     onQuackSubmit,
     isQuacking: isFetching,
   };

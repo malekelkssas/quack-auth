@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { MAX_NAME_LENGTH } from '@shared/dtos';
 
 import { DuckCanvas } from '@/components/duck/DuckCanvas';
 import { PixelButton } from '@/components/duck/PixelButton';
@@ -21,7 +22,7 @@ export function Home() {
     pondStatus,
     openCases,
     quackName,
-    onQuackNameChange,
+    setQuackName,
     onQuackSubmit,
     isQuacking,
   } = useHome();
@@ -83,9 +84,9 @@ export function Home() {
               id="quack-name"
               type="text"
               value={quackName}
-              onChange={onQuackNameChange}
+              onChange={(event) => setQuackName(event.target.value)}
               placeholder="Name (optional)"
-              maxLength={100}
+              maxLength={MAX_NAME_LENGTH}
               autoComplete="off"
               className="rounded-md border-2 border-secondary bg-card px-3 py-2.5 text-base text-cream placeholder:text-muted-foreground/60 focus:border-duck-amber focus:outline-none"
             />

@@ -1,3 +1,4 @@
+import { MAX_NAME_LENGTH, MAX_PASSWORD_LENGTH } from '@shared/dtos';
 import { Lock, Mail, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
@@ -59,6 +60,7 @@ export function Signup() {
           placeholder="Sir Quacksalot"
           icon={<User className="h-4 w-4" />}
           error={errors.name?.message}
+          maxLength={MAX_NAME_LENGTH}
           {...register('name')}
         />
         <PixelField
@@ -68,6 +70,7 @@ export function Signup() {
           autoComplete="new-password"
           placeholder="••••••••"
           icon={<Lock className="h-4 w-4" />}
+          maxLength={MAX_PASSWORD_LENGTH}
           error={errors.password?.message}
           trailing={
             <PasswordVisibilityToggle
