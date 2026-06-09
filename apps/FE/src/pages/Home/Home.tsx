@@ -99,13 +99,13 @@ export function Home() {
               'repeating-linear-gradient(90deg,#4a9429 0px,#4a9429 16px,#3a7a1b 16px,#3a7a1b 32px)',
           }}
         />
+        <div
+          className="absolute bottom-0 right-12 h-5 w-44 rounded-t-[50%] border-t-[3px] border-sky-blue/70 bg-sky-blue/40 opacity-75 sm:w-52"
+          aria-hidden="true"
+        />
         <div className="absolute inset-x-0 bottom-0 h-full">
           <DuckCanvas mode="both" height={64} />
         </div>
-        <div
-          className="absolute bottom-0 left-1/2 h-5 w-44 -translate-x-1/2 rounded-t-[50%] border-t-[3px] border-sky-blue/70 bg-sky-blue/40 opacity-75"
-          aria-hidden="true"
-        />
       </div>
 
       <div className="relative z-10">
