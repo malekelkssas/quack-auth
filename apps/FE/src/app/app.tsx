@@ -2,6 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 
 import { GuestRoute } from '@/components/routing/GuestRoute';
 import { ProtectedRoute } from '@/components/routing/ProtectedRoute';
+import { SessionDeathRedirect } from '@/components/routing/SessionDeathRedirect';
 import { Toaster } from '@/components/ui/toaster';
 import { useCsrfBootstrap } from '@/hooks/use-csrf-bootstrap';
 import Home from '@/pages/Home/Home';
@@ -15,6 +16,7 @@ export function App() {
 
   return (
     <>
+      <SessionDeathRedirect />
       <Routes>
         <Route element={<ProtectedRoute />}>
           <Route path={FE_ROUTES.HOME} element={<Home />} />

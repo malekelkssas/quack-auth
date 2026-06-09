@@ -6,7 +6,6 @@ import { BE_ROUTES } from '@shared/constants';
 import api from '@/api/axiosConfig';
 import { authApi } from '@/store/api/authApi';
 import { resetApp } from '@/store/reset';
-import { FE_ROUTES } from '@/utils/constants';
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -17,6 +16,9 @@ type FailedRequest = {
   reject: (reason?: unknown) => void;
   config: RetryableConfig;
 };
+
+/** Dispatched from handleSessionDead so react-router can soft-navigate to login. */
+export const SESSION_DEAD_EVENT = 'quack:session-dead';
 
 const AUTH_SKIP_401_PATHS = [
   `/${BE_ROUTES.AUTH}/${BE_ROUTES.LOGIN}`,
@@ -44,10 +46,14 @@ const processQueue = (error: unknown | null) => {
 };
 
 const handleSessionDead = (store: Store, persistor: Persistor) => {
+  // Clear all client state for a dead session, then soft-navigate to login.
+  // ProtectedRoute checks !isAuthenticated before the getMe loading gate
+  // (resetApiState leaves getMe isUninitialized — must not block redirect).
+  // SESSION_DEAD_EVENT is a backup navigate for routes outside ProtectedRoute.
   store.dispatch(resetApp());
   store.dispatch(authApi.util.resetApiState());
   void persistor.purge();
-  window.location.assign(FE_ROUTES.LOGIN);
+  window.dispatchEvent(new CustomEvent(SESSION_DEAD_EVENT));
 };
 
 export function setupAxiosInterceptors(store: Store, persistor: Persistor) {

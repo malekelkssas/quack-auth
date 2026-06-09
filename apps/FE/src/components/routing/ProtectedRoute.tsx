@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 
 import ProgressLoader from '@/components/ProgressLoader';
@@ -10,22 +10,32 @@ export function ProtectedRoute() {
   const { isAuthenticated } = useAuth();
   const [triggerGetMe, { isLoading, isFetching, isError, isUninitialized }] =
     useLazyGetMeQuery();
-  const attemptedRef = useRef(false);
 
   useEffect(() => {
-    if (!attemptedRef.current) {
-      attemptedRef.current = true;
+    if (isAuthenticated) {
       void triggerGetMe();
     }
-  }, [triggerGetMe]);
+  }, [isAuthenticated, triggerGetMe]);
+
+  // Must run before the loading gate: handleSessionDead() dispatches resetApp()
+  // (isAuthenticated → false) and authApi.util.resetApiState() (getMe →
+  // isUninitialized). Checking isChecking first used to trap the route on
+  // ProgressLoader forever — fixed height-0 blank screen + blue bar only.
+  if (!isAuthenticated) {
+    return <Navigate to={FE_ROUTES.LOGIN} replace />;
+  }
 
   const isChecking = isUninitialized || isLoading || isFetching;
 
   if (isChecking) {
-    return <ProgressLoader />;
+    return (
+      <div className="min-h-screen bg-background">
+        <ProgressLoader />
+      </div>
+    );
   }
 
-  if (isError || !isAuthenticated) {
+  if (isError) {
     return <Navigate to={FE_ROUTES.LOGIN} replace />;
   }
 

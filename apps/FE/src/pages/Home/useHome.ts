@@ -1,7 +1,8 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import type { ChangeEvent, FormEvent } from 'react';
 
 import { useAuth } from '@/hooks/slices/useAuth';
-import { useQuackQuery } from '@/store/api/quackApi';
+import { useLazyQuackQuery } from '@/store/api/quackApi';
 
 /** In-character lines for the detective speech bubble; one entry per line. */
 const DETECTIVE_QUOTES: string[][] = [
@@ -43,21 +44,41 @@ export function useHome() {
     [],
   );
 
-  // Live transmission from the BE `POST /api/quack` endpoint (cookie-guarded);
-  // empty body so the server greets the signed-in agent by their stored name.
-  const {
-    data: quackData,
-    isLoading: isQuackLoading,
-    isError: isQuackError,
-  } = useQuackQuery();
+  // Transmission to the BE `POST /api/quack` endpoint is now user-driven: the
+  // agent types a name and hits send. We use the lazy trigger so nothing fires
+  // on mount (a background POST that 401s after the access token expires can
+  // trip the session-death redirect in the axios interceptor).
+  const [triggerQuack, { data: quackData, isFetching, isError }] =
+    useLazyQuackQuery();
 
-  // Feed the quack into the detective speech bubble; fall back to an
-  // in-character quote while loading or if the signal drops.
+  const [quackName, setQuackName] = useState('');
+
+  const onQuackNameChange = useCallback(
+    (event: ChangeEvent<HTMLInputElement>) => {
+      setQuackName(event.target.value);
+    },
+    [],
+  );
+
+  const onQuackSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      const trimmed = quackName.trim();
+      // Empty input → no body so the server greets the signed-in agent by
+      // their stored name; otherwise send the typed override.
+      void triggerQuack(trimmed ? { name: trimmed } : undefined);
+    },
+    [quackName, triggerQuack],
+  );
+
+  // Feed the latest quack into the detective speech bubble; fall back to an
+  // in-character quote before the first transmission or if the signal drops.
   const quackLines = useMemo<string[]>(() => {
-    if (isQuackLoading) return ['Tuning the', 'pond radio...'];
-    if (isQuackError || !quackData?.quack) return quote;
+    if (isFetching) return ['Tuning the', 'pond radio...'];
+    if (isError) return ['Signal lost.', 'Try again,', 'agent.'];
+    if (!quackData?.quack) return quote;
     return ['Incoming signal:', `"${quackData.quack}!"`];
-  }, [isQuackLoading, isQuackError, quackData, quote]);
+  }, [isFetching, isError, quackData, quote]);
 
   const tickerItems = useMemo(() => {
     if (!quackData?.quack) return TICKER_ITEMS;
@@ -82,7 +103,11 @@ export function useHome() {
     quote: quackLines,
     tickerItems,
     lastSeen,
-    pondStatus: isQuackError ? 'SIGNAL LOST' : POND_STATUS,
+    pondStatus: isError ? 'SIGNAL LOST' : POND_STATUS,
     openCases: OPEN_CASES,
+    quackName,
+    onQuackNameChange,
+    onQuackSubmit,
+    isQuacking: isFetching,
   };
 }

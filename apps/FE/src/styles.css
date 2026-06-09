@@ -108,10 +108,10 @@
 
 @keyframes ticker {
   from {
-    transform: translateX(0);
+    transform: translate3d(0, 0, 0);
   }
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 
@@ -129,6 +129,12 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
   }
 
   body {

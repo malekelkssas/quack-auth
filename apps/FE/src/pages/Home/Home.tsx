@@ -20,31 +20,39 @@ export function Home() {
     lastSeen,
     pondStatus,
     openCases,
+    quackName,
+    onQuackNameChange,
+    onQuackSubmit,
+    isQuacking,
   } = useHome();
 
   return (
     <div className="relative flex min-h-screen flex-col overflow-hidden bg-duck-navy font-body text-foreground">
       <StarField />
 
-      <nav className="relative z-10 flex items-center justify-between border-b-[3px] border-duck-amber bg-card px-6 py-3">
-        <span className="font-pixel text-[8px] tracking-widest text-duck-amber">
+      <nav className="relative z-10 flex items-center justify-between gap-2 border-b-[3px] border-duck-amber bg-card px-3 py-2 sm:gap-4 sm:px-6 sm:py-3">
+        <span className="shrink-0 font-pixel text-[7px] tracking-widest text-duck-amber sm:text-[8px]">
           DET. QUACKSWORTH
         </span>
-        <div className="flex items-center gap-3.5">
-          <span className="flex items-center gap-2 text-lg text-muted-foreground">
+        <div className="flex min-w-0 items-center gap-2 sm:gap-3.5">
+          <span className="flex min-w-0 items-center gap-2 text-base text-muted-foreground sm:text-lg">
             <span
-              className="flex h-7 w-7 items-center justify-center rounded border-2 border-duck-amber bg-accent font-pixel text-[7px] text-duck-amber"
-              aria-hidden="true"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded border-2 border-duck-amber bg-accent font-pixel text-[7px] text-duck-amber"
+              aria-label={greeting}
+              title={greeting}
             >
               {initials}
             </span>
-            <span>{greeting}</span>
+            <span className="hidden min-w-0 truncate sm:inline">
+              {greeting}
+            </span>
           </span>
           <Link
             to={FE_ROUTES.LOGOUT}
-            className="rounded border-2 border-destructive px-2.5 py-1.5 font-pixel text-[7px] uppercase text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground"
+            className="shrink-0 whitespace-nowrap rounded border-2 border-destructive px-2 py-1 font-pixel text-[7px] uppercase text-destructive transition-colors hover:bg-destructive hover:text-destructive-foreground sm:px-2.5 sm:py-1.5"
           >
-            [ Logout ]
+            <span className="sm:hidden">[ OUT ]</span>
+            <span className="hidden sm:inline">[ Logout ]</span>
           </Link>
         </div>
       </nav>
@@ -64,17 +72,31 @@ export function Home() {
             <br />
             New cases are waiting.
           </p>
-          <div className="flex flex-wrap justify-center gap-2.5 sm:justify-start">
-            <PixelButton className="w-auto px-3.5 py-2.5 text-[7px]">
-              [ Open cases ]
-            </PixelButton>
-            <button
-              type="button"
-              className="rounded-md border-2 border-secondary bg-transparent px-3.5 py-2.5 font-pixel text-[7px] uppercase text-muted-foreground transition-colors hover:border-duck-amber hover:text-duck-amber"
+          <form onSubmit={onQuackSubmit} className="flex flex-col gap-2.5">
+            <label
+              htmlFor="quack-name"
+              className="font-pixel text-[7px] uppercase tracking-wider text-duck-amber"
             >
-              [ My profile ]
-            </button>
-          </div>
+              Send a quack
+            </label>
+            <input
+              id="quack-name"
+              type="text"
+              value={quackName}
+              onChange={onQuackNameChange}
+              placeholder="Name (optional)"
+              maxLength={100}
+              autoComplete="off"
+              className="rounded-md border-2 border-secondary bg-card px-3 py-2.5 text-base text-cream placeholder:text-muted-foreground/60 focus:border-duck-amber focus:outline-none"
+            />
+            <PixelButton
+              type="submit"
+              disabled={isQuacking}
+              className="w-auto px-3.5 py-2.5 text-[7px]"
+            >
+              {isQuacking ? '[ Quacking... ]' : '[ Quack! ]'}
+            </PixelButton>
+          </form>
         </div>
 
         <div className="relative flex flex-col items-center sm:flex-row sm:items-start">
@@ -98,10 +120,6 @@ export function Home() {
             background:
               'repeating-linear-gradient(90deg,#4a9429 0px,#4a9429 16px,#3a7a1b 16px,#3a7a1b 32px)',
           }}
-        />
-        <div
-          className="absolute bottom-0 right-12 h-5 w-44 rounded-t-[50%] border-t-[3px] border-sky-blue/70 bg-sky-blue/40 opacity-75 sm:w-52"
-          aria-hidden="true"
         />
         <div className="absolute inset-x-0 bottom-0 h-full">
           <DuckCanvas mode="both" height={64} />
